@@ -1,8 +1,11 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from . import bp
 from ...extensions import db
 from ...models.user import User
+from ...models.friendship import Friendship
+from ...models.collection import UserCollection
+from ...models.pokemon import Form
 from ...services.collection_service import get_collection_stats
 
 
@@ -58,14 +61,12 @@ def perfil():
             visibility = request.form.get("visibility", "public")
             if visibility not in ("public", "friends", "private"):
                 visibility = "public"
-
             if email != current_user.email:
                 if db.session.query(User).filter(
                     User.email == email, User.id != current_user.id
                 ).first():
                     flash("E-mail já está em uso por outro treinador.", "warning")
                     return redirect(url_for("auth.perfil"))
-
             current_user.email = email
             current_user.trainer_code = trainer_code
             current_user.visibility = visibility
@@ -89,6 +90,75 @@ def perfil():
 
     stats = get_collection_stats(current_user.id)
     return render_template("auth/perfil.html", stats=stats)
+
+
+@bp.route("/treinador/<username>")
+def perfil_publico(username: str):
+    profile_user = db.session.query(User).filter_by(username=username).first_or_404()
+
+    # Redireciona para o próprio perfil se for o usuário logado
+    if current_user.is_authenticated and current_user.id == profile_user.id:
+        return redirect(url_for("auth.perfil"))
+
+    # Verifica visibilidade
+    can_view = False
+    if profile_user.visibility == "public":
+        can_view = True
+    elif profile_user.visibility == "friends" and current_user.is_authenticated:
+        friendship = db.session.query(Friendship).filter(
+            db.or_(
+                db.and_(
+                    Friendship.requester_id == current_user.id,
+                    Friendship.addressee_id == profile_user.id,
+                ),
+                db.and_(
+                    Friendship.requester_id == profile_user.id,
+                    Friendship.addressee_id == current_user.id,
+                ),
+            ),
+            Friendship.status == "accepted",
+        ).first()
+        can_view = friendship is not None
+
+    if not can_view:
+        abort(403)
+
+    stats = get_collection_stats(profile_user.id)
+
+    # Primeiros 24 Pokémon capturados
+    sample_owned = (
+        db.session.query(Form)
+        .join(UserCollection, UserCollection.form_id == Form.id)
+        .filter(
+            UserCollection.user_id == profile_user.id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        )
+        .order_by(Form.species_id)
+        .limit(24)
+        .all()
+    )
+
+    # Pokémon disponíveis para troca
+    trade_forms = (
+        db.session.query(Form)
+        .join(UserCollection, UserCollection.form_id == Form.id)
+        .filter(
+            UserCollection.user_id == profile_user.id,
+            UserCollection.owned.is_(True),
+            UserCollection.for_trade.is_(True),
+        )
+        .order_by(Form.species_id)
+        .all()
+    )
+
+    return render_template(
+        "auth/perfil_publico.html",
+        profile_user=profile_user,
+        stats=stats,
+        sample_owned=sample_owned,
+        trade_forms=trade_forms,
+    )
 
 
 @bp.route("/logout")
