@@ -20,13 +20,16 @@ Write-Host "   GitHub atualizado." -ForegroundColor Green
 # ── 2. Servidor puxa do GitHub e sobe containers ─────────────────────────────
 Write-Host "[2/3] Atualizando servidor e containers..." -ForegroundColor Cyan
 
+$downFirst = if ($Build) { "docker-compose -f docker-compose.prod.yml down" } else { "true" }
+
 $remoteCmd = @"
 set -e
 cd $Remote
 git pull origin main
-docker compose -f docker-compose.prod.yml up -d $buildFlag
+$downFirst
+docker-compose -f docker-compose.prod.yml up -d $buildFlag
 echo '>>> Containers em execucao:'
-docker compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.prod.yml ps
 "@
 
 & ssh -i "$Key" -p $Port -o StrictHostKeyChecking=no $Server $remoteCmd
