@@ -19,7 +19,9 @@ def index():
         if q.isdigit():
             query = query.filter(Species.id == int(q))
         else:
-            query = query.filter(Species.name.ilike(f"%{q}%"))
+            query = query.filter(
+                db.or_(Species.name.ilike(f"%{q}%"), Species.name_pt.ilike(f"%{q}%"))
+            )
     if generation:
         query = query.filter(Species.generation == generation)
 

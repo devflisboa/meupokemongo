@@ -80,8 +80,10 @@
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             Trocas
           </a>
-          <a href="#"
-             class="px-4 py-1.5 rounded-full transition-colors text-gray-300 hover:text-white hover:bg-white/10">
+          <a href="{{ url_for('auth.perfil') }}"
+             class="px-4 py-1.5 rounded-full transition-colors
+               {% if request.endpoint == 'auth.perfil' %}bg-white text-[#1B2A4A] font-bold
+               {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             Perfil
           </a>
           {% else %}
