@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-xl font-black text-gray-900">Painel Administrativo</h1>
+  <p class="text-xs text-gray-400 mt-0.5">Visão geral do sistema MeuPokémonGO</p>
+</div>
+
+<!-- Stats grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-[#1B2A4A]">{{ total_users }}</div>
+    <div class="text-xs text-gray-400 mt-1">Treinadores</div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-blue-600">{{ total_species }}</div>
+    <div class="text-xs text-gray-400 mt-1">Espécies</div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-purple-600">{{ total_forms }}</div>
+    <div class="text-xs text-gray-400 mt-1">Formas</div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-green-600">{{ total_owned }}</div>
+    <div class="text-xs text-gray-400 mt-1">Capturas</div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-amber-600">{{ total_matches }}</div>
+    <div class="text-xs text-gray-400 mt-1">Matches</div>
+  </div>
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+    <div class="text-2xl font-black text-gray-600">{{ total_events }}</div>
+    <div class="text-xs text-gray-400 mt-1">Eventos</div>
+  </div>
+</div>
+
+<!-- Ações -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  <a href="{{ url_for('admin.sync_page') }}"
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-bold text-sm text-gray-800">Sincronizar Pokédex</div>
+        <div class="text-xs text-gray-400">Buscar dados da PokeAPI</div>
+      </div>
+    </div>
+    <div class="text-xs text-blue-600 font-semibold group-hover:underline">Abrir sync →</div>
+  </a>
+
+  <a href="{{ url_for('admin.usuarios') }}"
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
+        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-bold text-sm text-gray-800">Usuários</div>
+        <div class="text-xs text-gray-400">{{ total_users }} treinadores cadastrados</div>
+      </div>
+    </div>
+    <div class="text-xs text-green-600 font-semibold group-hover:underline">Ver lista →</div>
+  </a>
+
+  <a href="{{ url_for('admin.logs') }}"
+    class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow group">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="font-bold text-sm text-gray-800">Analytics Logs</div>
+        <div class="text-xs text-gray-400">{{ total_events }} eventos registrados</div>
+      </div>
+    </div>
+    <div class="text-xs text-purple-600 font-semibold group-hover:underline">Ver logs →</div>
+  </a>
+</div>
+{% endblock %}

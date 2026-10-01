@@ -1,0 +1,22 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+instance/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+venv/
+.venv/
+node_modules/
+*.db
+*.sqlite3
+meupokemongo.tar.gz
+migrations/__pycache__/
+migrations/versions/__pycache__/
+WhatsApp Image*
+*.jpeg
+*.jpg

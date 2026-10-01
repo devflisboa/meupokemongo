@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Pré-visualização — Importação{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('import_.index') }}" class="text-gray-400 hover:text-gray-600 transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div>
+      <h1 class="text-xl font-black text-gray-900">Pré-visualização</h1>
+      <p class="text-xs text-gray-400">Confirme os dados antes de importar</p>
+    </div>
+  </div>
+
+  <!-- Erros -->
+  {% if errors %}
+  <div class="bg-red-50 border border-red-200 rounded-2xl p-5 mb-5">
+    <div class="flex items-center gap-2 mb-3">
+      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <h2 class="font-bold text-sm text-red-700">{{ errors|length }} linha(s) com erro — serão ignoradas</h2>
+    </div>
+    <ul class="space-y-1">
+      {% for e in errors %}
+      <li class="text-xs text-red-600 flex items-start gap-1.5">
+        <span class="mt-0.5">•</span><span>{{ e }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Resumo -->
+  <div class="grid grid-cols-2 gap-4 mb-5">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center">
+      <div class="text-3xl font-black text-[#1B2A4A]">{{ rows|length }}</div>
+      <div class="text-xs text-gray-400 mt-1">Linhas válidas</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center">
+      <div class="text-3xl font-black text-red-500">{{ errors|length }}</div>
+      <div class="text-xs text-gray-400 mt-1">Linhas ignoradas</div>
+    </div>
+  </div>
+
+  <!-- Preview table -->
+  {% if rows %}
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-5">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+      <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Dados a importar</span>
+      <span class="text-xs text-gray-400">mostrando primeiras {{ [rows|length, 20]|min }} de {{ rows|length }}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Form ID</th>
+            <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Possui</th>
+            <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Qtd</th>
+            <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Troca</th>
+            <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Notas</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for row in rows[:20] %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2.5 font-mono text-xs text-gray-700">{{ row.form_id }}</td>
+            <td class="px-4 py-2.5 text-center">
+              {% if row.owned %}
+              <span class="inline-block w-4 h-4 bg-green-400 rounded-full"></span>
+              {% else %}
+              <span class="inline-block w-4 h-4 bg-gray-200 rounded-full"></span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-center font-semibold text-gray-800">{{ row.quantity }}</td>
+            <td class="px-4 py-2.5 text-center">
+              {% if row.for_trade %}
+              <span class="text-blue-500 text-xs font-bold">Sim</span>
+              {% else %}
+              <span class="text-gray-300 text-xs">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-xs text-gray-400 max-w-xs truncate">{{ row.notes or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('import_.confirmar') }}" class="flex items-center gap-4">
+    <button type="submit"
+      class="bg-[#1B2A4A] hover:opacity-90 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-opacity">
+      Confirmar importação ({{ rows|length }} itens)
+    </button>
+    <a href="{{ url_for('import_.index') }}" class="text-sm text-gray-400 hover:text-gray-600">Cancelar</a>
+  </form>
+
+  {% else %}
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+    <p class="text-gray-400 text-sm mb-4">Nenhuma linha válida encontrada no arquivo.</p>
+    <a href="{{ url_for('import_.index') }}"
+      class="inline-block bg-[#1B2A4A] text-white text-sm px-4 py-2 rounded-lg font-bold hover:opacity-90">
+      Tentar novamente
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

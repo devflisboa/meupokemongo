@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Wishlist{% endblock %}
+
+{% block content %}
+{% set priority_label = {"high": "Alta", "medium": "Média", "low": "Baixa"} %}
+{% set priority_color = {"high": "bg-red-100 text-red-700 border-red-200", "medium": "bg-amber-100 text-amber-700 border-amber-200", "low": "bg-gray-100 text-gray-500 border-gray-200"} %}
+{% set priority_dot = {"high": "bg-red-400", "medium": "bg-amber-400", "low": "bg-gray-400"} %}
+{% set type_grad = {
+  "fire": "from-orange-400 to-red-500", "water": "from-blue-400 to-cyan-500",
+  "grass": "from-green-400 to-emerald-500", "electric": "from-yellow-300 to-amber-400",
+  "psychic": "from-pink-400 to-fuchsia-500", "ice": "from-cyan-300 to-blue-400",
+  "dragon": "from-indigo-500 to-purple-600", "dark": "from-gray-600 to-gray-800",
+  "fairy": "from-pink-300 to-rose-400", "fighting": "from-red-500 to-orange-600",
+  "flying": "from-sky-300 to-blue-400", "poison": "from-purple-400 to-violet-500",
+  "ground": "from-yellow-500 to-amber-600", "rock": "from-stone-400 to-stone-600",
+  "bug": "from-lime-400 to-green-500", "ghost": "from-violet-500 to-purple-700",
+  "steel": "from-slate-400 to-gray-500", "normal": "from-gray-300 to-gray-400"
+} %}
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-xl font-black text-gray-900">Minha Wishlist</h1>
+    <p class="text-xs text-gray-400 mt-0.5">Pokémon que você quer obter por troca</p>
+  </div>
+  <span class="bg-[#1B2A4A] text-white text-xs font-bold px-3 py-1 rounded-full">
+    {{ items|length }} desejado{{ 's' if items|length != 1 else '' }}
+  </span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Lista de wishlist -->
+  <div class="lg:col-span-2">
+    {% if items %}
+    <div class="space-y-3">
+      {% for item in items %}
+      {% set sp = item.form.species %}
+      {% set grad = type_grad.get(item.form.type1, "from-gray-300 to-gray-400") %}
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex">
+        <!-- Mini sprite -->
+        <div class="bg-gradient-to-br {{ grad }} w-20 flex-shrink-0 flex items-center justify-center p-2">
+          {% if item.form.sprite_url %}
+          <img src="{{ item.form.sprite_url }}" alt="{{ sp.name }}"
+            class="w-14 h-14 object-contain drop-shadow"
+            onerror="this.style.display='none'" />
+          {% else %}
+          <span class="text-2xl">❓</span>
+          {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="flex-1 px-4 py-3 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="text-xs text-gray-400 font-mono">#{{ '%03d' % sp.id }}</div>
+              <div class="font-black text-gray-800 text-sm leading-tight">
+                {{ (sp.name_pt or sp.name) | poke_name }}
+              </div>
+              {% if item.form.form_name != 'normal' %}
+              <div class="text-xs text-gray-400 capitalize">{{ item.form.form_name | replace('-', ' ') }}</div>
+              {% endif %}
+            </div>
+            <span class="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-bold border {{ priority_color.get(item.priority, 'bg-gray-100 text-gray-500 border-gray-200') }}">
+              {{ priority_label.get(item.priority, item.priority) }}
+            </span>
+          </div>
+
+          {% if sp.is_legendary or sp.is_mythical %}
+          <div class="flex gap-1 mt-1.5">
+            {% if sp.is_legendary %}
+            <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-semibold">Lendário</span>
+            {% endif %}
+            {% if sp.is_mythical %}
+            <span class="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold">Mítico</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Remove -->
+        <div class="flex items-center pr-4">
+          <form method="post" action="{{ url_for('wishlist.remove', item_id=item.id) }}"
+            onsubmit="return confirm('Remover da wishlist?')">
+            <button type="submit"
+              class="text-gray-300 hover:text-red-400 transition-colors p-1 rounded">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+      <div class="text-5xl mb-4">⭐</div>
+      <h2 class="text-lg font-black text-gray-800 mb-2">Wishlist vazia</h2>
+      <p class="text-sm text-gray-400 max-w-xs mx-auto">
+        Adicione Pokémon que você deseja obter por troca. O sistema buscará matches automaticamente.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Adicionar -->
+  <div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <h2 class="font-bold text-sm text-gray-700 mb-4">Adicionar à wishlist</h2>
+      <form method="post" action="{{ url_for('wishlist.add') }}" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Pokémon</label>
+          <select name="form_id" required
+            class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+            <option value="">Selecione...</option>
+            {% for species in all_species %}
+            {% set normal_form = species.forms.filter_by(form_name='normal').first() %}
+            {% if normal_form and normal_form.id not in wished_form_ids %}
+            <option value="{{ normal_form.id }}">
+              #{{ '%03d' % species.id }} {{ (species.name_pt or species.name) | poke_name }}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Prioridade</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="radio" name="priority" value="high" class="sr-only peer" />
+              <div class="w-full py-2 rounded-lg text-xs font-bold text-center border border-gray-200 peer-checked:bg-red-500 peer-checked:text-white peer-checked:border-red-500 hover:bg-red-50 transition-colors">
+                Alta
+              </div>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="radio" name="priority" value="medium" checked class="sr-only peer" />
+              <div class="w-full py-2 rounded-lg text-xs font-bold text-center border border-gray-200 peer-checked:bg-amber-400 peer-checked:text-white peer-checked:border-amber-400 hover:bg-amber-50 transition-colors">
+                Média
+              </div>
+            </label>
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="radio" name="priority" value="low" class="sr-only peer" />
+              <div class="w-full py-2 rounded-lg text-xs font-bold text-center border border-gray-200 peer-checked:bg-gray-400 peer-checked:text-white peer-checked:border-gray-400 hover:bg-gray-50 transition-colors">
+                Baixa
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit"
+          class="w-full bg-[#1B2A4A] hover:opacity-90 text-white font-bold py-2.5 rounded-lg text-sm transition-opacity">
+          Adicionar
+        </button>
+      </form>
+
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <a href="{{ url_for('trades.index') }}"
+          class="flex items-center gap-2 text-xs text-blue-600 hover:underline font-semibold">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+          </svg>
+          Ver oportunidades de troca
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

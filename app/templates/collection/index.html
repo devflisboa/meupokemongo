@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block title %}Minha Coleção{% endblock %}
+
+{% block content %}
+{% set type_grad = {
+  "fire": "from-orange-400 to-red-500", "water": "from-blue-400 to-cyan-500",
+  "grass": "from-green-400 to-emerald-500", "electric": "from-yellow-300 to-amber-400",
+  "psychic": "from-pink-400 to-fuchsia-500", "ice": "from-cyan-300 to-blue-400",
+  "dragon": "from-indigo-500 to-purple-600", "dark": "from-gray-600 to-gray-800",
+  "fairy": "from-pink-300 to-rose-400", "fighting": "from-red-500 to-orange-600",
+  "flying": "from-sky-300 to-blue-400", "poison": "from-purple-400 to-violet-500",
+  "ground": "from-yellow-500 to-amber-600", "rock": "from-stone-400 to-stone-600",
+  "bug": "from-lime-400 to-green-500", "ghost": "from-violet-500 to-purple-700",
+  "steel": "from-slate-400 to-gray-500", "normal": "from-gray-300 to-gray-400"
+} %}
+{% set type_badge = {
+  "fire": "bg-orange-100 text-orange-700", "water": "bg-blue-100 text-blue-700",
+  "grass": "bg-green-100 text-green-700", "electric": "bg-yellow-100 text-yellow-700",
+  "psychic": "bg-pink-100 text-pink-700", "ice": "bg-cyan-100 text-cyan-700",
+  "dragon": "bg-indigo-100 text-indigo-700", "dark": "bg-gray-200 text-gray-700",
+  "fairy": "bg-pink-100 text-pink-600", "fighting": "bg-red-100 text-red-700",
+  "flying": "bg-sky-100 text-sky-700", "poison": "bg-purple-100 text-purple-700",
+  "ground": "bg-yellow-100 text-yellow-800", "rock": "bg-stone-100 text-stone-700",
+  "bug": "bg-lime-100 text-lime-700", "ghost": "bg-violet-100 text-violet-700",
+  "steel": "bg-slate-100 text-slate-700", "normal": "bg-gray-100 text-gray-600"
+} %}
+
+<!-- Header e stats -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+  <div>
+    <h1 class="text-xl font-black text-gray-900">Minha Coleção</h1>
+    <p class="text-xs text-gray-400 mt-0.5">
+      <span class="font-bold text-[#1B2A4A]">{{ total_owned }}</span> /
+      {{ total_species }} espécies capturadas
+      {% if total_species > 0 %}
+      <span class="ml-1 text-gray-300">·</span>
+      <span class="ml-1 font-semibold text-green-600">{{ (total_owned / total_species * 100) | round(1) }}%</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="w-full sm:w-48 bg-gray-200 rounded-full h-2 flex-shrink-0">
+    {% if total_species > 0 %}
+    <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ [total_owned / total_species * 100, 100]|min }}%"></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Filtros -->
+<form method="get" class="flex flex-wrap items-center gap-2 mb-5">
+  <!-- Tabs -->
+  <div class="flex bg-white rounded-xl border border-gray-200 p-1">
+    {% for val, label in [('all', 'Todos'), ('owned', 'Capturados'), ('missing', 'Faltantes')] %}
+    <a href="?show={{ val }}&q={{ q }}&generation={{ generation or '' }}"
+      class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors {{ 'bg-[#1B2A4A] text-white' if show == val else 'text-gray-500 hover:text-gray-800' }}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Busca -->
+  <div class="flex flex-1 min-w-40 bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <input type="text" name="q" value="{{ q }}" placeholder="Nome ou #número..."
+      class="flex-1 px-3 py-2 text-sm focus:outline-none" />
+    <input type="hidden" name="show" value="{{ show }}" />
+    <input type="hidden" name="generation" value="{{ generation or '' }}" />
+    <button type="submit" class="px-3 text-gray-400 hover:text-gray-600">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Geração -->
+  <select name="generation" onchange="this.form.submit()"
+    class="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none">
+    <option value="">Todas as gerações</option>
+    {% for g in range(1, 10) %}
+    <option value="{{ g }}" {{ 'selected' if generation == g }}>Geração {{ g }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<!-- Grid de cards -->
+{% set items = pagination.items %}
+{% if items %}
+<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 mb-6" id="pokegrid">
+  {% for species in items %}
+  {% set data = species_data.get(species.id, {}) %}
+  {% set form = data.get('form') %}
+  {% set entry = data.get('entry') %}
+  {% set owned = entry and entry.owned and entry.quantity > 0 %}
+  {% set qty = entry.quantity if entry else 0 %}
+  {% set for_trade = entry.for_trade if entry else false %}
+  {% set form_id = form.id if form else 0 %}
+  {% set grad = type_grad.get(form.type1 if form else '', 'from-gray-300 to-gray-400') %}
+
+  <div class="poke-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group"
+    data-form-id="{{ form_id }}"
+    data-owned="{{ 'true' if owned else 'false' }}"
+    data-qty="{{ qty }}"
+    data-trade="{{ 'true' if for_trade else 'false' }}">
+
+    <!-- Sprite area -->
+    <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-2 pb-1 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:72px">
+      {% if form and form.sprite_url %}
+      <img src="{{ form.sprite_url }}" alt="{{ species.name }}"
+        class="w-14 h-14 object-contain drop-shadow-sm lazy" loading="lazy"
+        onerror="this.style.display='none'" />
+      {% else %}
+      <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+        <span class="text-lg text-white/60 font-mono">{{ '%03d' % species.id }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Owned checkmark badge -->
+      {% if owned %}
+      <div class="owned-badge absolute top-1.5 right-1.5 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center shadow">
+        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      {% else %}
+      <div class="owned-badge absolute top-1.5 right-1.5 w-5 h-5 hidden bg-green-400 rounded-full items-center justify-center shadow">
+        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="px-2 pt-1.5 pb-2">
+      <div class="text-gray-400 font-mono text-[10px] leading-none">#{{ '%03d' % species.id }}</div>
+      <a href="{{ url_for('pokedex.detail', species_id=species.id) }}"
+        class="block text-xs font-black text-gray-800 leading-tight truncate hover:text-blue-600 transition-colors">
+        {{ (species.name_pt or species.name) | poke_name }}
+      </a>
+
+      <!-- Type badges -->
+      {% if form %}
+      <div class="flex flex-wrap gap-0.5 mt-1">
+        <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type1, 'bg-gray-100 text-gray-500') }}">
+          {{ form.type1 | capitalize if form.type1 else '?' }}
+        </span>
+        {% if form.type2 %}
+        <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">
+          {{ form.type2 | capitalize }}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Controls -->
+      {% if form_id %}
+      <div class="mt-2 space-y-1">
+        <!-- Capture toggle -->
+        <button onclick="toggleCapture(this)"
+          class="capture-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors
+            {{ 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' if owned else 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600' }}">
+          {{ 'Capturado' if owned else 'Capturar' }}
+        </button>
+
+        <!-- Qty + Trade (only if owned) -->
+        <div class="owned-controls {{ '' if owned else 'hidden' }}">
+          <div class="flex items-center justify-between gap-1">
+            <button onclick="adjustQty(this, -1)" class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs font-bold text-gray-600 flex items-center justify-center transition-colors">−</button>
+            <span class="qty-display text-xs font-black text-gray-800 flex-1 text-center">{{ qty }}</span>
+            <button onclick="adjustQty(this, 1)" class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs font-bold text-gray-600 flex items-center justify-center transition-colors">+</button>
+          </div>
+          <button onclick="toggleTrade(this)"
+            class="trade-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
+              {{ 'bg-blue-100 text-blue-700' if for_trade else 'bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-500' }}">
+            {{ '🔄 Para troca' if for_trade else 'Troca?' }}
+          </button>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Paginação -->
+{% if pagination.pages > 1 %}
+<div class="flex items-center justify-center gap-1">
+  {% if pagination.has_prev %}
+  <a href="?page={{ pagination.prev_num }}&show={{ show }}&q={{ q }}&generation={{ generation or '' }}"
+    class="px-3 py-1.5 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">‹</a>
+  {% endif %}
+
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+    <a href="?page={{ p }}&show={{ show }}&q={{ q }}&generation={{ generation or '' }}"
+      class="px-3 py-1.5 rounded-lg text-sm border transition-colors
+        {{ 'bg-[#1B2A4A] text-white border-transparent' if p == pagination.page else 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+      {{ p }}
+    </a>
+    {% else %}
+    <span class="px-2 text-gray-300">…</span>
+    {% endif %}
+  {% endfor %}
+
+  {% if pagination.has_next %}
+  <a href="?page={{ pagination.next_num }}&show={{ show }}&q={{ q }}&generation={{ generation or '' }}"
+    class="px-3 py-1.5 rounded-lg text-sm bg-white border border-gray-200 text-gray-600 hover:bg-gray-50">›</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+  <div class="text-5xl mb-4">🔍</div>
+  <h2 class="text-lg font-black text-gray-800 mb-2">Nenhum resultado</h2>
+  <p class="text-sm text-gray-400 mb-4">Tente ajustar os filtros ou limpar a busca.</p>
+  <a href="{{ url_for('collection.index') }}"
+    class="inline-block bg-[#1B2A4A] text-white text-sm px-4 py-2 rounded-lg font-bold hover:opacity-90">
+    Ver todos
+  </a>
+</div>
+{% endif %}
+
+<script>
+function getCard(el) {
+  return el.closest('.poke-card');
+}
+
+function getSpriteArea(card) {
+  return card.querySelector('.bg-gradient-to-br');
+}
+
+function toggleCapture(btn) {
+  const card = getCard(btn);
+  const owned = card.dataset.owned === 'true';
+  const newOwned = !owned;
+  const qty = newOwned ? Math.max(1, parseInt(card.dataset.qty) || 1) : 0;
+  save(card, newOwned, qty, newOwned ? card.dataset.trade === 'true' : false);
+}
+
+function adjustQty(btn, delta) {
+  const card = getCard(btn);
+  const qty = Math.max(0, parseInt(card.dataset.qty) + delta);
+  const owned = qty > 0;
+  save(card, owned, qty, owned && card.dataset.trade === 'true');
+}
+
+function toggleTrade(btn) {
+  const card = getCard(btn);
+  const forTrade = card.dataset.trade !== 'true';
+  save(card, true, parseInt(card.dataset.qty) || 1, forTrade);
+}
+
+function save(card, owned, qty, forTrade) {
+  const formId = card.dataset.formId;
+  if (!formId || formId === '0') return;
+
+  const fd = new FormData();
+  fd.append('form_id', formId);
+  fd.append('owned', owned ? 'true' : 'false');
+  fd.append('quantity', qty);
+  fd.append('for_trade', forTrade ? 'true' : 'false');
+
+  fetch('/collection/upsert', {method: 'POST', body: fd})
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) return;
+
+      card.dataset.owned = data.owned ? 'true' : 'false';
+      card.dataset.qty = data.quantity;
+      card.dataset.trade = data.for_trade ? 'true' : 'false';
+
+      updateCardUI(card, data.owned, data.quantity, data.for_trade);
+    });
+}
+
+function updateCardUI(card, owned, qty, forTrade) {
+  const spriteArea = getSpriteArea(card);
+  const capBtn = card.querySelector('.capture-btn');
+  const ownedControls = card.querySelector('.owned-controls');
+  const qtyDisplay = card.querySelector('.qty-display');
+  const tradeBtn = card.querySelector('.trade-btn');
+  const ownedBadge = card.querySelector('.owned-badge');
+
+  if (spriteArea) {
+    spriteArea.classList.toggle('opacity-40', !owned);
+  }
+
+  if (capBtn) {
+    if (owned) {
+      capBtn.textContent = 'Capturado';
+      capBtn.className = capBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      capBtn.classList.add('bg-green-100', 'text-green-700', 'hover:bg-red-100', 'hover:text-red-600');
+    } else {
+      capBtn.textContent = 'Capturar';
+      capBtn.className = capBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      capBtn.classList.add('bg-gray-100', 'text-gray-500', 'hover:bg-green-100', 'hover:text-green-600');
+    }
+  }
+
+  if (ownedControls) {
+    ownedControls.classList.toggle('hidden', !owned);
+  }
+
+  if (qtyDisplay) {
+    qtyDisplay.textContent = qty;
+  }
+
+  if (tradeBtn) {
+    if (forTrade) {
+      tradeBtn.textContent = '🔄 Para troca';
+      tradeBtn.className = tradeBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      tradeBtn.classList.add('bg-blue-100', 'text-blue-700');
+    } else {
+      tradeBtn.textContent = 'Troca?';
+      tradeBtn.className = tradeBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      tradeBtn.classList.add('bg-gray-50', 'text-gray-400', 'hover:bg-blue-50', 'hover:text-blue-500');
+    }
+  }
+
+  if (ownedBadge) {
+    ownedBadge.classList.toggle('hidden', !owned);
+    ownedBadge.classList.toggle('flex', owned);
+  }
+}
+</script>
+{% endblock %}

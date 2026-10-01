@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% set default_form = species.forms.first() %}
+{% set type1 = default_form.type1 if default_form and default_form.type1 else '' %}
+{% set display_name = (species.name_pt or species.name) | poke_name %}
+
+{% block title %}#{{ '%03d' % species.id }} {{ display_name }}{% endblock %}
+
+{% set type_card_bg = {
+  'grass':    'from-green-300 to-green-500',
+  'fire':     'from-orange-300 to-red-400',
+  'water':    'from-blue-300 to-blue-500',
+  'electric': 'from-yellow-200 to-yellow-400',
+  'ice':      'from-cyan-200 to-cyan-400',
+  'fighting': 'from-red-400 to-red-700',
+  'poison':   'from-purple-300 to-purple-500',
+  'ground':   'from-yellow-400 to-amber-600',
+  'flying':   'from-indigo-200 to-indigo-400',
+  'psychic':  'from-pink-300 to-pink-500',
+  'bug':      'from-lime-300 to-lime-500',
+  'rock':     'from-yellow-500 to-amber-700',
+  'ghost':    'from-purple-500 to-purple-800',
+  'dragon':   'from-indigo-400 to-indigo-700',
+  'dark':     'from-gray-500 to-gray-800',
+  'steel':    'from-slate-300 to-slate-500',
+  'fairy':    'from-pink-200 to-pink-400',
+  'normal':   'from-amber-100 to-amber-300',
+} %}
+
+{% set type_badge = {
+  'fire':     'bg-orange-500 text-white',
+  'water':    'bg-blue-500 text-white',
+  'grass':    'bg-green-600 text-white',
+  'electric': 'bg-yellow-400 text-gray-900',
+  'ice':      'bg-cyan-400 text-white',
+  'fighting': 'bg-red-700 text-white',
+  'poison':   'bg-purple-500 text-white',
+  'ground':   'bg-yellow-600 text-white',
+  'flying':   'bg-indigo-400 text-white',
+  'psychic':  'bg-pink-500 text-white',
+  'bug':      'bg-lime-500 text-white',
+  'rock':     'bg-yellow-700 text-white',
+  'ghost':    'bg-purple-700 text-white',
+  'dragon':   'bg-indigo-600 text-white',
+  'dark':     'bg-gray-700 text-white',
+  'steel':    'bg-slate-500 text-white',
+  'fairy':    'bg-pink-400 text-white',
+  'normal':   'bg-gray-400 text-white',
+} %}
+
+{% set bg = type_card_bg.get(type1, 'from-gray-200 to-gray-300') %}
+
+{% block content %}
+
+<a href="{{ url_for('pokedex.index') }}"
+   class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mb-5">
+  ← Pokédex
+</a>
+
+{# Hero #}
+<div class="flex flex-col md:flex-row gap-5 max-w-3xl mb-6">
+  <div class="bg-gradient-to-b {{ bg }} rounded-2xl flex items-center justify-center w-full md:w-56 h-56 shadow-md flex-shrink-0">
+    {% if default_form and default_form.sprite_url %}
+    <img src="{{ default_form.sprite_url }}" alt="{{ display_name }}"
+         class="w-44 h-44 object-contain drop-shadow-lg" />
+    {% else %}
+    <span class="text-8xl select-none">❓</span>
+    {% endif %}
+  </div>
+
+  <div class="flex-1 bg-white rounded-2xl shadow-sm p-5">
+    <div class="flex items-center gap-3 mb-1 text-xs text-gray-400">
+      <span class="font-mono font-semibold">#{{ '%03d' % species.id }}</span>
+      <span>Geração {{ species.generation }}</span>
+    </div>
+
+    <h1 class="text-3xl font-black text-gray-900 mb-0.5">{{ display_name }}</h1>
+    {% if species.name_pt %}
+    <p class="text-sm text-gray-400 italic mb-3">{{ species.name | poke_name }}</p>
+    {% else %}
+    <div class="mb-3"></div>
+    {% endif %}
+
+    <div class="flex gap-2 mb-4 flex-wrap">
+      {% if species.is_legendary %}
+      <span class="bg-yellow-100 text-yellow-700 text-sm px-3 py-1 rounded-full font-bold">★ Lendário</span>
+      {% endif %}
+      {% if species.is_mythical %}
+      <span class="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full font-bold">✦ Mítico</span>
+      {% endif %}
+    </div>
+
+    {% if default_form %}
+    <div class="flex gap-2 mb-5 flex-wrap">
+      {% if default_form.type1 %}
+      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type1, 'bg-gray-300 text-gray-700') }}">{{ default_form.type1 }}</span>
+      {% endif %}
+      {% if default_form.type2 %}
+      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type2, 'bg-gray-300 text-gray-700') }}">{{ default_form.type2 }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('collection.index') }}"
+       class="inline-block bg-[#1B2A4A] hover:opacity-90 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-opacity">
+      Gerenciar na coleção
+    </a>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="text-sm text-blue-600 hover:underline">Faça login para adicionar à coleção →</a>
+    {% endif %}
+  </div>
+</div>
+
+{# Formas #}
+{% if species.forms.count() > 1 %}
+<div class="max-w-3xl mb-6">
+  <h2 class="font-bold text-sm text-gray-700 mb-3">Todas as formas</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+    {% for form in species.forms %}
+    {% set fbg = type_card_bg.get(form.type1 or '', 'from-gray-200 to-gray-300') %}
+    <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
+      <div class="bg-gradient-to-b {{ fbg }} h-20 flex items-center justify-center">
+        {% if form.sprite_url %}
+        <img src="{{ form.sprite_url }}" alt="{{ form.form_name }}" class="w-16 h-16 object-contain" />
+        {% endif %}
+      </div>
+      <div class="p-2.5 text-center text-xs">
+        <div class="font-bold capitalize mb-1">{{ form.form_name }}</div>
+        <div class="flex gap-1 justify-center flex-wrap">
+          {% if form.type1 %}
+          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-300 text-gray-700') }}">{{ form.type1 }}</span>
+          {% endif %}
+          {% if form.type2 %}
+          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-300 text-gray-700') }}">{{ form.type2 }}</span>
+          {% endif %}
+        </div>
+        {% if form.is_shiny_available %}
+        <div class="text-yellow-600 mt-1.5">✨ Shiny disponível</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# Cadeia evolutiva #}
+{% if evolutions %}
+<div class="max-w-3xl">
+  <h2 class="font-bold text-sm text-gray-700 mb-3">Cadeia evolutiva</h2>
+  <div class="bg-white rounded-2xl shadow-sm p-4">
+    <div class="flex flex-wrap gap-3 items-center">
+      {% for evo in evolutions %}
+      {% set from_name = (evo.from_form.species.name_pt or evo.from_form.species.name) | poke_name %}
+      {% set to_name   = (evo.to_form.species.name_pt or evo.to_form.species.name) | poke_name %}
+      {% set from_bg   = type_card_bg.get(evo.from_form.type1 or '', 'from-gray-200 to-gray-300') %}
+      {% set to_bg     = type_card_bg.get(evo.to_form.type1 or '', 'from-gray-200 to-gray-300') %}
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('pokedex.detail', species_id=evo.from_form.species_id) }}"
+           class="text-center hover:opacity-80 transition-opacity">
+          <div class="bg-gradient-to-b {{ from_bg }} rounded-xl w-16 h-16 flex items-center justify-center mx-auto mb-1">
+            <img src="{{ evo.from_form.sprite_url or '' }}" alt="{{ from_name }}" class="w-12 h-12 object-contain" />
+          </div>
+          <div class="text-[10px] text-gray-600 font-semibold">{{ from_name }}</div>
+        </a>
+        <div class="text-gray-400 flex flex-col items-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+          {% if evo.candy_cost %}<span class="text-[9px] mt-0.5">{{ evo.candy_cost }} 🍬</span>{% endif %}
+        </div>
+        <a href="{{ url_for('pokedex.detail', species_id=evo.to_form.species_id) }}"
+           class="text-center hover:opacity-80 transition-opacity">
+          <div class="bg-gradient-to-b {{ to_bg }} rounded-xl w-16 h-16 flex items-center justify-center mx-auto mb-1">
+            <img src="{{ evo.to_form.sprite_url or '' }}" alt="{{ to_name }}" class="w-12 h-12 object-contain" />
+          </div>
+          <div class="text-[10px] text-gray-600 font-semibold">{{ to_name }}</div>
+        </a>
+      </div>
+      {% if not loop.last %}<span class="text-gray-200 text-xl">|</span>{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

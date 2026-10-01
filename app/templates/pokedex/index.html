@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Pokédex{% endblock %}
+
+{% set type_card_bg = {
+  'grass':    'from-green-300 to-green-500',
+  'fire':     'from-orange-300 to-red-400',
+  'water':    'from-blue-300 to-blue-500',
+  'electric': 'from-yellow-200 to-yellow-400',
+  'ice':      'from-cyan-200 to-cyan-400',
+  'fighting': 'from-red-400 to-red-700',
+  'poison':   'from-purple-300 to-purple-500',
+  'ground':   'from-yellow-400 to-amber-600',
+  'flying':   'from-indigo-200 to-indigo-400',
+  'psychic':  'from-pink-300 to-pink-500',
+  'bug':      'from-lime-300 to-lime-500',
+  'rock':     'from-yellow-500 to-amber-700',
+  'ghost':    'from-purple-500 to-purple-800',
+  'dragon':   'from-indigo-400 to-indigo-700',
+  'dark':     'from-gray-500 to-gray-800',
+  'steel':    'from-slate-300 to-slate-500',
+  'fairy':    'from-pink-200 to-pink-400',
+  'normal':   'from-amber-100 to-amber-300',
+} %}
+
+{% set type_badge = {
+  'fire':     'bg-orange-500 text-white',
+  'water':    'bg-blue-500 text-white',
+  'grass':    'bg-green-600 text-white',
+  'electric': 'bg-yellow-400 text-gray-900',
+  'ice':      'bg-cyan-400 text-white',
+  'fighting': 'bg-red-700 text-white',
+  'poison':   'bg-purple-500 text-white',
+  'ground':   'bg-yellow-600 text-white',
+  'flying':   'bg-indigo-400 text-white',
+  'psychic':  'bg-pink-500 text-white',
+  'bug':      'bg-lime-500 text-white',
+  'rock':     'bg-yellow-700 text-white',
+  'ghost':    'bg-purple-700 text-white',
+  'dragon':   'bg-indigo-600 text-white',
+  'dark':     'bg-gray-700 text-white',
+  'steel':    'bg-slate-500 text-white',
+  'fairy':    'bg-pink-400 text-white',
+  'normal':   'bg-gray-400 text-white',
+} %}
+
+{% block content %}
+
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-black flex items-center gap-2.5 text-gray-800">
+    <svg viewBox="0 0 24 24" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="11" fill="#E5E5E5"/>
+      <path d="M 1 12 A 11 11 0 0 1 23 12 Z" fill="#CC0000"/>
+      <circle cx="12" cy="12" r="11" fill="none" stroke="#1B2A4A" stroke-width="1"/>
+      <rect x="1" y="10.5" width="22" height="3" fill="#1B2A4A"/>
+      <circle cx="12" cy="12" r="2.5" fill="white"/>
+      <circle cx="12" cy="12" r="2.5" fill="none" stroke="#1B2A4A" stroke-width="0.8"/>
+    </svg>
+    Pokédex
+    <span class="text-sm font-normal text-gray-400">({{ pagination.total }} espécies)</span>
+  </h1>
+</div>
+
+<form method="get" class="flex flex-wrap gap-2 mb-6">
+  <div class="relative">
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none"
+         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <input type="text" name="q" value="{{ q }}" placeholder="Nome ou número..."
+      class="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-44" />
+  </div>
+  <select name="generation"
+    class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+    <option value="">Todas as gerações</option>
+    {% for g in range(1, 10) %}
+    <option value="{{ g }}" {% if generation == g %}selected{% endif %}>Geração {{ g }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit"
+    class="bg-[#1B2A4A] hover:opacity-90 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition-opacity">
+    Filtrar
+  </button>
+  {% if q or generation %}
+  <a href="{{ url_for('pokedex.index') }}"
+     class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-100 transition-colors">
+    Limpar
+  </a>
+  {% endif %}
+</form>
+
+{% if pagination.items %}
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+  {% for species in pagination.items %}
+  {% set form = species.forms.first() %}
+  {% set type1 = form.type1 if form and form.type1 else '' %}
+  {% set bg = type_card_bg.get(type1, 'from-gray-200 to-gray-300') %}
+  {% set display_name = (species.name_pt or species.name) | poke_name %}
+
+  <a href="{{ url_for('pokedex.detail', species_id=species.id) }}"
+     class="rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group bg-white block">
+    <div class="bg-gradient-to-b {{ bg }} h-28 flex items-center justify-center relative">
+      {% if form and form.sprite_url %}
+      <img src="{{ form.sprite_url }}" alt="{{ display_name }}"
+           class="w-20 h-20 object-contain drop-shadow group-hover:scale-110 transition-transform duration-200"
+           loading="lazy" onerror="this.style.display='none'" />
+      {% else %}
+      <span class="text-4xl select-none">❓</span>
+      {% endif %}
+      {% if species.is_legendary %}
+      <span class="absolute top-2 left-2 bg-yellow-400/90 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">★</span>
+      {% endif %}
+      {% if species.is_mythical %}
+      <span class="absolute top-2 left-2 bg-purple-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">✦</span>
+      {% endif %}
+    </div>
+    <div class="p-2.5">
+      <div class="text-[10px] text-gray-400 font-mono">#{{ '%03d' % species.id }}</div>
+      <div class="font-bold text-xs text-gray-800 group-hover:text-blue-600 truncate leading-tight mb-1.5">
+        {{ display_name }}
+      </div>
+      {% if form %}
+      <div class="flex gap-1 flex-wrap">
+        {% if form.type1 %}
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-400 text-white') }}">{{ form.type1 }}</span>
+        {% endif %}
+        {% if form.type2 %}
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-400 text-white') }}">{{ form.type2 }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="flex gap-2 justify-center text-sm items-center">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('pokedex.index', page=pagination.prev_num, q=q, generation=generation) }}"
+     class="px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors font-medium">
+    ← Anterior
+  </a>
+  {% endif %}
+  <span class="px-4 py-2 text-gray-500 text-xs">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+  {% if pagination.has_next %}
+  <a href="{{ url_for('pokedex.index', page=pagination.next_num, q=q, generation=generation) }}"
+     class="px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors font-medium">
+    Próxima →
+  </a>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="bg-white rounded-2xl p-12 text-center">
+  <p class="text-4xl mb-3">📭</p>
+  <p class="text-sm text-gray-500 mb-4">Nenhum Pokémon encontrado.</p>
+  {% if q or generation %}
+  <a href="{{ url_for('pokedex.index') }}" class="text-xs text-blue-600 hover:underline">Limpar filtros</a>
+  {% else %}
+  <a href="{{ url_for('admin.index') }}" class="text-xs text-blue-600 hover:underline">Sincronizar dados →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

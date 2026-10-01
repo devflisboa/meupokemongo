@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% set type_card_bg = {
+  'grass':    'from-green-300 to-green-500',
+  'fire':     'from-orange-300 to-red-400',
+  'water':    'from-blue-300 to-blue-500',
+  'electric': 'from-yellow-200 to-yellow-400',
+  'ice':      'from-cyan-200 to-cyan-400',
+  'fighting': 'from-red-400 to-red-700',
+  'poison':   'from-purple-300 to-purple-500',
+  'ground':   'from-yellow-400 to-amber-600',
+  'flying':   'from-indigo-200 to-indigo-400',
+  'psychic':  'from-pink-300 to-pink-500',
+  'bug':      'from-lime-300 to-lime-500',
+  'rock':     'from-yellow-500 to-amber-700',
+  'ghost':    'from-purple-500 to-purple-800',
+  'dragon':   'from-indigo-400 to-indigo-700',
+  'dark':     'from-gray-500 to-gray-800',
+  'steel':    'from-slate-300 to-slate-500',
+  'fairy':    'from-pink-200 to-pink-400',
+  'normal':   'from-amber-100 to-amber-300',
+} %}
+
+{% set type_badge = {
+  'fire':     'bg-orange-500 text-white',
+  'water':    'bg-blue-500 text-white',
+  'grass':    'bg-green-600 text-white',
+  'electric': 'bg-yellow-400 text-gray-900',
+  'ice':      'bg-cyan-400 text-white',
+  'fighting': 'bg-red-700 text-white',
+  'poison':   'bg-purple-500 text-white',
+  'ground':   'bg-yellow-600 text-white',
+  'flying':   'bg-indigo-400 text-white',
+  'psychic':  'bg-pink-500 text-white',
+  'bug':      'bg-lime-500 text-white',
+  'rock':     'bg-yellow-700 text-white',
+  'ghost':    'bg-purple-700 text-white',
+  'dragon':   'bg-indigo-600 text-white',
+  'dark':     'bg-gray-700 text-white',
+  'steel':    'bg-slate-500 text-white',
+  'fairy':    'bg-pink-400 text-white',
+  'normal':   'bg-gray-400 text-white',
+} %}
+
+{% block content %}
+
+{# ─── STATS CARDS ─── #}
+{% if current_user.is_authenticated and stats %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+
+  <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
+    <div class="flex-1 min-w-0">
+      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Collection Stats</div>
+      <div class="text-3xl font-black leading-none">
+        {{ stats.owned }}<span class="text-xl font-normal opacity-70"> / {{ stats.total }}</span>
+      </div>
+      <div class="text-xs opacity-75 mt-1">Pokémon Coletados &bull; {{ stats.percent }}% Completo</div>
+      <div class="mt-2.5 h-1.5 bg-white/25 rounded-full overflow-hidden">
+        <div class="h-full bg-white rounded-full" style="width:{{ stats.percent }}%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">⭐</div>
+    <div class="flex-1 min-w-0">
+      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Pokémon Faltantes</div>
+      <div class="text-3xl font-black leading-none">{{ stats.missing }}</div>
+      <div class="text-xs opacity-75 mt-1">espécies ainda não capturadas</div>
+      <div class="mt-2.5 h-1.5 bg-white/25 rounded-full overflow-hidden">
+        <div class="h-full bg-white rounded-full" style="width:{{ [100 - stats.percent, 0]|max }}%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🏆</div>
+    <div class="flex-1 min-w-0">
+      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Recursos</div>
+      <div class="flex items-end gap-6 mt-1">
+        <div>
+          <div class="text-xs opacity-75">Trocas 🔄</div>
+          <div class="text-3xl font-black leading-none">{{ matches|length }}</div>
+        </div>
+        <div>
+          <div class="text-xs opacity-75">Treinadores 👥</div>
+          <div class="text-3xl font-black leading-none">{{ total_trainers }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+{# ─── LAYOUT: Grid + Sidebar ─── #}
+<div class="flex flex-col lg:flex-row gap-5">
+
+  {# ══ ESQUERDA: Pokédex Grid ══ #}
+  <div class="flex-1 min-w-0">
+
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-base text-gray-800 flex items-center gap-2">
+        <svg viewBox="0 0 24 24" class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="11" fill="#E5E5E5"/>
+          <path d="M 1 12 A 11 11 0 0 1 23 12 Z" fill="#CC0000"/>
+          <circle cx="12" cy="12" r="11" fill="none" stroke="#1B2A4A" stroke-width="1"/>
+          <rect x="1" y="10.5" width="22" height="3" fill="#1B2A4A"/>
+          <circle cx="12" cy="12" r="2.5" fill="white"/>
+          <circle cx="12" cy="12" r="2.5" fill="none" stroke="#1B2A4A" stroke-width="0.8"/>
+        </svg>
+        Pokédex Grid
+      </h2>
+      <a href="{{ url_for('pokedex.index') }}" class="text-xs text-blue-600 hover:underline font-semibold">Ver todos →</a>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4 flex-wrap">
+      <span class="bg-[#1B2A4A] text-white text-xs font-semibold px-3.5 py-1.5 rounded-full">
+        Geração I &bull; Kanto
+      </span>
+      <a href="{{ url_for('pokedex.index') }}"
+         class="border border-gray-300 text-gray-600 text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1 hover:bg-gray-50 transition-colors">
+        <span class="text-base leading-none">+</span> Adicionar Filtro
+      </a>
+    </div>
+
+    {% if featured_species %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {% for species in featured_species %}
+      {% set form = species.forms.first() %}
+      {% set type1 = form.type1 if form and form.type1 else '' %}
+      {% set bg = type_card_bg.get(type1, 'from-gray-200 to-gray-300') %}
+      {% set display_name = (species.name_pt or species.name) | poke_name %}
+      <a href="{{ url_for('pokedex.detail', species_id=species.id) }}"
+         class="rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group bg-white block">
+        <div class="bg-gradient-to-b {{ bg }} h-32 flex items-center justify-center relative">
+          {% if form and form.sprite_url %}
+          <img src="{{ form.sprite_url }}" alt="{{ display_name }}"
+               class="w-24 h-24 object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-200"
+               loading="lazy" />
+          {% else %}
+          <span class="text-5xl select-none">❓</span>
+          {% endif %}
+          {% if species.id in owned_species_ids %}
+          <span class="absolute top-2 right-2 bg-white/90 text-green-600 text-xs font-black px-1.5 py-0.5 rounded-full shadow">✓</span>
+          {% endif %}
+          {% if species.is_legendary %}
+          <span class="absolute top-2 left-2 bg-yellow-400/90 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">★</span>
+          {% endif %}
+          {% if species.is_mythical %}
+          <span class="absolute top-2 left-2 bg-purple-500/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">✦</span>
+          {% endif %}
+        </div>
+        <div class="p-2.5">
+          <div class="text-[10px] text-gray-400 font-mono">#{{ '%03d' % species.id }}</div>
+          <div class="font-bold text-sm text-gray-800 group-hover:text-blue-600 truncate leading-tight">
+            {{ display_name }}
+          </div>
+          {% if form %}
+          <div class="flex gap-1 mt-1.5 flex-wrap">
+            {% if form.type1 %}
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-400 text-white') }}">{{ form.type1 }}</span>
+            {% endif %}
+            {% if form.type2 %}
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-400 text-white') }}">{{ form.type2 }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          <div class="mt-2 text-[10px] font-semibold
+            {% if species.id in owned_species_ids %}text-green-600{% else %}text-gray-400{% endif %}">
+            {% if species.id in owned_species_ids %}● Capturado{% else %}○ Não capturado{% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl p-10 text-center">
+      <p class="text-4xl mb-3">📭</p>
+      <p class="text-sm text-gray-500 mb-4">Nenhum Pokémon sincronizado ainda.</p>
+      <a href="{{ url_for('admin.index') }}"
+         class="text-xs bg-[#1B2A4A] text-white font-semibold px-4 py-2 rounded-full hover:opacity-90">
+        Sincronizar dados →
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# ══ DIREITA: Sidebar ══ #}
+  <div class="w-full lg:w-80 space-y-4 flex-shrink-0">
+
+    {# Missing Pokémon #}
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h3 class="font-bold text-sm text-gray-800">📍 Missing Pokémon</h3>
+        {% if stats %}
+        <span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ stats.missing }} Faltando</span>
+        {% endif %}
+      </div>
+      {% if missing %}
+      <div class="divide-y divide-gray-50">
+        {% for form in missing %}
+        {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
+        <div class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
+          <div class="flex items-center gap-2.5 min-w-0">
+            {% if form.sprite_url %}
+            <img src="{{ form.sprite_url }}" alt="{{ pname }}" class="w-10 h-10 object-contain flex-shrink-0" loading="lazy" />
+            {% else %}
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center text-lg">❓</div>
+            {% endif %}
+            <div class="min-w-0">
+              <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+              <div class="text-sm font-bold text-gray-800 truncate">{{ pname }}</div>
+              <div class="text-[10px] text-gray-400 capitalize">
+                {% if form.species.is_legendary %}Lendário
+                {% elif form.species.is_mythical %}Mítico
+                {% else %}Normal{% endif %}
+                {% if form.type1 %} &bull; {{ form.type1 | title }}{% endif %}
+              </div>
+            </div>
+          </div>
+          <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
+             class="flex-shrink-0 text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors ml-2">
+            Track
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="px-4 py-8 text-center text-sm text-gray-400">
+        {% if current_user.is_authenticated %}
+        🎉 Você capturou todos!
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver sua coleção.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Evolution Pending #}
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h3 class="font-bold text-sm text-gray-800">⬆ Evolution Pending</h3>
+        {% if pending_evolutions %}
+        <span class="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ pending_evolutions|length }} Ready</span>
+        {% endif %}
+      </div>
+      {% if pending_evolutions %}
+      <div class="divide-y divide-gray-50">
+        {% for evo in pending_evolutions %}
+        {% set from_form = evo.from_form %}
+        {% set to_form = evo.to_form %}
+        {% set from_name = (from_form.species.name_pt or from_form.species.name) | poke_name %}
+        {% set to_name = (to_form.species.name_pt or to_form.species.name) | poke_name %}
+        <div class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+          {% if from_form.sprite_url %}
+          <img src="{{ from_form.sprite_url }}" alt="{{ from_name }}" class="w-10 h-10 object-contain flex-shrink-0 mt-0.5" loading="lazy" />
+          {% else %}
+          <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 mt-0.5"></div>
+          {% endif %}
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-semibold text-gray-800 truncate">
+              {{ from_name }} <span class="text-gray-400 font-normal">→</span> {{ to_name }}
+            </div>
+            {% if evo.candy_cost %}
+            <div class="text-[10px] text-gray-500 mt-0.5">{{ evo.candy_cost }} Candy</div>
+            <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
+            </div>
+            {% else %}
+            <div class="text-[10px] text-green-600 font-bold mt-0.5">Pronto para Evoluir!</div>
+            <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-green-500 rounded-full" style="width:100%"></div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="px-4 py-8 text-center text-sm text-gray-400">
+        {% if current_user.is_authenticated %}
+        Nenhuma evolução pendente.
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver evoluções.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Trade Opportunities #}
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h3 class="font-bold text-sm text-gray-800">🔄 Trade Opportunities</h3>
+        {% if matches %}
+        <span class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+          {{ matches|length }} Novo{{ 's' if matches|length > 1 else '' }}
+        </span>
+        {% endif %}
+      </div>
+      {% if matches %}
+      <div class="p-3 grid grid-cols-2 gap-2">
+        {% for match in matches %}
+        {% set pokemon_name = (match.form.species.name_pt or match.form.species.name) | poke_name %}
+        <div class="border border-gray-100 rounded-xl p-3 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700 flex-shrink-0">
+              {{ match.owner.username[0].upper() }}
+            </div>
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold text-gray-800 truncate">{{ match.owner.username }}</div>
+              <span class="text-green-500 text-[9px]">✓ verificado</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-gray-500 leading-tight">
+            Quer: <span class="font-semibold text-gray-700">{{ pokemon_name }}</span>
+          </div>
+          <a href="{{ url_for('trades.whatsapp_click', match_id=match.id) }}"
+             class="block text-center bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold py-1.5 rounded-lg transition-colors">
+            Propor Troca
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="px-4 py-8 text-center text-sm text-gray-400">
+        {% if current_user.is_authenticated %}
+        Nenhuma oportunidade de troca.
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver trocas.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
