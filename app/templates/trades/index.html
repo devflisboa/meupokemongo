@@ -78,12 +78,14 @@
       </a>
       <div class="flex gap-2">
         <form method="post" action="{{ url_for('trades.fechar', match_id=match.id) }}" class="flex-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit"
             class="w-full text-[11px] font-bold py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
             Concluída ✓
           </button>
         </form>
         <form method="post" action="{{ url_for('trades.cancelar', match_id=match.id) }}" class="flex-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit"
             class="w-full text-[11px] font-bold py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors">
             Cancelar ✕
@@ -93,12 +95,14 @@
       {% elif match.status == 'contacted' %}
       <div class="flex gap-2">
         <form method="post" action="{{ url_for('trades.fechar', match_id=match.id) }}" class="flex-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit"
             class="w-full text-[11px] font-bold py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
             Concluída ✓
           </button>
         </form>
         <form method="post" action="{{ url_for('trades.cancelar', match_id=match.id) }}" class="flex-1">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit"
             class="w-full text-[11px] font-bold py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-red-50 hover:text-red-500 transition-colors">
             Cancelar ✕

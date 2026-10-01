@@ -11,79 +11,86 @@
     </a>
     <div>
       <h1 class="text-xl font-black text-gray-900">Pré-visualização</h1>
-      <p class="text-xs text-gray-400">Confirme os dados antes de importar</p>
+      <p class="text-xs text-gray-400">
+        {% if fmt == 'pokegenie' %}PokeGenie CSV detectado automaticamente{% else %}Formato interno{% endif %}
+        · confirme antes de importar
+      </p>
     </div>
   </div>
 
-  <!-- Erros -->
   {% if errors %}
-  <div class="bg-red-50 border border-red-200 rounded-2xl p-5 mb-5">
-    <div class="flex items-center gap-2 mb-3">
-      <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5">
+    <div class="flex items-center gap-2 mb-2">
+      <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
       </svg>
-      <h2 class="font-bold text-sm text-red-700">{{ errors|length }} linha(s) com erro — serão ignoradas</h2>
+      <h2 class="font-bold text-sm text-amber-800">{{ errors|length }} linha(s) ignoradas</h2>
     </div>
-    <ul class="space-y-1">
+    <ul class="space-y-1 max-h-32 overflow-y-auto">
       {% for e in errors %}
-      <li class="text-xs text-red-600 flex items-start gap-1.5">
-        <span class="mt-0.5">•</span><span>{{ e }}</span>
+      <li class="text-xs text-amber-700 flex gap-1.5">
+        <span class="mt-0.5 flex-shrink-0">•</span><span>{{ e }}</span>
       </li>
       {% endfor %}
     </ul>
   </div>
   {% endif %}
 
-  <!-- Resumo -->
-  <div class="grid grid-cols-2 gap-4 mb-5">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center">
+  <div class="grid grid-cols-3 gap-3 mb-5">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
       <div class="text-3xl font-black text-[#1B2A4A]">{{ rows|length }}</div>
-      <div class="text-xs text-gray-400 mt-1">Linhas válidas</div>
+      <div class="text-xs text-gray-400 mt-1">Espécies válidas</div>
     </div>
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 text-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
+      <div class="text-3xl font-black text-green-600">{{ rows | sum(attribute='quantity') }}</div>
+      <div class="text-xs text-gray-400 mt-1">Pokémon no total</div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
       <div class="text-3xl font-black text-red-500">{{ errors|length }}</div>
-      <div class="text-xs text-gray-400 mt-1">Linhas ignoradas</div>
+      <div class="text-xs text-gray-400 mt-1">Ignoradas</div>
     </div>
   </div>
 
-  <!-- Preview table -->
   {% if rows %}
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-5">
     <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-      <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">Dados a importar</span>
-      <span class="text-xs text-gray-400">mostrando primeiras {{ [rows|length, 20]|min }} de {{ rows|length }}</span>
+      <span class="text-xs font-bold text-gray-600 uppercase tracking-wide">
+        {% if fmt == 'pokegenie' %}Seus Pokémon{% else %}Dados a importar{% endif %}
+      </span>
+      <span class="text-xs text-gray-400">
+        {% if rows|length > 20 %}primeiras 20 de {{ rows|length }}{% else %}{{ rows|length }} itens{% endif %}
+      </span>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Form ID</th>
-            <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Possui</th>
+            <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+              {% if fmt == 'pokegenie' %}Pokémon{% else %}Form ID{% endif %}
+            </th>
             <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Qtd</th>
             <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Troca</th>
-            <th class="px-4 py-2.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Notas</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           {% for row in rows[:20] %}
           <tr class="hover:bg-gray-50">
-            <td class="px-4 py-2.5 font-mono text-xs text-gray-700">{{ row.form_id }}</td>
-            <td class="px-4 py-2.5 text-center">
-              {% if row.owned %}
-              <span class="inline-block w-4 h-4 bg-green-400 rounded-full"></span>
+            <td class="px-4 py-2.5 text-xs text-gray-700">
+              {% if fmt == 'pokegenie' and row._name is defined %}
+              <span class="font-mono text-gray-400 mr-1">#{{ '%03d' % row._species_id }}</span>
+              <span class="font-semibold">{{ row._name | poke_name }}</span>
               {% else %}
-              <span class="inline-block w-4 h-4 bg-gray-200 rounded-full"></span>
+              <span class="font-mono">{{ row.form_id }}</span>
               {% endif %}
             </td>
-            <td class="px-4 py-2.5 text-center font-semibold text-gray-800">{{ row.quantity }}</td>
+            <td class="px-4 py-2.5 text-center font-black text-gray-800">{{ row.quantity }}</td>
             <td class="px-4 py-2.5 text-center">
               {% if row.for_trade %}
-              <span class="text-blue-500 text-xs font-bold">Sim</span>
+              <span class="text-blue-500 text-xs font-bold">🔄 Sim</span>
               {% else %}
               <span class="text-gray-300 text-xs">—</span>
               {% endif %}
             </td>
-            <td class="px-4 py-2.5 text-xs text-gray-400 max-w-xs truncate">{{ row.notes or '—' }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -92,9 +99,10 @@
   </div>
 
   <form method="post" action="{{ url_for('import_.confirmar') }}" class="flex items-center gap-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit"
       class="bg-[#1B2A4A] hover:opacity-90 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-opacity">
-      Confirmar importação ({{ rows|length }} itens)
+      Confirmar e importar {{ rows|length }} espécies
     </button>
     <a href="{{ url_for('import_.index') }}" class="text-sm text-gray-400 hover:text-gray-600">Cancelar</a>
   </form>

@@ -50,6 +50,7 @@
         Dados do Perfil
       </h2>
       <form method="post" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="dados" />
 
         <div>
@@ -112,6 +113,7 @@
           Alterar Senha
         </h2>
         <form method="post" class="space-y-4">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="action" value="senha" />
           <div>
             <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Senha atual</label>
