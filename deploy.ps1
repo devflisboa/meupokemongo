@@ -24,9 +24,9 @@ $remoteCmd = @"
 set -e
 cd $Remote
 git pull origin main
-docker-compose -f docker-compose.prod.yml up -d $buildFlag
+docker compose -f docker-compose.prod.yml up -d $buildFlag
 echo '>>> Containers em execucao:'
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 "@
 
 & ssh -i "$Key" -p $Port -o StrictHostKeyChecking=no $Server $remoteCmd
