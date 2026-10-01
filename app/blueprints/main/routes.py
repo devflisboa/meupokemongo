@@ -1,3 +1,4 @@
+from datetime import date
 from flask import render_template
 from flask_login import current_user
 from . import bp
@@ -6,8 +7,76 @@ from ...services.matching_service import get_active_matches_for_user
 from ...services.analytics_service import log_event
 from ...extensions import db
 from ...models.user import User
-from ...models.pokemon import Species, Form
-from ...models.collection import UserCollection
+
+# Meses em inglês para montar a URL do site oficial
+_MONTH_EN = {
+    1: "january", 2: "february", 3: "march", 4: "april",
+    5: "may", 6: "june", 7: "july", 8: "august",
+    9: "september", 10: "october", 11: "november", 12: "december",
+}
+
+GAME_EVENTS = [
+    {
+        "title": "Dia Comunitário de Outubro",
+        "category": "Dia Comunitário",
+        "emoji": "🌟",
+        "date": "5 de out · 14h–17h",
+        "description": "Capture Pokémon com taxas especiais e ganhe bônus de Candy × 3.",
+        "gradient": "from-blue-400 to-blue-600",
+        "badge": "bg-blue-100 text-blue-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+    {
+        "title": "Halloween 2026: Noite das Sombras",
+        "category": "Evento Especial",
+        "emoji": "🎃",
+        "date": "15–31 de out",
+        "description": "Pokémon sombrios e fantasmagóricos com aparições aumentadas.",
+        "gradient": "from-orange-400 to-purple-600",
+        "badge": "bg-orange-100 text-orange-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+    {
+        "title": "Hora do Spotlight — Phantump",
+        "category": "Hora do Spotlight",
+        "emoji": "⭐",
+        "date": "6 de out · 18h–19h",
+        "description": "Phantump com aparições em massa e bônus de Stardust × 2.",
+        "gradient": "from-amber-300 to-amber-500",
+        "badge": "bg-amber-100 text-amber-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+    {
+        "title": "Hora de Reide — Mega Gengar",
+        "category": "Hora de Reide",
+        "emoji": "⚔️",
+        "date": "8 de out · 18h–19h",
+        "description": "Mega Gengar em Reides de 5 estrelas com chance de forma shiny.",
+        "gradient": "from-red-400 to-red-700",
+        "badge": "bg-red-100 text-red-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+    {
+        "title": "Pesquisa Especial: Missão Espectral",
+        "category": "Pesquisa Especial",
+        "emoji": "📜",
+        "date": "1–15 de out",
+        "description": "Complete etapas de pesquisa para encontrar um Pokémon raro.",
+        "gradient": "from-emerald-400 to-emerald-600",
+        "badge": "bg-emerald-100 text-emerald-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+    {
+        "title": "Temporada das Colheitas",
+        "category": "Temporada",
+        "emoji": "🍂",
+        "date": "1 out – 31 dez",
+        "description": "Temporada outonal com Pokémon regionais e bônus sazonais.",
+        "gradient": "from-yellow-400 to-amber-600",
+        "badge": "bg-yellow-100 text-yellow-700",
+        "url": "https://pokemongo.com/pt-BR/events/october-2026",
+    },
+]
 
 
 @bp.route("/")
@@ -18,7 +87,6 @@ def index():
     missing = []
     pending_evolutions = []
     matches = []
-    owned_species_ids = set()
 
     if current_user.is_authenticated:
         stats = get_collection_stats(current_user.id)
@@ -26,37 +94,12 @@ def index():
         pending_evolutions = get_pending_evolutions(current_user.id)[:3]
         matches = get_active_matches_for_user(current_user.id)[:4]
 
-        owned_form_rows = db.session.query(UserCollection.form_id).filter(
-            UserCollection.user_id == current_user.id,
-            UserCollection.owned.is_(True),
-            UserCollection.quantity > 0,
-        ).all()
-        if owned_form_rows:
-            owned_form_ids = {r[0] for r in owned_form_rows}
-            owned_species_ids = {
-                r[0]
-                for r in db.session.query(Form.species_id)
-                .filter(Form.id.in_(owned_form_ids))
-                .all()
-            }
-
     total_trainers = db.session.query(User).count()
-    featured_ids = [1, 4, 7, 25, 94, 133]
-    featured_species = (
-        db.session.query(Species)
-        .filter(Species.id.in_(featured_ids))
-        .order_by(Species.id)
-        .all()
+
+    today = date.today()
+    events_page_url = (
+        f"https://pokemongo.com/pt-BR/events/{_MONTH_EN[today.month]}-{today.year}"
     )
-    if len(featured_species) < 6:
-        extra = (
-            db.session.query(Species)
-            .filter(Species.id.notin_([s.id for s in featured_species]))
-            .order_by(Species.id)
-            .limit(6 - len(featured_species))
-            .all()
-        )
-        featured_species = featured_species + extra
 
     return render_template(
         "main/index.html",
@@ -65,6 +108,6 @@ def index():
         pending_evolutions=pending_evolutions,
         matches=matches,
         total_trainers=total_trainers,
-        featured_species=featured_species,
-        owned_species_ids=owned_species_ids,
+        game_events=GAME_EVENTS,
+        events_page_url=events_page_url,
     )
