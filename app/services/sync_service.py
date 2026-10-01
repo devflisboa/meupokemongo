@@ -121,6 +121,13 @@ def sync_pokemon(limit: int = 151, offset: int = 0, log=print) -> dict:
             form.type1 = type1
             form.type2 = type2
             form.sprite_url = _sprite_url(species_id)
+            shiny_artwork = (
+                pk_data.get("sprites", {})
+                .get("other", {})
+                .get("official-artwork", {})
+                .get("front_shiny")
+            )
+            form.is_shiny_available = bool(shiny_artwork)
 
             db.session.commit()
             report["species"] += 1
