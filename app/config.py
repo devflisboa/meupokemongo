@@ -1,4 +1,13 @@
 import os
+from datetime import datetime, timezone, timedelta
+
+# Fuso horário de Brasília (UTC-3, sem DST para simplicidade em produção Docker)
+TZ_BR = timezone(timedelta(hours=-3))
+
+
+def now_br() -> datetime:
+    """Retorna a hora atual no fuso de Brasília, sem tzinfo (compatível com MySQL)."""
+    return datetime.now(TZ_BR).replace(tzinfo=None)
 
 
 class Config:

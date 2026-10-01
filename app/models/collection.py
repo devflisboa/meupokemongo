@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 
@@ -13,8 +13,8 @@ class UserCollection(db.Model):
     quantity = db.Column(db.Integer, default=0, nullable=False)
     for_trade = db.Column(db.Boolean, default=False, nullable=False)
     notes = db.Column(db.String(500), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_br)
+    updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
     user = db.relationship("User", back_populates="collection")
     form = db.relationship("Form", back_populates="collection_entries")

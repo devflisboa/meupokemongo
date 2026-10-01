@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 EVENT_TYPES = (
@@ -22,7 +22,7 @@ class AnalyticsEvent(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     metadata_json = db.Column(db.JSON, nullable=True)
     ip_address = db.Column(db.String(45), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=now_br, nullable=False, index=True)
 
     user = db.relationship("User", back_populates="events")
 

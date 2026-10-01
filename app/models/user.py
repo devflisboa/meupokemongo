@@ -1,7 +1,7 @@
-from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..extensions import db, login_manager
+from ..config import now_br
 
 
 class User(UserMixin, db.Model):
@@ -15,8 +15,8 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     # public = coleção visível a todos; friends = só amigos; private = só o dono
     visibility = db.Column(db.Enum("public", "friends", "private"), default="public", nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_br, nullable=False)
+    updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
     collection = db.relationship("UserCollection", back_populates="user", lazy="dynamic")
     wishlist = db.relationship("Wishlist", back_populates="user", lazy="dynamic")

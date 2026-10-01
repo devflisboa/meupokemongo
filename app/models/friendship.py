@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 
@@ -10,8 +10,8 @@ class Friendship(db.Model):
     requester_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     addressee_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     status = db.Column(db.Enum("pending", "accepted", "blocked"), default="pending", nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_br)
+    updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
     requester = db.relationship("User", foreign_keys=[requester_id])
     addressee = db.relationship("User", foreign_keys=[addressee_id])

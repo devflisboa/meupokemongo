@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 
@@ -11,8 +11,8 @@ class TradeMatch(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     form_id = db.Column(db.Integer, db.ForeignKey("forms.id"), nullable=False)
     status = db.Column(db.Enum("active", "contacted", "completed", "cancelled"), default="active", nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_br)
+    updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
     wisher = db.relationship("User", foreign_keys=[wisher_id])
     owner = db.relationship("User", foreign_keys=[owner_id])
@@ -34,7 +34,7 @@ class WhatsappClick(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     match_id = db.Column(db.Integer, db.ForeignKey("trade_matches.id"), nullable=False, index=True)
     clicker_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    clicked_at = db.Column(db.DateTime, default=datetime.utcnow)
+    clicked_at = db.Column(db.DateTime, default=now_br)
 
     match = db.relationship("TradeMatch")
     clicker = db.relationship("User", foreign_keys=[clicker_id])

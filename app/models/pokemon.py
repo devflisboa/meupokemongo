@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 
@@ -14,7 +14,7 @@ class Species(db.Model):
     is_mythical = db.Column(db.Boolean, default=False)
     base_happiness = db.Column(db.Integer, nullable=True)
     capture_rate = db.Column(db.Integer, nullable=True)
-    synced_at = db.Column(db.DateTime, default=datetime.utcnow)
+    synced_at = db.Column(db.DateTime, default=now_br)
 
     forms = db.relationship("Form", back_populates="species", lazy="dynamic")
 
@@ -68,4 +68,4 @@ class PokemonCache(db.Model):
 
     cache_key = db.Column(db.String(100), primary_key=True)
     payload = db.Column(db.JSON, nullable=False)
-    cached_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    cached_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)

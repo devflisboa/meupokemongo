@@ -133,7 +133,10 @@
     <div class="bg-[#152238] px-4 py-1.5 flex items-center justify-between text-xs">
       <span class="text-gray-400">
         <span class="text-green-400">●</span>
-        Flask &bull; v3.1.3 &bull; Running on localhost:5000
+        Flask &bull; v3.1.3
+        {% if current_user.is_authenticated %}
+        &bull; Olá, <span class="text-white font-semibold">{{ current_user.username }}</span>
+        {% endif %}
       </span>
       <span class="text-green-400 font-semibold">● Online</span>
     </div>
@@ -181,7 +184,9 @@
 
   <!-- FOOTER -->
   <footer class="border-t border-gray-200 bg-white text-center text-xs text-gray-400 py-3 mt-2">
-    MeuPokémonGO &bull; Dashboard v1.0 &bull; Built with Flask + Tailwind CSS &bull; Data synced 2 min ago
+    MeuPokémonGO &bull; v1.0 &bull; Feito com Flask + Tailwind CSS &bull;
+    Dados: <a href="https://pokeapi.co" target="_blank" rel="noopener" class="hover:text-gray-600 underline">PokéAPI</a>
+    &amp; <a href="https://pokemongo.com" target="_blank" rel="noopener" class="hover:text-gray-600 underline">Pokémon GO</a>
   </footer>
 
 </body>

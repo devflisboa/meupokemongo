@@ -1,4 +1,4 @@
-from datetime import datetime
+from ..config import now_br
 from ..extensions import db
 
 
@@ -10,7 +10,7 @@ class Wishlist(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     form_id = db.Column(db.Integer, db.ForeignKey("forms.id"), nullable=False)
     priority = db.Column(db.Enum("low", "medium", "high"), default="medium", nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_br)
 
     user = db.relationship("User", back_populates="wishlist")
     form = db.relationship("Form")

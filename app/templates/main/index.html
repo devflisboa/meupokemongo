@@ -10,7 +10,7 @@
   <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
     <div class="flex-1 min-w-0">
-      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Collection Stats</div>
+      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Estatísticas da Coleção</div>
       <div class="text-3xl font-black leading-none">
         {{ stats.owned }}<span class="text-xl font-normal opacity-70"> / {{ stats.total }}</span>
       </div>
@@ -78,22 +78,27 @@
       <a href="{{ ev.url }}" target="_blank" rel="noopener"
          class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group block">
 
-        {# Topo colorido #}
-        <div class="bg-gradient-to-r {{ ev.gradient }} h-16 flex items-center px-4 gap-3 relative">
-          <span class="text-3xl drop-shadow leading-none">{{ ev.emoji }}</span>
-          <div class="flex-1 min-w-0">
-            <span class="inline-block text-[10px] font-bold uppercase tracking-wide
-                         bg-white/25 text-white px-2 py-0.5 rounded-full mb-0.5">
-              {{ ev.category }}
-            </span>
-            <div class="text-white font-bold text-xs leading-tight truncate">
-              {{ ev.title }}
-            </div>
+        {# Capa com imagem real do evento #}
+        <div class="relative h-32 overflow-hidden bg-gray-200">
+          <img src="{{ ev.image_url }}"
+               alt="{{ ev.title }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               loading="lazy" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+          {# Badge de categoria sobreposto #}
+          <span class="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide
+                       bg-black/50 text-white backdrop-blur-sm px-2 py-0.5 rounded-full">
+            {{ ev.category }}
+          </span>
+
+          {# Seta no canto #}
+          <span class="absolute top-2 right-2 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all text-sm leading-none">→</span>
+
+          {# Título sobre a imagem #}
+          <div class="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
+            <p class="text-white font-bold text-xs leading-tight line-clamp-2">{{ ev.title }}</p>
           </div>
-          <svg class="w-4 h-4 text-white/60 flex-shrink-0 group-hover:translate-x-0.5 transition-transform"
-               fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-          </svg>
         </div>
 
         {# Corpo #}
@@ -133,7 +138,7 @@
     {# Missing Pokémon #}
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">📍 Missing Pokémon</h3>
+        <h3 class="font-bold text-sm text-gray-800">📍 Pokémon Faltando</h3>
         {% if stats %}
         <span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ stats.missing }} Faltando</span>
         {% endif %}
@@ -162,7 +167,7 @@
           </div>
           <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
              class="flex-shrink-0 text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors ml-2">
-            Track
+            Ver
           </a>
         </div>
         {% endfor %}
@@ -181,9 +186,9 @@
     {# Evolution Pending #}
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">⬆ Evolution Pending</h3>
+        <h3 class="font-bold text-sm text-gray-800">⬆ Evoluções Pendentes</h3>
         {% if pending_evolutions %}
-        <span class="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ pending_evolutions|length }} Ready</span>
+        <span class="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ pending_evolutions|length }} Pronto{{ 's' if pending_evolutions|length > 1 else '' }}</span>
         {% endif %}
       </div>
       {% if pending_evolutions %}
@@ -204,7 +209,7 @@
               {{ from_name }} <span class="text-gray-400 font-normal">→</span> {{ to_name }}
             </div>
             {% if evo.candy_cost %}
-            <div class="text-[10px] text-gray-500 mt-0.5">{{ evo.candy_cost }} Candy</div>
+            <div class="text-[10px] text-gray-500 mt-0.5">{{ evo.candy_cost }} Doces</div>
             <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
               <div class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
             </div>
@@ -232,7 +237,7 @@
     {# Trade Opportunities #}
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">🔄 Trade Opportunities</h3>
+        <h3 class="font-bold text-sm text-gray-800">🔄 Oportunidades de Troca</h3>
         {% if matches %}
         <span class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
           {{ matches|length }} Novo{{ 's' if matches|length > 1 else '' }}
