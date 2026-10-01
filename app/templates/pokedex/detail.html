@@ -101,11 +101,90 @@
     </div>
     {% endif %}
 
-    {% if current_user.is_authenticated %}
-    <a href="{{ url_for('collection.index') }}"
-       class="inline-block bg-[#1B2A4A] hover:opacity-90 text-white text-sm px-4 py-2 rounded-lg font-semibold transition-opacity">
-      Gerenciar na coleção
-    </a>
+    {% if current_user.is_authenticated and default_form %}
+    {% set owned = collection_entry and collection_entry.owned and collection_entry.quantity > 0 %}
+    {% set for_trade = collection_entry.for_trade if collection_entry else false %}
+    {% set qty = collection_entry.quantity if collection_entry else 0 %}
+    <div class="detail-card"
+      data-form-id="{{ default_form.id }}"
+      data-owned="{{ 'true' if owned else 'false' }}"
+      data-qty="{{ qty }}"
+      data-trade="{{ 'true' if for_trade else 'false' }}">
+
+      <div class="flex flex-wrap gap-2">
+        <button onclick="toggleCaptureDetail(this)"
+          class="capture-btn text-sm font-bold px-4 py-2 rounded-lg transition-colors
+            {{ 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' if owned else 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700' }}">
+          {{ '✓ Capturado' if owned else '+ Capturar' }}
+        </button>
+
+        <div class="owned-controls flex gap-2 {{ '' if owned else 'hidden' }}">
+          <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2">
+            <button onclick="adjustQtyDetail(this, -1)" class="w-6 h-6 text-gray-500 hover:text-gray-800 font-bold text-lg leading-none">−</button>
+            <span class="qty-display text-sm font-black text-gray-800 min-w-[1.5rem] text-center">{{ qty }}</span>
+            <button onclick="adjustQtyDetail(this, 1)" class="w-6 h-6 text-gray-500 hover:text-gray-800 font-bold text-lg leading-none">+</button>
+          </div>
+          <button onclick="toggleTradeDetail(this)"
+            class="trade-btn text-sm font-bold px-4 py-2 rounded-lg transition-colors
+              {{ 'bg-blue-100 text-blue-700' if for_trade else 'bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600' }}">
+            {{ '🔄 Para troca' if for_trade else 'Troca?' }}
+          </button>
+        </div>
+      </div>
+
+      <a href="{{ url_for('collection.index') }}" class="block text-xs text-gray-400 hover:text-gray-600 mt-2">Ver toda a coleção →</a>
+    </div>
+
+    <script>
+    function getDetailCard() { return document.querySelector('.detail-card'); }
+
+    function saveDetail(owned, qty, forTrade) {
+      const card = getDetailCard();
+      const fd = new FormData();
+      fd.append('form_id', card.dataset.formId);
+      fd.append('owned', owned ? 'true' : 'false');
+      fd.append('quantity', qty);
+      fd.append('for_trade', forTrade ? 'true' : 'false');
+      fetch('/collection/upsert', {method: 'POST', body: fd})
+        .then(r => r.json())
+        .then(data => {
+          if (!data.ok) return;
+          card.dataset.owned = data.owned ? 'true' : 'false';
+          card.dataset.qty = data.quantity;
+          card.dataset.trade = data.for_trade ? 'true' : 'false';
+
+          const capBtn = card.querySelector('.capture-btn');
+          const controls = card.querySelector('.owned-controls');
+          const qtyDisplay = card.querySelector('.qty-display');
+          const tradeBtn = card.querySelector('.trade-btn');
+
+          if (capBtn) capBtn.textContent = data.owned ? '✓ Capturado' : '+ Capturar';
+          if (capBtn) capBtn.className = capBtn.className.replace(/bg-\S+\s?text-\S+/g, '').trim()
+            + (data.owned ? ' bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' : ' bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700');
+          if (controls) controls.classList.toggle('hidden', !data.owned);
+          if (qtyDisplay) qtyDisplay.textContent = data.quantity;
+          if (tradeBtn) tradeBtn.textContent = data.for_trade ? '🔄 Para troca' : 'Troca?';
+          if (tradeBtn) tradeBtn.className = tradeBtn.className.replace(/bg-\S+\s?text-\S+/g, '').trim()
+            + (data.for_trade ? ' bg-blue-100 text-blue-700' : ' bg-gray-100 text-gray-500 hover:bg-blue-50 hover:text-blue-600');
+        });
+    }
+
+    function toggleCaptureDetail(btn) {
+      const card = getDetailCard();
+      const owned = card.dataset.owned === 'true';
+      const qty = owned ? 0 : Math.max(1, parseInt(card.dataset.qty) || 1);
+      saveDetail(!owned, qty, !owned && card.dataset.trade === 'true');
+    }
+    function adjustQtyDetail(btn, delta) {
+      const card = getDetailCard();
+      const qty = Math.max(0, parseInt(card.dataset.qty) + delta);
+      saveDetail(qty > 0, qty, qty > 0 && card.dataset.trade === 'true');
+    }
+    function toggleTradeDetail(btn) {
+      const card = getDetailCard();
+      saveDetail(true, parseInt(card.dataset.qty) || 1, card.dataset.trade !== 'true');
+    }
+    </script>
     {% else %}
     <a href="{{ url_for('auth.login') }}" class="text-sm text-blue-600 hover:underline">Faça login para adicionar à coleção →</a>
     {% endif %}

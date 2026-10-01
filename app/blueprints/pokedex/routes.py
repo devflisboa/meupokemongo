@@ -3,6 +3,7 @@ from flask_login import current_user
 from . import bp
 from ...extensions import db
 from ...models.pokemon import Species, Form, EvolutionChain
+from ...models.collection import UserCollection
 from ...services.analytics_service import log_event
 
 PER_PAGE = 20
@@ -46,5 +47,18 @@ def detail(species_id: int):
         )
     ).all()
 
+    collection_entry = None
+    if current_user.is_authenticated:
+        default_form = species.forms.filter_by(form_name="normal").first()
+        if default_form:
+            collection_entry = db.session.query(UserCollection).filter_by(
+                user_id=current_user.id, form_id=default_form.id
+            ).first()
+
     log_event("POKEMON_VIEW", {"species_id": species_id})
-    return render_template("pokedex/detail.html", species=species, evolutions=evolutions)
+    return render_template(
+        "pokedex/detail.html",
+        species=species,
+        evolutions=evolutions,
+        collection_entry=collection_entry,
+    )

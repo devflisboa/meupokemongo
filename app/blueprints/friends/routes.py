@@ -67,3 +67,15 @@ def recusar(friendship_id: int):
     db.session.delete(f)
     db.session.commit()
     return redirect(url_for("friends.index"))
+
+
+@bp.route("/remover/<int:friendship_id>", methods=["POST"])
+@login_required
+def remover(friendship_id: int):
+    f = db.session.get(Friendship, friendship_id)
+    if not f or (f.requester_id != current_user.id and f.addressee_id != current_user.id):
+        abort(403)
+    db.session.delete(f)
+    db.session.commit()
+    flash("Amizade removida.", "info")
+    return redirect(url_for("friends.index"))

@@ -1,5 +1,5 @@
 from datetime import date
-from flask import render_template
+from flask import render_template, abort, request
 from flask_login import current_user
 from . import bp
 from ...services.collection_service import get_collection_stats, get_missing_pokemon, get_pending_evolutions
@@ -7,6 +7,8 @@ from ...services.matching_service import get_active_matches_for_user
 from ...services.analytics_service import log_event
 from ...extensions import db
 from ...models.user import User
+from ...models.collection import UserCollection
+from ...models.pokemon import Form
 
 # Meses em inglês para montar a URL do site oficial
 _MONTH_EN = {
@@ -104,4 +106,33 @@ def index():
         total_trainers=total_trainers,
         game_events=GAME_EVENTS,
         events_page_url=events_page_url,
+    )
+
+
+@bp.route("/estoque/<username>")
+def estoque(username: str):
+    """Página pública de estoque para troca — sem login obrigatório."""
+    profile_user = db.session.query(User).filter_by(username=username).first_or_404()
+
+    trade_forms = (
+        db.session.query(Form)
+        .join(UserCollection, UserCollection.form_id == Form.id)
+        .filter(
+            UserCollection.user_id == profile_user.id,
+            UserCollection.owned.is_(True),
+            UserCollection.for_trade.is_(True),
+        )
+        .order_by(Form.species_id)
+        .all()
+    )
+
+    stats = get_collection_stats(profile_user.id)
+    share_url = request.url
+
+    return render_template(
+        "main/estoque.html",
+        profile_user=profile_user,
+        trade_forms=trade_forms,
+        stats=stats,
+        share_url=share_url,
     )

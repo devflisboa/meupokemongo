@@ -49,3 +49,27 @@ def whatsapp_click(match_id: int):
 
     from flask import redirect as flask_redirect
     return flask_redirect(wa_url)
+
+
+@bp.route("/fechar/<int:match_id>", methods=["POST"])
+@login_required
+def fechar(match_id: int):
+    match = db.session.get(TradeMatch, match_id)
+    if not match or match.wisher_id != current_user.id:
+        abort(403)
+    match.status = "completed"
+    db.session.commit()
+    log_event("TRADE_COMPLETED", {"match_id": match_id})
+    return redirect(url_for("trades.index"))
+
+
+@bp.route("/cancelar/<int:match_id>", methods=["POST"])
+@login_required
+def cancelar(match_id: int):
+    match = db.session.get(TradeMatch, match_id)
+    if not match or match.wisher_id != current_user.id:
+        abort(403)
+    match.status = "cancelled"
+    db.session.commit()
+    log_event("TRADE_CANCELLED", {"match_id": match_id})
+    return redirect(url_for("trades.index"))
