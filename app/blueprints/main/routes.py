@@ -111,28 +111,43 @@ def index():
 
 @bp.route("/estoque/<username>")
 def estoque(username: str):
-    """Página pública de estoque para troca — sem login obrigatório."""
+    """Página pública de coleção completa — sem login obrigatório."""
     profile_user = db.session.query(User).filter_by(username=username).first_or_404()
 
-    trade_forms = (
+    # IDs de formas que o usuário possui (owned) e para troca
+    collection_map: dict[int, UserCollection] = {
+        uc.form_id: uc
+        for uc in db.session.query(UserCollection).filter_by(
+            user_id=profile_user.id, owned=True
+        ).filter(UserCollection.quantity > 0).all()
+    }
+    trade_form_ids = {
+        fid for fid, uc in collection_map.items() if uc.for_trade
+    }
+
+    # Todas as formas normais, ordenadas por species_id
+    all_forms = (
         db.session.query(Form)
-        .join(UserCollection, UserCollection.form_id == Form.id)
-        .filter(
-            UserCollection.user_id == profile_user.id,
-            UserCollection.owned.is_(True),
-            UserCollection.for_trade.is_(True),
-        )
+        .filter_by(form_name="normal")
         .order_by(Form.species_id)
         .all()
     )
 
+    owned_forms = [f for f in all_forms if f.id in collection_map]
+    missing_forms = [f for f in all_forms if f.id not in collection_map]
+    trade_forms = [f for f in all_forms if f.id in trade_form_ids]
+
     stats = get_collection_stats(profile_user.id)
-    share_url = request.url
+    share_url = request.url.split("?")[0]
 
     return render_template(
         "main/estoque.html",
         profile_user=profile_user,
+        all_forms=all_forms,
+        owned_forms=owned_forms,
+        missing_forms=missing_forms,
         trade_forms=trade_forms,
+        collection_map=collection_map,
         stats=stats,
         share_url=share_url,
     )
