@@ -1,0 +1,28 @@
+{
+  "name": "meupokemongo",
+  "version": "1.0.0",
+  "description": "Portfólio pessoal para gerenciar a coleção de Pokémon GO — rastreia Pokémon capturados, evoluções pendentes e oportunidades de troca com outros treinadores.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "cy:run": "cypress run",
+    "cy:open": "cypress open",
+    "cy:run:spec": "cypress run --spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devflisboa/meupokemongo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/devflisboa/meupokemongo/issues"
+  },
+  "homepage": "https://github.com/devflisboa/meupokemongo#readme",
+  "devDependencies": {
+    "cypress": "^16.1.1"
+  }
+}

@@ -1,69 +1,98 @@
 {% extends "base.html" %}
-{% block title %}Estoque de {{ profile_user.username }}{% endblock %}
+{% block title %}Coleção de {{ profile_user.username }} — {{ owned_forms|length }} Pokémon{% endblock %}
+
+{% block head %}
+<meta property="og:title" content="Coleção de {{ profile_user.username }} — {{ owned_forms|length }} Pokémon | MeuPokémonGO">
+<meta property="og:description" content="{{ profile_user.username }} tem {{ owned_forms|length }} Pokémon capturados e {{ trade_forms|length }} disponíveis para troca no Pokémon GO.">
+<meta property="og:url" content="{{ share_url }}">
+<meta property="og:image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
+<meta property="og:type" content="website">
+{% endblock %}
 
 {% block content %}
 {% set type_grad = {
-  "fire": "from-orange-400 to-red-500", "water": "from-blue-400 to-cyan-500",
-  "grass": "from-green-400 to-emerald-500", "electric": "from-yellow-300 to-amber-400",
-  "psychic": "from-pink-400 to-fuchsia-500", "ice": "from-cyan-300 to-blue-400",
-  "dragon": "from-indigo-500 to-purple-600", "dark": "from-gray-600 to-gray-800",
-  "fairy": "from-pink-300 to-rose-400", "fighting": "from-red-500 to-orange-600",
-  "flying": "from-sky-300 to-blue-400", "poison": "from-purple-400 to-violet-500",
-  "ground": "from-yellow-500 to-amber-600", "rock": "from-stone-400 to-stone-600",
-  "bug": "from-lime-400 to-green-500", "ghost": "from-violet-500 to-purple-700",
-  "steel": "from-slate-400 to-gray-500", "normal": "from-gray-300 to-gray-400"
+  "fire":"from-orange-400 to-red-500","water":"from-blue-400 to-cyan-500",
+  "grass":"from-green-400 to-emerald-500","electric":"from-yellow-300 to-amber-400",
+  "psychic":"from-pink-400 to-fuchsia-500","ice":"from-cyan-300 to-blue-400",
+  "dragon":"from-indigo-500 to-purple-600","dark":"from-gray-600 to-gray-800",
+  "fairy":"from-pink-300 to-rose-400","fighting":"from-red-500 to-orange-600",
+  "flying":"from-sky-300 to-blue-400","poison":"from-purple-400 to-violet-500",
+  "ground":"from-yellow-500 to-amber-600","rock":"from-stone-400 to-stone-600",
+  "bug":"from-lime-400 to-green-500","ghost":"from-violet-500 to-purple-700",
+  "steel":"from-slate-400 to-gray-500","normal":"from-gray-300 to-gray-400"
+} %}
+{% set type_badge = {
+  "fire":"bg-orange-100 text-orange-700","water":"bg-blue-100 text-blue-700",
+  "grass":"bg-green-100 text-green-700","electric":"bg-yellow-100 text-yellow-800",
+  "psychic":"bg-pink-100 text-pink-700","ice":"bg-cyan-100 text-cyan-700",
+  "dragon":"bg-indigo-100 text-indigo-700","dark":"bg-gray-200 text-gray-700",
+  "fairy":"bg-rose-100 text-rose-700","fighting":"bg-red-100 text-red-700",
+  "flying":"bg-sky-100 text-sky-700","poison":"bg-purple-100 text-purple-700",
+  "ground":"bg-amber-100 text-amber-800","rock":"bg-stone-100 text-stone-700",
+  "bug":"bg-lime-100 text-lime-700","ghost":"bg-violet-100 text-violet-700",
+  "steel":"bg-slate-100 text-slate-700","normal":"bg-gray-100 text-gray-600"
 } %}
 
-{# ── Cabeçalho ── #}
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div class="flex items-center gap-4">
-      <div class="w-14 h-14 rounded-full bg-[#1B2A4A] flex items-center justify-center text-xl font-black text-white select-none flex-shrink-0">
-        {{ profile_user.username[0].upper() }}
-      </div>
-      <div>
-        <h1 class="text-xl font-black text-gray-900">{{ profile_user.username }}</h1>
-        <p class="text-xs text-gray-400 mt-0.5">
-          {% if profile_user.trainer_code %}
-          Código: <span class="font-mono font-bold text-gray-600">{{ profile_user.trainer_code }}</span> &bull;
-          {% endif %}
-          <span class="text-green-600 font-semibold">{{ owned_forms|length }}</span> capturados &bull;
-          <span class="text-amber-500 font-semibold">{{ missing_forms|length }}</span> faltantes &bull;
-          <span class="text-blue-600 font-semibold">{{ trade_forms|length }}</span> para troca
-        </p>
-        {% if stats %}
-        <div class="flex items-center gap-2 mt-1.5">
-          <div class="flex-1 max-w-32 bg-gray-200 rounded-full h-1.5">
-            <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ stats.percent }}%"></div>
+{# ── Cabeçalho compacto ── #}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+  <div class="flex items-center gap-3">
+    <div class="w-12 h-12 rounded-full bg-[#1B2A4A] flex items-center justify-center text-lg font-black text-white flex-shrink-0 select-none">
+      {{ profile_user.username[0].upper() }}
+    </div>
+    <div class="flex-1 min-w-0">
+      <h1 class="text-base font-black text-gray-900 truncate">{{ profile_user.username }}</h1>
+      {% if profile_user.trainer_code %}
+      <p class="text-[10px] text-gray-400 font-mono">{{ profile_user.trainer_code }}</p>
+      {% endif %}
+      {% if stats %}
+      {# ── Barra de progresso CTA ── #}
+      {% set next_pct = ((stats.percent // 10 + 1) * 10)|int %}
+      {% set next_pct = [next_pct, 100]|min %}
+      {% set total_sp = (owned_forms|length) + (missing_forms|length) %}
+      {% set needed = ((next_pct / 100 * total_sp) - owned_forms|length)|int %}
+      <div class="mt-1.5">
+        <div class="flex items-center gap-2">
+          <div class="flex-1 bg-gray-100 rounded-full h-2">
+            <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ stats.percent }}%"></div>
           </div>
-          <span class="text-[10px] text-gray-400 font-semibold">{{ stats.percent }}% completo</span>
+          <span class="text-[10px] text-gray-500 font-semibold flex-shrink-0">{{ stats.percent }}%</span>
         </div>
+        {% if needed > 0 and stats.percent < 100 %}
+        <a href="{{ url_for('collection.catalogar') }}"
+           class="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full mt-1 inline-block font-semibold hover:bg-amber-100 transition-colors">
+          Faltam {{ needed }} para {{ next_pct }}% → Catalogar
+        </a>
         {% endif %}
       </div>
+      {% endif %}
     </div>
-
-    <div class="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-      <button id="btn-copy" onclick="copyLink()"
-        class="flex items-center justify-center gap-2 border border-gray-200 text-gray-600 text-sm font-bold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+    <div class="flex gap-1.5 flex-shrink-0">
+      <button id="btn-copy" onclick="copyLink()" aria-label="Copiar link"
+        class="p-2 border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
         </svg>
-        <span id="btn-copy-label">Copiar link</span>
       </button>
-      <a href="#" onclick="shareWhatsApp(event)"
-        class="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+      <a href="#" onclick="shareWhatsApp(event)" aria-label="Compartilhar no WhatsApp"
+        class="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.507 3.934 1.395 5.608L0 24l6.534-1.371A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.822 9.822 0 01-5.028-1.381l-.36-.214-3.733.784.797-3.644-.235-.375A9.822 9.822 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
         </svg>
-        Compartilhar
       </a>
     </div>
   </div>
 </div>
 
-{# ── Abas ── #}
-<div class="flex gap-1 mb-4 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
+{# ── Busca ── #}
+<div class="mb-3">
+  <input id="card-search" type="search" placeholder="Filtrar Pokémon por nome ou #número..."
+    class="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent"
+    oninput="filterCards(this.value)" />
+</div>
+
+{# ── Abas desktop ── #}
+<div class="hidden sm:flex gap-1 mb-4 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
   <button onclick="showTab('tenho')" id="tab-tenho"
     class="tab-btn px-4 py-1.5 rounded-lg text-sm font-bold transition-colors bg-[#1B2A4A] text-white">
     ✓ Tenho <span class="ml-1 opacity-70">({{ owned_forms|length }})</span>
@@ -78,58 +107,123 @@
   </button>
 </div>
 
-{# ── Grid macro ── #}
-{% macro poke_grid(forms, dimmed=false) %}
-{% if forms %}
-<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
-  {% for form in forms %}
+{# ══════════════════════════════════════════
+   ABA — TENHO
+══════════════════════════════════════════ #}
+<div id="tab-content-tenho">
+{% if owned_forms %}
+<div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
+  {% for form in owned_forms %}
   {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
   {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
   {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden {{ 'opacity-40 grayscale' if dimmed }}">
-    <div class="bg-gradient-to-br {{ grad }} p-1.5 flex flex-col items-center">
-      {% if form.sprite_url %}
-      <img src="{{ form.sprite_url }}" alt="{{ pname }}"
-        class="w-10 h-10 object-contain drop-shadow" loading="lazy"
-        onerror="this.style.display='none'" />
-      {% else %}
-      <div class="w-10 h-10 flex items-center justify-center text-white/50 text-xs">?</div>
-      {% endif %}
-    </div>
+  {% set is_trade = collection_map[form.id].for_trade if form.id in collection_map else false %}
+  <div class="poke-card bg-white rounded-xl shadow-sm border overflow-hidden
+    {{ 'border-blue-300' if is_trade else 'border-gray-100' }}
+    hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}">
+      <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
+        {% if form.sprite_url %}
+        <img src="{{ form.sprite_url }}" alt="{{ pname }}"
+          class="w-9 h-9 object-contain drop-shadow" loading="lazy"
+          onerror="this.style.display='none'" />
+        {% else %}
+        <span class="text-white/50 text-xs" aria-hidden="true">?</span>
+        {% endif %}
+      </div>
+    </a>
     <div class="p-1 text-center">
-      <div class="text-[9px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-      <div class="text-[9px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
-      {% if qty > 1 %}
-      <div class="text-[8px] text-green-600 font-black">×{{ qty }}</div>
-      {% endif %}
+      <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
+      <div class="flex items-center justify-center gap-1 mt-0.5">
+        {% if qty > 1 %}
+        <span class="text-[7px] text-green-600 font-black border border-green-300 rounded px-0.5">×{{ qty }}</span>
+        {% endif %}
+        <button onclick="toggleTrade({{ form.id }}, {{ qty }}, this)"
+          class="trade-btn text-[7px] px-1 rounded transition-colors
+            {{ 'bg-blue-500 text-white' if is_trade else 'bg-gray-100 text-gray-400 hover:bg-blue-100' }}"
+          title="{{ 'Para troca' if is_trade else 'Marcar para troca' }}"
+          aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">
+          🔄
+        </button>
+      </div>
     </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
 <div class="bg-white rounded-2xl p-12 text-center border border-gray-100">
-  <div class="text-4xl mb-3">📭</div>
-  <p class="text-sm text-gray-400">Nenhum Pokémon nesta categoria.</p>
+  <div class="text-4xl mb-3" aria-hidden="true">📭</div>
+  <p class="text-sm text-gray-400">Nenhum Pokémon capturado ainda.</p>
+  <a href="{{ url_for('collection.catalogar') }}"
+     class="mt-3 inline-block bg-[#1B2A4A] text-white text-sm px-4 py-2 rounded-lg font-bold hover:opacity-90">
+    Catalogar coleção
+  </a>
 </div>
 {% endif %}
-{% endmacro %}
-
-{# ── Conteúdo das abas ── #}
-<div id="tab-content-tenho">
-  {{ poke_grid(owned_forms) }}
 </div>
 
+{# ══════════════════════════════════════════
+   ABA — FALTANTES (infinite scroll)
+══════════════════════════════════════════ #}
 <div id="tab-content-faltantes" class="hidden">
-  {{ poke_grid(missing_forms, dimmed=true) }}
+{% if missing_forms %}
+<div id="missing-grid"
+  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
+  {% for form in missing_forms %}
+  {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
+  {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
+  <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
+    class="poke-card missing-card bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
+      hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
+      {{ 'hidden' if loop.index0 >= 30 }}"
+    data-idx="{{ loop.index0 }}"
+    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
+      {% if form.sprite_url %}
+      <img src="{{ form.sprite_url }}" alt="{{ pname }}"
+        class="w-9 h-9 object-contain" loading="lazy"
+        onerror="this.style.display='none'" />
+      {% else %}
+      <span class="text-white/50 text-xs" aria-hidden="true">?</span>
+      {% endif %}
+    </div>
+    <div class="p-1 text-center">
+      <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{# Sentinel para IntersectionObserver #}
+<div id="missing-sentinel" class="h-8 mt-2 flex items-center justify-center">
+  <span id="loading-indicator" class="hidden text-xs text-gray-400">Carregando mais...</span>
+</div>
+{% else %}
+<div class="bg-white rounded-2xl p-12 text-center border border-gray-100">
+  <div class="text-4xl mb-3" aria-hidden="true">🏆</div>
+  <p class="text-sm text-gray-500 font-bold">Coleção completa!</p>
+  <p class="text-xs text-gray-400 mt-1">Todos os Pokémon foram capturados.</p>
+</div>
+{% endif %}
 </div>
 
+{# ══════════════════════════════════════════
+   ABA — PARA TROCA
+══════════════════════════════════════════ #}
 <div id="tab-content-troca" class="hidden">
-  {% if trade_forms %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-    {% for form in trade_forms %}
-    {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
-    {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+{% if trade_forms %}
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+  {% for form in trade_forms %}
+  {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
+  {% set tbadge = type_badge.get(form.type1 or '', "bg-gray-100 text-gray-500") %}
+  {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
+  {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden
+    hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
+    poke-card" data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}">
       <div class="bg-gradient-to-br {{ grad }} p-3 flex flex-col items-center">
         {% if form.sprite_url %}
         <img src="{{ form.sprite_url }}" alt="{{ pname }}"
@@ -137,74 +231,208 @@
           onerror="this.style.display='none'" />
         {% endif %}
       </div>
-      <div class="p-2.5 text-center">
-        <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-        <div class="text-xs font-black text-gray-800 leading-tight">{{ pname }}</div>
+    </a>
+    <div class="p-2.5 text-center">
+      <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+      <div class="text-xs font-black text-gray-800 leading-tight">{{ pname }}</div>
+      <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
         {% if form.type1 %}
-        <div class="text-[9px] text-gray-400 capitalize mt-0.5">
-          {{ form.type1 }}{% if form.type2 %} / {{ form.type2 }}{% endif %}
-        </div>
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ tbadge }}">{{ form.type1 }}</span>
         {% endif %}
-        {% if profile_user.trainer_code %}
-        <a href="https://wa.me/?text={{ ('Oi ' ~ profile_user.username ~ '! Vi seu estoque no MeuPokémonGO e quero trocar pelo ' ~ pname ~ ' (#' ~ '%03d' % form.species_id ~ '). Meu código de treinador: ____. Ver seu estoque: ' ~ share_url) | urlencode }}"
-          target="_blank" rel="noopener"
-          class="mt-2 block text-[10px] font-bold bg-green-500 hover:bg-green-600 text-white py-1 rounded-lg transition-colors">
-          Quero esse!
-        </a>
+        {% if form.type2 %}
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">{{ form.type2 }}</span>
+        {% endif %}
+        {% if qty > 1 %}
+        <span class="text-[9px] text-green-600 font-black">×{{ qty }}</span>
         {% endif %}
       </div>
+      {% if profile_user.trainer_code %}
+      <a href="https://wa.me/?text={{ ('Oi ' ~ profile_user.username ~ '! Vi seu estoque no MeuPokémonGO e quero trocar pelo ' ~ pname ~ ' (#' ~ '%03d' % form.species_id ~ '). Meu código: ____. Ver estoque: ' ~ share_url) | urlencode }}"
+        target="_blank" rel="noopener"
+        class="mt-2 block text-[10px] font-bold bg-green-500 hover:bg-green-600 text-white py-1 rounded-lg transition-colors">
+        Quero esse!
+      </a>
+      {% endif %}
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
+</div>
+{% else %}
+{# Estado vazio persuasivo #}
+<div class="bg-white rounded-2xl p-8 text-center border border-gray-100">
+  <div class="text-4xl mb-3" aria-hidden="true">🔄</div>
+  {% if owned_forms|length > 0 %}
+  <p class="text-sm font-bold text-gray-700">Você tem {{ owned_forms|length }} Pokémon na coleção.</p>
+  <p class="text-xs text-gray-400 mt-1">Marque alguns como "para troca" para encontrar matches com outros treinadores!</p>
+  <p class="text-xs text-blue-600 font-semibold mt-3">Na aba <strong>Tenho</strong>, clique em 🔄 em qualquer card.</p>
   {% else %}
-  <div class="bg-white rounded-2xl p-12 text-center border border-gray-100">
-    <div class="text-4xl mb-3">🔄</div>
-    <p class="text-sm text-gray-400">Nenhum Pokémon marcado para troca.</p>
-  </div>
+  <p class="text-sm text-gray-400">Nenhum Pokémon marcado para troca.</p>
   {% endif %}
 </div>
+{% endif %}
+</div>
+
+{# ══════════════════════════════════════════
+   FAB — Catalogar
+══════════════════════════════════════════ #}
+<a href="{{ url_for('collection.catalogar') }}"
+   class="fixed bottom-20 sm:bottom-6 right-4 z-50 w-14 h-14 bg-red-600 hover:bg-red-700 rounded-full shadow-xl flex items-center justify-center text-white text-2xl font-black transition-all hover:scale-110 active:scale-95"
+   title="Catalogar coleção" aria-label="Catalogar coleção">
+  +
+</a>
+
+{# ══════════════════════════════════════════
+   BOTTOM NAV — mobile
+══════════════════════════════════════════ #}
+<nav id="bottom-nav"
+  class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 grid grid-cols-3 sm:hidden">
+  <button onclick="showTab('tenho')" id="bnav-tenho"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-[#1B2A4A] border-t-2 border-[#1B2A4A]">
+    <span aria-hidden="true">✓</span>
+    <span>Tenho <span class="text-green-600">{{ owned_forms|length }}</span></span>
+  </button>
+  <button onclick="showTab('faltantes')" id="bnav-faltantes"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
+    <span aria-hidden="true">✗</span>
+    <span>Faltam <span class="text-amber-500">{{ missing_forms|length }}</span></span>
+  </button>
+  <button onclick="showTab('troca')" id="bnav-troca"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
+    <span aria-hidden="true">🔄</span>
+    <span>Troca <span class="text-blue-600">{{ trade_forms|length }}</span></span>
+  </button>
+</nav>
 
 <script>
-const shareUrl = {{ share_url | tojson }};
-const username = {{ profile_user.username | tojson }};
-const trainerCode = {{ (profile_user.trainer_code or '') | tojson }};
-const ownedCount = {{ owned_forms|length }};
+const shareUrl     = {{ share_url | tojson }};
+const username     = {{ profile_user.username | tojson }};
+const trainerCode  = {{ (profile_user.trainer_code or '') | tojson }};
+const ownedCount   = {{ owned_forms|length }};
 const missingCount = {{ missing_forms|length }};
-const tradeCount = {{ trade_forms|length }};
+const tradeCount   = {{ trade_forms|length }};
 
+// ── Tabs ──
 function showTab(name) {
-  ['tenho', 'faltantes', 'troca'].forEach(t => {
+  ['tenho','faltantes','troca'].forEach(t => {
     document.getElementById('tab-content-' + t).classList.toggle('hidden', t !== name);
+    // desktop tab
     const btn = document.getElementById('tab-' + t);
-    if (t === name) {
-      btn.classList.add('bg-[#1B2A4A]', 'text-white');
-      btn.classList.remove('text-gray-500', 'hover:bg-gray-100');
-    } else {
-      btn.classList.remove('bg-[#1B2A4A]', 'text-white');
-      btn.classList.add('text-gray-500', 'hover:bg-gray-100');
+    if (btn) {
+      btn.classList.toggle('bg-[#1B2A4A]', t === name);
+      btn.classList.toggle('text-white', t === name);
+      btn.classList.toggle('text-gray-500', t !== name);
+      btn.classList.toggle('hover:bg-gray-100', t !== name);
+    }
+    // bottom nav
+    const bnav = document.getElementById('bnav-' + t);
+    if (bnav) {
+      bnav.classList.toggle('text-[#1B2A4A]', t === name);
+      bnav.classList.toggle('border-[#1B2A4A]', t === name);
+      bnav.classList.toggle('text-gray-400', t !== name);
+      bnav.classList.toggle('border-transparent', t !== name);
     }
   });
 }
 
+// ── Busca em tempo real ──
+function filterCards(q) {
+  q = q.toLowerCase().trim();
+  // identify active tab
+  const tabs = ['tenho','faltantes','troca'];
+  const active = tabs.find(t => !document.getElementById('tab-content-' + t).classList.contains('hidden'));
+  const grid = active === 'faltantes' ? document.getElementById('missing-grid')
+             : document.getElementById('tab-content-' + active);
+  if (!grid) return;
+  grid.querySelectorAll('.poke-card').forEach(card => {
+    const name = card.dataset.name || '';
+    const match = !q || name.includes(q);
+    card.style.display = match ? '' : 'none';
+    // For missing cards, also restore opacity/classes if searching
+    if (active === 'faltantes' && match) {
+      card.classList.remove('hidden');
+    }
+  });
+}
+
+// ── Infinite scroll para faltantes ──
+(function() {
+  const sentinel = document.getElementById('missing-sentinel');
+  const loader   = document.getElementById('loading-indicator');
+  if (!sentinel) return;
+  let shown = 30;
+
+  const obs = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return;
+    const cards = document.querySelectorAll('.missing-card');
+    if (shown >= cards.length) { obs.disconnect(); return; }
+    loader.classList.remove('hidden');
+    const next = Math.min(shown + 30, cards.length);
+    for (let i = shown; i < next; i++) {
+      cards[i].classList.remove('hidden');
+    }
+    shown = next;
+    if (shown >= cards.length) {
+      loader.classList.add('hidden');
+      obs.disconnect();
+    } else {
+      loader.classList.add('hidden');
+    }
+  }, { rootMargin: '200px' });
+
+  obs.observe(sentinel);
+})();
+
+// ── Toggle for_trade ──
+async function toggleTrade(formId, qty, btn) {
+  const isTrade = btn.classList.contains('bg-blue-500');
+  const newTrade = !isTrade;
+  try {
+    const fd = new FormData();
+    fd.append('form_id', formId);
+    fd.append('owned', 'true');
+    fd.append('quantity', qty || 1);
+    fd.append('for_trade', newTrade ? 'true' : 'false');
+    const res = await fetch('{{ url_for("collection.upsert") }}', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      btn.classList.toggle('bg-blue-500', data.for_trade);
+      btn.classList.toggle('text-white', data.for_trade);
+      btn.classList.toggle('bg-gray-100', !data.for_trade);
+      btn.classList.toggle('text-gray-400', !data.for_trade);
+      // Update card border
+      const card = btn.closest('.poke-card');
+      if (card) {
+        card.classList.toggle('border-blue-300', data.for_trade);
+        card.classList.toggle('border-gray-100', !data.for_trade);
+      }
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ── Share ──
 function buildWhatsAppText() {
   let msg = `🎮 *Pokémon GO — ${username}*\n\n`;
-  msg += `📊 Coleção: *${ownedCount}* capturados · *${missingCount}* faltantes\n`;
-  if (tradeCount > 0) msg += `🔄 *${tradeCount}* disponíveis para troca\n`;
-  if (trainerCode) msg += `\n📟 Código de treinador: *${trainerCode}*`;
-  msg += `\n\n🔗 Ver coleção completa: ${shareUrl}`;
+  msg += `📊 ${ownedCount} capturados · ${missingCount} faltantes\n`;
+  if (tradeCount > 0) msg += `🔄 ${tradeCount} disponíveis para troca\n`;
+  if (trainerCode) msg += `\n📟 Código: *${trainerCode}*`;
+  msg += `\n\n🔗 ${shareUrl}`;
   return msg;
 }
 
 function shareWhatsApp(e) {
   e.preventDefault();
+  fetch('/api/log', { method: 'POST', body: JSON.stringify({event:'WHATSAPP_CLICK', data:{page:'estoque',username}}) });
   window.open('https://wa.me/?text=' + encodeURIComponent(buildWhatsAppText()), '_blank', 'noopener');
 }
 
 function copyLink() {
+  fetch('/api/log', { method: 'POST', body: JSON.stringify({event:'SHARE_CLICK', data:{page:'estoque',username}}) });
   navigator.clipboard.writeText(shareUrl).then(() => {
-    const label = document.getElementById('btn-copy-label');
-    label.textContent = 'Link copiado!';
-    setTimeout(() => { label.textContent = 'Copiar link'; }, 2000);
+    const btn = document.getElementById('btn-copy');
+    btn.innerHTML = '<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+    setTimeout(() => {
+      btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>';
+    }, 2000);
   });
 }
 </script>

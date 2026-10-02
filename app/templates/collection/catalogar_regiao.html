@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Catalogar — {{ region.name }}{% endblock %}
+
+{% block content %}
+{% set type_grad = {
+  "fire":"from-orange-400 to-red-500","water":"from-blue-400 to-cyan-500",
+  "grass":"from-green-400 to-emerald-500","electric":"from-yellow-300 to-amber-400",
+  "psychic":"from-pink-400 to-fuchsia-500","ice":"from-cyan-300 to-blue-400",
+  "dragon":"from-indigo-500 to-purple-600","dark":"from-gray-600 to-gray-800",
+  "fairy":"from-pink-300 to-rose-400","fighting":"from-red-500 to-orange-600",
+  "flying":"from-sky-300 to-blue-400","poison":"from-purple-400 to-violet-500",
+  "ground":"from-yellow-500 to-amber-600","rock":"from-stone-400 to-stone-600",
+  "bug":"from-lime-400 to-green-500","ghost":"from-violet-500 to-purple-700",
+  "steel":"from-slate-400 to-gray-500","normal":"from-gray-300 to-gray-400"
+} %}
+
+{# ── Cabeçalho ── #}
+<div class="flex items-center gap-3 mb-5">
+  <a href="{{ url_for('collection.index') }}"
+     class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+  <div>
+    <h1 class="text-xl font-black text-gray-900">Catalogar Coleção</h1>
+    <p class="text-xs text-gray-400 mt-0.5">Marque o que falta — o resto será salvo como capturado</p>
+  </div>
+</div>
+
+{# ── Seletor de Região ── #}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+  <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Região</p>
+  <div class="flex flex-wrap gap-2">
+    {% for r in regions %}
+    <a href="{{ url_for('collection.catalogar', regiao=r.name) }}"
+       class="px-3 py-1.5 rounded-full text-sm font-bold transition-colors
+         {% if r.name == region.name %}bg-[#1B2A4A] text-white
+         {% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+      {{ r.name }} <span class="opacity-60 font-normal">{{ r.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Toggle modo ── #}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+  <div class="flex gap-3">
+    <button id="btn-modo-falta" onclick="setModo('falta')"
+      class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors bg-red-500 text-white">
+      <span>✗</span> Marcar o que FALTA
+    </button>
+    <button id="btn-modo-tenho" onclick="setModo('tenho')"
+      class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors bg-gray-100 text-gray-500 hover:bg-gray-200">
+      <span>✓</span> Marcar o que TENHO
+    </button>
+  </div>
+  <p id="modo-desc" class="text-xs text-gray-500 text-center mt-2">
+    Marcando o que <strong>FALTA</strong>. O resto será salvo como TENHO.
+  </p>
+</div>
+
+{# ── Busca rápida ── #}
+<div class="mb-3">
+  <input id="search-input" type="search" placeholder="Filtrar por nome ou #número..."
+    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent"
+    oninput="filterCards(this.value)" />
+</div>
+
+{# ── Stats da região ── #}
+<div class="flex items-center justify-between mb-3 px-1">
+  <span class="text-xs text-gray-500">
+    <span id="count-selected" class="font-black text-red-500">0</span> marcados
+    · <span class="text-green-600 font-bold">{{ owned_set|length }}</span> já capturados
+    · {{ rows|length }} total
+  </span>
+  <button onclick="selectAll()" class="text-xs text-[#1B2A4A] font-bold hover:underline">Selecionar todos</button>
+</div>
+
+{# ── Grid de cards ── #}
+<div id="poke-grid"
+  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 mb-32">
+  {% for form, species in rows %}
+  {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
+  {% set pname = (species.name_pt or species.name) | poke_name %}
+  {% set is_owned = form.id in owned_set %}
+  <button type="button"
+    data-form-id="{{ form.id }}"
+    data-name="{{ pname.lower() }} {{ '%03d' % species.id }}"
+    onclick="toggleCard(this)"
+    class="poke-card relative bg-white rounded-xl border-2 overflow-hidden transition-all
+      {{ 'border-green-400' if is_owned else 'border-gray-100' }}
+      hover:scale-[1.05] active:scale-95">
+    <div class="bg-gradient-to-br {{ grad }} p-1.5 flex items-center justify-center min-h-[52px]">
+      {% if form.sprite_url %}
+      <img src="{{ form.sprite_url }}" alt="{{ pname }}"
+        class="w-10 h-10 object-contain drop-shadow" loading="lazy"
+        onerror="this.style.display='none'" />
+      {% else %}
+      <span class="text-white/50 text-xs">?</span>
+      {% endif %}
+    </div>
+    <div class="p-1 text-center">
+      <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % species.id }}</div>
+      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
+    </div>
+    {# Badge de seleção #}
+    <div class="sel-badge absolute top-0.5 right-0.5 w-4 h-4 rounded-full hidden items-center justify-center text-white text-[8px] font-black"></div>
+    {# Badge já capturado #}
+    {% if is_owned %}
+    <div class="owned-badge absolute top-0.5 left-0.5 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+      <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    {% endif %}
+  </button>
+  {% endfor %}
+</div>
+
+{# ── Barra flutuante de confirmação ── #}
+<div id="confirm-bar"
+  class="fixed bottom-16 sm:bottom-4 left-4 right-4 z-50 bg-[#1B2A4A] text-white rounded-2xl shadow-xl px-4 py-3 hidden">
+  <div class="flex items-center justify-between gap-3">
+    <p id="confirm-text" class="text-sm font-semibold leading-tight"></p>
+    <div class="flex gap-2 flex-shrink-0">
+      <button onclick="clearSelection()"
+        class="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white transition-colors">
+        Limpar
+      </button>
+      <button onclick="confirmar()"
+        class="px-4 py-1.5 text-xs font-black bg-white text-[#1B2A4A] rounded-lg hover:bg-gray-100 transition-colors">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const REGION_START = {{ region.start }};
+const REGION_END   = {{ region.end }};
+const REGION_TOTAL = {{ rows|length }};
+const OWNED_INIT   = new Set({{ owned_set | list | tojson }});
+
+let modo = 'falta';
+const selected = new Set();
+
+function setModo(m) {
+  modo = m;
+  const isFalta = m === 'falta';
+  document.getElementById('btn-modo-falta').className =
+    'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ' +
+    (isFalta ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200');
+  document.getElementById('btn-modo-tenho').className =
+    'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ' +
+    (!isFalta ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200');
+  document.getElementById('modo-desc').innerHTML = isFalta
+    ? 'Marcando o que <strong>FALTA</strong>. O resto será salvo como TENHO.'
+    : 'Marcando o que <strong>TENHO</strong>. Apenas esses serão salvos.';
+  clearSelection();
+  // Recolor existing cards visual
+  updateAllBadges();
+}
+
+function updateAllBadges() {
+  document.querySelectorAll('.poke-card').forEach(card => {
+    const fid = parseInt(card.dataset.formId);
+    const isSel = selected.has(fid);
+    applyCardState(card, isSel);
+  });
+}
+
+function applyCardState(card, isSel) {
+  const badge = card.querySelector('.sel-badge');
+  if (isSel) {
+    const isRed = modo === 'falta';
+    card.classList.remove('border-gray-100','border-green-400','border-red-400');
+    card.classList.add(isRed ? 'border-red-400' : 'border-green-400', 'ring-2',
+      isRed ? 'ring-red-400' : 'ring-green-400');
+    badge.classList.remove('hidden');
+    badge.classList.add('flex');
+    badge.style.background = isRed ? '#ef4444' : '#22c55e';
+    badge.textContent = isRed ? '✗' : '✓';
+  } else {
+    card.classList.remove('border-red-400','border-green-400','ring-2','ring-red-400','ring-green-400');
+    card.classList.add('border-gray-100');
+    badge.classList.add('hidden');
+    badge.classList.remove('flex');
+  }
+}
+
+function toggleCard(card) {
+  const fid = parseInt(card.dataset.formId);
+  if (selected.has(fid)) {
+    selected.delete(fid);
+    applyCardState(card, false);
+  } else {
+    selected.add(fid);
+    applyCardState(card, true);
+  }
+  updateBar();
+}
+
+function updateBar() {
+  const bar = document.getElementById('confirm-bar');
+  const n = selected.size;
+  document.getElementById('count-selected').textContent = n;
+  if (n === 0) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  const isFalta = modo === 'falta';
+  const outra = REGION_TOTAL - n;
+  document.getElementById('confirm-text').textContent = isFalta
+    ? `Marcou ${n} como FALTANTE. Vamos salvar os outros ${outra} de ${document.title.split('—')[1]?.trim() || ''} como TENHO.`
+    : `Marcou ${n} como TENHO. Os outros ${outra} serão ignorados.`;
+}
+
+function clearSelection() {
+  selected.clear();
+  updateAllBadges();
+  updateBar();
+}
+
+function selectAll() {
+  document.querySelectorAll('.poke-card:not([style*="display: none"])').forEach(card => {
+    const fid = parseInt(card.dataset.formId);
+    selected.add(fid);
+    applyCardState(card, true);
+  });
+  updateBar();
+}
+
+function filterCards(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.poke-card').forEach(card => {
+    const match = card.dataset.name.includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+}
+
+async function confirmar() {
+  const btn = document.querySelector('#confirm-bar button:last-child');
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+  try {
+    const res = await fetch('{{ url_for("collection.regiao") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        start: REGION_START,
+        end: REGION_END,
+        modo: modo,
+        ids: [...selected],
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✓ Salvo!';
+      btn.className = btn.className.replace('bg-white text-[#1B2A4A]', 'bg-green-500 text-white');
+      setTimeout(() => window.location.reload(), 800);
+    }
+  } catch(e) {
+    btn.textContent = 'Erro';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

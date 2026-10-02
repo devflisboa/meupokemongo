@@ -4,6 +4,20 @@ from . import bp
 from ...extensions import db
 from ...models.collection import UserCollection
 from ...models.pokemon import Form, Species
+from ...services.analytics_service import log_event
+
+REGIONS = [
+    {"name": "Kanto",  "start": 1,   "end": 151,  "count": 151},
+    {"name": "Johto",  "start": 152,  "end": 251,  "count": 100},
+    {"name": "Hoenn",  "start": 252,  "end": 386,  "count": 135},
+    {"name": "Sinnoh", "start": 387,  "end": 493,  "count": 107},
+    {"name": "Unova",  "start": 494,  "end": 649,  "count": 156},
+    {"name": "Kalos",  "start": 650,  "end": 721,  "count": 72},
+    {"name": "Alola",  "start": 722,  "end": 809,  "count": 86},
+    {"name": "Galar",  "start": 810,  "end": 898,  "count": 89},
+    {"name": "Hisui",  "start": 899,  "end": 905,  "count": 6},
+    {"name": "Paldea", "start": 906,  "end": 1025, "count": 120},
+]
 
 
 @bp.route("/")
@@ -84,6 +98,102 @@ def index():
         total_owned=total_owned,
         total_species=total_species,
     )
+
+
+@bp.route("/catalogar")
+@login_required
+def catalogar():
+    regiao_name = request.args.get("regiao", "Kanto")
+    region = next((r for r in REGIONS if r["name"] == regiao_name), REGIONS[0])
+
+    rows = (
+        db.session.query(Form, Species)
+        .join(Species, Species.id == Form.species_id)
+        .filter(
+            Form.form_name == "normal",
+            Species.id >= region["start"],
+            Species.id <= region["end"],
+        )
+        .order_by(Species.id)
+        .all()
+    )
+
+    form_ids = [f.id for f, s in rows]
+    owned_set: set[int] = set()
+    if form_ids:
+        owned_set = {
+            uc.form_id
+            for uc in db.session.query(UserCollection).filter(
+                UserCollection.user_id == current_user.id,
+                UserCollection.form_id.in_(form_ids),
+                UserCollection.owned.is_(True),
+                UserCollection.quantity > 0,
+            ).all()
+        }
+
+    return render_template(
+        "collection/catalogar_regiao.html",
+        rows=rows,
+        owned_set=owned_set,
+        region=region,
+        regions=REGIONS,
+    )
+
+
+@bp.route("/regiao", methods=["POST"])
+@login_required
+def regiao():
+    data = request.get_json(force=True) or {}
+    start = int(data.get("start", 0))
+    end = int(data.get("end", 0))
+    modo = data.get("modo", "falta")
+    ids_marcados = set(int(i) for i in data.get("ids", []))
+
+    all_form_ids = [
+        row[0]
+        for row in db.session.query(Form.id)
+        .join(Species, Species.id == Form.species_id)
+        .filter(
+            Form.form_name == "normal",
+            Species.id >= start,
+            Species.id <= end,
+        )
+        .all()
+    ]
+
+    if modo == "falta":
+        ids_owned = set(all_form_ids) - ids_marcados
+        ids_missing = ids_marcados
+    else:
+        ids_owned = ids_marcados
+        ids_missing = set(all_form_ids) - ids_marcados
+
+    existing: dict[int, UserCollection] = {
+        uc.form_id: uc
+        for uc in db.session.query(UserCollection).filter(
+            UserCollection.user_id == current_user.id,
+            UserCollection.form_id.in_(all_form_ids),
+        ).all()
+    }
+
+    for fid in ids_owned:
+        uc = existing.get(fid)
+        if not uc:
+            uc = UserCollection(user_id=current_user.id, form_id=fid)
+            db.session.add(uc)
+        uc.owned = True
+        uc.quantity = max(getattr(uc, "quantity", 0) or 0, 1)
+
+    for fid in ids_missing:
+        uc = existing.get(fid)
+        if uc:
+            uc.owned = False
+            uc.quantity = 0
+            uc.for_trade = False
+
+    db.session.commit()
+    log_event("REGIAO_CATALOGAR", {"modo": modo, "start": start, "end": end, "count_owned": len(ids_owned)})
+    return jsonify({"ok": True, "owned": len(ids_owned), "missing": len(ids_missing)})
 
 
 @bp.route("/upsert", methods=["POST"])

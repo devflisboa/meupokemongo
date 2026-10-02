@@ -47,6 +47,9 @@ def create_app(env: str | None = None) -> Flask:
     def poke_name_filter(name: str) -> str:
         if not name:
             return ""
+        # Strip "-normal" suffix stored by PokeAPI form slugs
+        if name.lower().endswith("-normal"):
+            name = name[:-7]
         return name.replace("-", " ").title()
 
     @app.context_processor

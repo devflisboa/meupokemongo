@@ -1,7 +1,8 @@
 from datetime import date
-from flask import render_template, abort, request
+from flask import render_template, abort, request, jsonify
 from flask_login import current_user
 from . import bp
+from ...extensions import csrf
 from ...services.collection_service import get_collection_stats, get_missing_pokemon, get_pending_evolutions
 from ...services.matching_service import get_active_matches_for_user
 from ...services.analytics_service import log_event
@@ -107,6 +108,16 @@ def index():
         game_events=GAME_EVENTS,
         events_page_url=events_page_url,
     )
+
+
+@bp.route("/api/log", methods=["POST"])
+@csrf.exempt
+def api_log():
+    data = request.get_json(force=True) or {}
+    event = str(data.get("event", ""))[:64]
+    if event:
+        log_event(event, data.get("data", {}))
+    return jsonify({"ok": True})
 
 
 @bp.route("/estoque/<username>")
