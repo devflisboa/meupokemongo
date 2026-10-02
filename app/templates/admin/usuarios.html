@@ -24,6 +24,7 @@
           <th class="px-5 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Admin</th>
           <th class="px-5 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Visibilidade</th>
           <th class="px-5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Cadastro</th>
+          <th class="px-5 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wide">Ações</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
@@ -31,8 +32,12 @@
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="px-5 py-3">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white {{ 'bg-amber-500' if u.is_admin else 'bg-[#1B2A4A]' }}">
-                {{ u.username[0].upper() }}
+              <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 {{ 'bg-amber-500' if u.is_admin else 'bg-[#1B2A4A]' }} flex items-center justify-center">
+                {% if u.avatar %}
+                <img src="{{ url_for('auth.avatar', user_id=u.id) }}" class="w-full h-full object-cover" />
+                {% else %}
+                <span class="font-bold text-xs text-white">{{ u.username[0].upper() }}</span>
+                {% endif %}
               </div>
               <div>
                 <div class="font-semibold text-gray-800">{{ u.username }}</div>
@@ -58,6 +63,18 @@
             {% endif %}
           </td>
           <td class="px-5 py-3 text-right text-xs text-gray-400">{{ u.created_at.strftime('%d/%m/%Y') }}</td>
+          <td class="px-5 py-3 text-right">
+            <a href="{{ url_for('main.estoque', username=u.username) }}"
+              class="inline-flex items-center gap-1 text-xs font-bold text-[#1B2A4A] hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+              Ver estoque
+            </a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

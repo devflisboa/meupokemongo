@@ -13,6 +13,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     trainer_code = db.Column(db.String(20), nullable=True)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    avatar = db.Column(db.LargeBinary, nullable=True)
+    avatar_mime = db.Column(db.String(30), nullable=True)
     # public = coleção visível a todos; friends = só amigos; private = só o dono
     visibility = db.Column(db.Enum("public", "friends", "private"), default="public", nullable=False)
     created_at = db.Column(db.DateTime, default=now_br, nullable=False)

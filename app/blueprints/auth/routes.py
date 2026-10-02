@@ -1,4 +1,5 @@
-from flask import render_template, redirect, url_for, flash, request, abort
+from io import BytesIO
+from flask import render_template, redirect, url_for, flash, request, abort, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from . import bp
 from ...extensions import db
@@ -86,6 +87,37 @@ def perfil():
             db.session.commit()
             flash("Senha alterada com sucesso!", "success")
 
+        elif action == "avatar":
+            file = request.files.get("avatar")
+            if not file or not file.filename:
+                flash("Nenhum arquivo selecionado.", "warning")
+                return redirect(url_for("auth.perfil"))
+            allowed = {"image/jpeg", "image/png", "image/webp"}
+            mime = file.content_type or ""
+            if mime not in allowed:
+                flash("Formato inválido. Use JPEG, PNG ou WebP.", "warning")
+                return redirect(url_for("auth.perfil"))
+            raw = file.read()
+            if len(raw) > 2 * 1024 * 1024:
+                flash("Imagem muito grande. Máximo 2 MB.", "warning")
+                return redirect(url_for("auth.perfil"))
+            try:
+                from PIL import Image
+                img = Image.open(BytesIO(raw)).convert("RGB")
+                w, h = img.size
+                side = min(w, h)
+                img = img.crop(((w - side) // 2, (h - side) // 2,
+                                (w + side) // 2, (h + side) // 2))
+                img = img.resize((200, 200), Image.LANCZOS)
+                buf = BytesIO()
+                img.save(buf, format="JPEG", quality=85)
+                current_user.avatar = buf.getvalue()
+                current_user.avatar_mime = "image/jpeg"
+                db.session.commit()
+                flash("Foto de perfil atualizada!", "success")
+            except Exception:
+                flash("Erro ao processar a imagem.", "danger")
+
         return redirect(url_for("auth.perfil"))
 
     stats = get_collection_stats(current_user.id)
@@ -159,6 +191,17 @@ def perfil_publico(username: str):
         sample_owned=sample_owned,
         trade_forms=trade_forms,
     )
+
+
+@bp.route("/avatar/<int:user_id>")
+def avatar(user_id: int):
+    user = db.session.get(User, user_id)
+    if not user or not user.avatar:
+        abort(404)
+    resp = make_response(user.avatar)
+    resp.headers["Content-Type"] = user.avatar_mime or "image/jpeg"
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 @bp.route("/logout")

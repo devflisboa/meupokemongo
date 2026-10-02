@@ -10,6 +10,29 @@
 {% endblock %}
 
 {% block content %}
+{# ── Overlay de admin — só aparece quando admin visualiza outro usuário ── #}
+{% if current_user.is_authenticated and current_user.is_admin and current_user.id != profile_user.id %}
+<div class="bg-[#1B2A4A] text-white rounded-xl p-3 mb-4 flex items-center gap-3 flex-wrap">
+  <div class="flex items-center gap-2 flex-shrink-0">
+    <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+    </svg>
+    <span class="text-xs font-bold text-yellow-300">Admin — visualizando somente leitura</span>
+  </div>
+  <select onchange="location.href='/estoque/'+this.value"
+    class="ml-auto bg-[#243660] text-white text-xs rounded-lg px-2 py-1.5 border border-[#2d4270] focus:outline-none cursor-pointer">
+    {% for u in all_users %}
+    <option value="{{ u.username }}" {% if u.id == profile_user.id %}selected{% endif %}>
+      {{ u.username }}{% if u.is_admin %} ★{% endif %}
+    </option>
+    {% endfor %}
+  </select>
+</div>
+{% endif %}
+
 {% set type_grad = {
   "fire":"from-orange-400 to-red-500","water":"from-blue-400 to-cyan-500",
   "grass":"from-green-400 to-emerald-500","electric":"from-yellow-300 to-amber-400",
@@ -36,8 +59,13 @@
 {# ── Cabeçalho compacto ── #}
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
   <div class="flex items-center gap-3">
-    <div class="w-12 h-12 rounded-full bg-[#1B2A4A] flex items-center justify-center text-lg font-black text-white flex-shrink-0 select-none">
-      {{ profile_user.username[0].upper() }}
+    <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-[#1B2A4A] flex items-center justify-center">
+      {% if profile_user.avatar %}
+      <img src="{{ url_for('auth.avatar', user_id=profile_user.id) }}"
+        class="w-full h-full object-cover" alt="{{ profile_user.username }}" />
+      {% else %}
+      <span class="text-lg font-black text-white select-none">{{ profile_user.username[0].upper() }}</span>
+      {% endif %}
     </div>
     <div class="flex-1 min-w-0">
       <h1 class="text-base font-black text-gray-900 truncate">{{ profile_user.username }}</h1>

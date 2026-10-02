@@ -151,6 +151,10 @@ def estoque(username: str):
     stats = get_collection_stats(profile_user.id)
     share_url = request.url.split("?")[0]
 
+    all_users = []
+    if current_user.is_authenticated and current_user.is_admin:
+        all_users = db.session.query(User).order_by(User.username).all()
+
     return render_template(
         "main/estoque.html",
         profile_user=profile_user,
@@ -161,4 +165,5 @@ def estoque(username: str):
         collection_map=collection_map,
         stats=stats,
         share_url=share_url,
+        all_users=all_users,
     )

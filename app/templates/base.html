@@ -134,9 +134,16 @@
           </button>
           <!-- Avatar / Auth -->
           {% if current_user.is_authenticated %}
-          <div class="w-8 h-8 rounded-full bg-[#243660] border-2 border-gray-500 flex items-center justify-center text-sm font-bold text-white select-none">
-            {{ current_user.username[0].upper() }}
-          </div>
+          <a href="{{ url_for('auth.perfil') }}" class="flex-shrink-0">
+            {% if current_user.avatar %}
+            <img src="{{ url_for('auth.avatar', user_id=current_user.id) }}"
+              class="w-8 h-8 rounded-full object-cover border-2 border-gray-500" alt="Avatar" />
+            {% else %}
+            <div class="w-8 h-8 rounded-full bg-[#243660] border-2 border-gray-500 flex items-center justify-center text-sm font-bold text-white select-none">
+              {{ current_user.username[0].upper() }}
+            </div>
+            {% endif %}
+          </a>
           <a href="{{ url_for('auth.logout') }}" class="text-xs text-gray-400 hover:text-white ml-1 font-bold">Sair</a>
           {% else %}
           <a href="{{ url_for('auth.login') }}"
