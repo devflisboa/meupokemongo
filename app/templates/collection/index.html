@@ -73,9 +73,9 @@
   <!-- Geração -->
   <select name="generation" onchange="this.form.submit()"
     class="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none">
-    <option value="">Todas as gerações</option>
-    {% for g in range(1, 10) %}
-    <option value="{{ g }}" {{ 'selected' if generation == g }}>Geração {{ g }}</option>
+    <option value="">Todas as regiões</option>
+    {% for g, region in [(1,'Kanto'),(2,'Johto'),(3,'Hoenn'),(4,'Sinnoh'),(5,'Unova'),(6,'Kalos'),(7,'Alola'),(8,'Galar'),(9,'Paldea')] %}
+    <option value="{{ g }}" {{ 'selected' if generation == g }}>Gen {{ g }} — {{ region }}</option>
     {% endfor %}
   </select>
 </form>
