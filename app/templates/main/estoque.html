@@ -118,10 +118,12 @@
   {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
   {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
   {% set is_trade = collection_map[form.id].for_trade if form.id in collection_map else false %}
+  {% set is_shiny = collection_map[form.id].has_shiny if form.id in collection_map else false %}
   <div class="poke-card relative bg-white rounded-xl shadow-sm border overflow-hidden
-    {{ 'border-blue-300' if is_trade else 'border-gray-100' }}
+    {% if is_shiny %}border-yellow-400{% elif is_trade %}border-blue-300{% else %}border-gray-100{% endif %}
     hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
-    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}"
+    data-qty="{{ qty }}">
     <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
       <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
         {% if form.sprite_url %}
@@ -140,13 +142,24 @@
         {% endif %}
       </div>
     </a>
+    {# Botão shiny — canto superior direito, só para o dono #}
+    {% if current_user.is_authenticated and current_user.id == profile_user.id %}
+    <button onclick="toggleShiny({{ form.id }}, this)"
+      class="shiny-btn absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-[10px] transition-colors
+        {{ 'bg-yellow-400 text-white shadow' if is_shiny else 'bg-white/70 text-gray-300 hover:bg-yellow-100' }}"
+      title="{{ 'Shiny! ⭐' if is_shiny else 'Tenho shiny' }}"
+      aria-label="{{ 'Remover shiny' if is_shiny else 'Marcar como shiny' }}">⭐</button>
+    {% elif is_shiny %}
+    <span class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-yellow-400 text-white shadow text-[10px]" title="Shiny!">⭐</span>
+    {% endif %}
+    {# Botão troca — canto inferior direito #}
+    {% if current_user.is_authenticated and current_user.id == profile_user.id %}
     <button onclick="toggleTrade({{ form.id }}, {{ qty }}, this)"
       class="trade-btn absolute bottom-1.5 right-1 w-7 h-7 flex items-center justify-center rounded-full text-[11px] transition-colors
         {{ 'bg-blue-500 text-white' if is_trade else 'bg-gray-100 text-gray-400 hover:bg-blue-100' }}"
       title="{{ 'Para troca' if is_trade else 'Marcar para troca' }}"
-      aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">
-      🔄
-    </button>
+      aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">🔄</button>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -360,16 +373,55 @@ function filterCards(q) {
   obs.observe(sentinel);
 })();
 
+// ── Helpers de borda e estado ──
+function updateCardBorder(card) {
+  const isShiny = card.querySelector('.shiny-btn')?.classList.contains('bg-yellow-400') ?? false;
+  const isTrade = card.querySelector('.trade-btn')?.classList.contains('bg-blue-500') ?? false;
+  card.classList.toggle('border-yellow-400', isShiny);
+  card.classList.toggle('border-blue-300', !isShiny && isTrade);
+  card.classList.toggle('border-gray-100', !isShiny && !isTrade);
+}
+
+// ── Toggle shiny ──
+async function toggleShiny(formId, btn) {
+  const card = btn.closest('.poke-card');
+  const newShiny = !btn.classList.contains('bg-yellow-400');
+  const isTrade = card.querySelector('.trade-btn')?.classList.contains('bg-blue-500') ?? false;
+  const qty = parseInt(card.dataset.qty) || 1;
+  try {
+    const fd = new FormData();
+    fd.append('form_id', formId);
+    fd.append('owned', 'true');
+    fd.append('quantity', qty);
+    fd.append('for_trade', isTrade ? 'true' : 'false');
+    fd.append('has_shiny', newShiny ? 'true' : 'false');
+    fd.append('shiny_qty', newShiny ? 1 : 0);
+    const res = await fetch('{{ url_for("collection.upsert") }}', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      btn.classList.toggle('bg-yellow-400', data.has_shiny);
+      btn.classList.toggle('text-white', data.has_shiny);
+      btn.classList.toggle('shadow', data.has_shiny);
+      btn.classList.toggle('bg-white/70', !data.has_shiny);
+      btn.classList.toggle('text-gray-300', !data.has_shiny);
+      updateCardBorder(card);
+    }
+  } catch(e) { console.error(e); }
+}
+
 // ── Toggle for_trade ──
 async function toggleTrade(formId, qty, btn) {
-  const isTrade = btn.classList.contains('bg-blue-500');
-  const newTrade = !isTrade;
+  const card = btn.closest('.poke-card');
+  const newTrade = !btn.classList.contains('bg-blue-500');
+  const isShiny = card.querySelector('.shiny-btn')?.classList.contains('bg-yellow-400') ?? false;
   try {
     const fd = new FormData();
     fd.append('form_id', formId);
     fd.append('owned', 'true');
     fd.append('quantity', qty || 1);
     fd.append('for_trade', newTrade ? 'true' : 'false');
+    fd.append('has_shiny', isShiny ? 'true' : 'false');
+    fd.append('shiny_qty', isShiny ? 1 : 0);
     const res = await fetch('{{ url_for("collection.upsert") }}', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.ok) {
@@ -377,12 +429,7 @@ async function toggleTrade(formId, qty, btn) {
       btn.classList.toggle('text-white', data.for_trade);
       btn.classList.toggle('bg-gray-100', !data.for_trade);
       btn.classList.toggle('text-gray-400', !data.for_trade);
-      // Update card border
-      const card = btn.closest('.poke-card');
-      if (card) {
-        card.classList.toggle('border-blue-300', data.for_trade);
-        card.classList.toggle('border-gray-100', !data.for_trade);
-      }
+      updateCardBorder(card);
     }
   } catch(e) { console.error(e); }
 }

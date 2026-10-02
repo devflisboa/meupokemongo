@@ -203,6 +203,8 @@ def upsert():
     owned = request.form.get("owned") == "true"
     quantity = max(0, request.form.get("quantity", 0, type=int))
     for_trade = request.form.get("for_trade") == "true"
+    has_shiny = request.form.get("has_shiny") == "true"
+    shiny_qty = max(0, request.form.get("shiny_qty", 0, type=int))
     notes = request.form.get("notes", "")
 
     form = db.session.get(Form, form_id)
@@ -220,6 +222,15 @@ def upsert():
     entry.quantity = quantity
     entry.notes = notes
     entry.for_trade = for_trade if (owned and quantity > 0) else False
+    entry.has_shiny = has_shiny if owned else False
+    entry.shiny_qty = shiny_qty if has_shiny else 0
 
     db.session.commit()
-    return jsonify({"ok": True, "owned": entry.owned, "quantity": entry.quantity, "for_trade": entry.for_trade})
+    return jsonify({
+        "ok": True,
+        "owned": entry.owned,
+        "quantity": entry.quantity,
+        "for_trade": entry.for_trade,
+        "has_shiny": entry.has_shiny,
+        "shiny_qty": entry.shiny_qty,
+    })

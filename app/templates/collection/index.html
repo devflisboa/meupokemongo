@@ -91,14 +91,17 @@
   {% set owned = entry and entry.owned and entry.quantity > 0 %}
   {% set qty = entry.quantity if entry else 0 %}
   {% set for_trade = entry.for_trade if entry else false %}
+  {% set has_shiny = entry.has_shiny if entry else false %}
   {% set form_id = form.id if form else 0 %}
   {% set grad = type_grad.get(form.type1 if form else '', 'from-gray-300 to-gray-400') %}
 
-  <div class="poke-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group"
+  <div class="poke-card bg-white rounded-2xl shadow-sm border overflow-hidden group
+    {% if has_shiny %}border-yellow-400{% elif for_trade %}border-blue-200{% else %}border-gray-100{% endif %}"
     data-form-id="{{ form_id }}"
     data-owned="{{ 'true' if owned else 'false' }}"
     data-qty="{{ qty }}"
-    data-trade="{{ 'true' if for_trade else 'false' }}">
+    data-trade="{{ 'true' if for_trade else 'false' }}"
+    data-shiny="{{ 'true' if has_shiny else 'false' }}">
 
     <!-- Sprite area -->
     <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-2 pb-1 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:72px">
@@ -171,6 +174,11 @@
             class="trade-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-blue-100 text-blue-700' if for_trade else 'bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-500' }}">
             {{ '🔄 Para troca' if for_trade else 'Troca?' }}
+          </button>
+          <button onclick="toggleShiny(this)"
+            class="shiny-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
+              {{ 'bg-yellow-100 text-yellow-700' if has_shiny else 'bg-gray-50 text-gray-400 hover:bg-yellow-50 hover:text-yellow-500' }}">
+            {{ '⭐ Tenho Shiny!' if has_shiny else '⭐ Shiny?' }}
           </button>
         </div>
       </div>
@@ -246,10 +254,16 @@ function adjustQty(btn, delta) {
 function toggleTrade(btn) {
   const card = getCard(btn);
   const forTrade = card.dataset.trade !== 'true';
-  save(card, true, parseInt(card.dataset.qty) || 1, forTrade);
+  save(card, true, parseInt(card.dataset.qty) || 1, forTrade, card.dataset.shiny === 'true');
 }
 
-function save(card, owned, qty, forTrade) {
+function toggleShiny(btn) {
+  const card = getCard(btn);
+  const hasShiny = card.dataset.shiny !== 'true';
+  save(card, true, parseInt(card.dataset.qty) || 1, card.dataset.trade === 'true', hasShiny);
+}
+
+function save(card, owned, qty, forTrade, hasShiny) {
   const formId = card.dataset.formId;
   if (!formId || formId === '0') return;
 
@@ -258,6 +272,8 @@ function save(card, owned, qty, forTrade) {
   fd.append('owned', owned ? 'true' : 'false');
   fd.append('quantity', qty);
   fd.append('for_trade', forTrade ? 'true' : 'false');
+  fd.append('has_shiny', hasShiny ? 'true' : 'false');
+  fd.append('shiny_qty', hasShiny ? 1 : 0);
 
   fetch('/collection/upsert', {method: 'POST', body: fd})
     .then(r => r.json())
@@ -267,17 +283,19 @@ function save(card, owned, qty, forTrade) {
       card.dataset.owned = data.owned ? 'true' : 'false';
       card.dataset.qty = data.quantity;
       card.dataset.trade = data.for_trade ? 'true' : 'false';
+      card.dataset.shiny = data.has_shiny ? 'true' : 'false';
 
-      updateCardUI(card, data.owned, data.quantity, data.for_trade);
+      updateCardUI(card, data.owned, data.quantity, data.for_trade, data.has_shiny);
     });
 }
 
-function updateCardUI(card, owned, qty, forTrade) {
+function updateCardUI(card, owned, qty, forTrade, hasShiny) {
   const spriteArea = getSpriteArea(card);
   const capBtn = card.querySelector('.capture-btn');
   const ownedControls = card.querySelector('.owned-controls');
   const qtyDisplay = card.querySelector('.qty-display');
   const tradeBtn = card.querySelector('.trade-btn');
+  const shinyBtn = card.querySelector('.shiny-btn');
   const ownedBadge = card.querySelector('.owned-badge');
 
   if (spriteArea) {
@@ -320,6 +338,23 @@ function updateCardUI(card, owned, qty, forTrade) {
     ownedBadge.classList.toggle('hidden', !owned);
     ownedBadge.classList.toggle('flex', owned);
   }
+
+  if (shinyBtn) {
+    if (hasShiny) {
+      shinyBtn.textContent = '⭐ Tenho Shiny!';
+      shinyBtn.className = shinyBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      shinyBtn.classList.add('bg-yellow-100', 'text-yellow-700');
+    } else {
+      shinyBtn.textContent = '⭐ Shiny?';
+      shinyBtn.className = shinyBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
+      shinyBtn.classList.add('bg-gray-50', 'text-gray-400', 'hover:bg-yellow-50', 'hover:text-yellow-500');
+    }
+  }
+
+  // Borda do card: shiny (amarela) > troca (azul) > padrão
+  card.classList.toggle('border-yellow-400', !!hasShiny);
+  card.classList.toggle('border-blue-200', !hasShiny && !!forTrade);
+  card.classList.toggle('border-gray-100', !hasShiny && !forTrade);
 }
 </script>
 {% endblock %}
