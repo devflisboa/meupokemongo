@@ -122,6 +122,7 @@
   <div class="poke-card relative bg-white rounded-xl shadow-sm border overflow-hidden
     {% if is_shiny %}border-yellow-400{% elif is_trade %}border-blue-300{% else %}border-gray-100{% endif %}
     hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+    data-poke-id="{{ form.species_id }}"
     data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}"
     data-qty="{{ qty }}">
     <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
@@ -195,6 +196,7 @@
     class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
       hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
       {{ 'hidden' if loop.index0 >= 30 }}"
+    data-poke-id="{{ form.species_id }}"
     data-idx="{{ loop.index0 }}"
     data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
     {# Badge lendário / mítico — canto superior esquerdo #}
@@ -245,7 +247,7 @@
   {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden
     hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all relative
-    poke-card" data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    poke-card" data-poke-id="{{ form.species_id }}" data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
     {# Badge lendário / mítico — canto superior esquerdo #}
     {% if form.species.is_mythical %}
     <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>

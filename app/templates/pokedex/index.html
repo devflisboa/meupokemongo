@@ -138,6 +138,7 @@
   {% set owned = form and form.id in owned_form_ids %}
 
   <a href="{{ url_for('pokedex.detail', species_id=species.id) }}"
+     data-poke-id="{{ species.id }}"
      class="rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group bg-white block">
     <div class="bg-gradient-to-b {{ bg }} h-24 flex items-center justify-center relative">
       {% if form and form.sprite_url %}

@@ -97,6 +97,7 @@
 
   <div class="poke-card bg-white rounded-2xl shadow-sm border overflow-hidden group
     {% if has_shiny %}border-yellow-400{% elif for_trade %}border-blue-200{% else %}border-gray-100{% endif %}"
+    data-poke-id="{{ species.id }}"
     data-form-id="{{ form_id }}"
     data-owned="{{ 'true' if owned else 'false' }}"
     data-qty="{{ qty }}"

@@ -1,4 +1,4 @@
-from flask import render_template, request, abort
+from flask import render_template, request, abort, jsonify
 from flask_login import current_user
 from . import bp
 from ...extensions import db
@@ -13,6 +13,80 @@ TYPES = [
     "fire", "flying", "ghost", "grass", "ground", "ice",
     "normal", "poison", "psychic", "rock", "steel", "water",
 ]
+
+
+@bp.route("/api/<int:species_id>")
+def api_detail(species_id: int):
+    species = db.session.get(Species, species_id)
+    if not species:
+        abort(404)
+
+    default_form = (
+        db.session.query(Form)
+        .filter_by(species_id=species_id, form_name="normal")
+        .first()
+        or db.session.query(Form).filter_by(species_id=species_id).first()
+    )
+
+    form_ids = [
+        row[0]
+        for row in db.session.query(Form.id).filter_by(species_id=species_id).all()
+    ]
+    evolutions = (
+        db.session.query(EvolutionChain)
+        .filter(
+            db.or_(
+                EvolutionChain.from_form_id.in_(form_ids),
+                EvolutionChain.to_form_id.in_(form_ids),
+            )
+        )
+        .all()
+        if form_ids
+        else []
+    )
+
+    collection_data = None
+    if current_user.is_authenticated and default_form:
+        entry = db.session.query(UserCollection).filter_by(
+            user_id=current_user.id, form_id=default_form.id
+        ).first()
+        collection_data = {
+            "form_id": default_form.id,
+            "owned": entry.owned if entry else False,
+            "quantity": entry.quantity if entry else 0,
+            "for_trade": entry.for_trade if entry else False,
+            "has_shiny": entry.has_shiny if entry else False,
+        }
+
+    return jsonify({
+        "id": species.id,
+        "name": species.name,
+        "name_pt": species.name_pt,
+        "generation": species.generation,
+        "is_legendary": species.is_legendary,
+        "is_mythical": species.is_mythical,
+        "capture_rate": species.capture_rate,
+        "form": {
+            "id": default_form.id,
+            "type1": default_form.type1,
+            "type2": default_form.type2,
+            "sprite_url": default_form.sprite_url,
+            "is_shiny_available": default_form.is_shiny_available,
+        } if default_form else None,
+        "collection": collection_data,
+        "evolutions": [
+            {
+                "from_id": e.from_form.species_id,
+                "from_name": e.from_form.species.name_pt or e.from_form.species.name,
+                "from_sprite": e.from_form.sprite_url,
+                "to_id": e.to_form.species_id,
+                "to_name": e.to_form.species.name_pt or e.to_form.species.name,
+                "to_sprite": e.to_form.sprite_url,
+                "candy_cost": e.candy_cost,
+            }
+            for e in evolutions
+        ],
+    })
 
 
 @bp.route("/")

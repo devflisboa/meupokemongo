@@ -201,6 +201,248 @@
     &amp; <a href="https://pokemongo.com" target="_blank" rel="noopener" class="hover:text-gray-600 underline">Pokémon GO</a>
   </footer>
 
+  {# ── Pokémon Quick Modal ── #}
+  <div id="poke-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="poke-modal-title">
+    <div id="poke-modal-backdrop" class="absolute inset-0 bg-black/50" onclick="closePokeModal()"></div>
+    <div id="poke-modal-sheet"
+      class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-out"
+      style="transform:translateY(100%)">
+      <div id="poke-modal-content"></div>
+    </div>
+  </div>
+
+  <script>
+  const UPSERT_URL = "{{ url_for('collection.upsert') }}";
+
+  function pokeName(n) {
+    if (!n) return '';
+    if (n.toLowerCase().endsWith('-normal')) n = n.slice(0, -7);
+    return n.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  const TG = {
+    fire:'from-orange-400 to-red-500', water:'from-blue-400 to-cyan-500',
+    grass:'from-green-400 to-emerald-500', electric:'from-yellow-300 to-amber-400',
+    psychic:'from-pink-400 to-fuchsia-500', ice:'from-cyan-300 to-blue-400',
+    dragon:'from-indigo-500 to-purple-600', dark:'from-gray-600 to-gray-800',
+    fairy:'from-pink-300 to-rose-400', fighting:'from-red-500 to-orange-600',
+    flying:'from-sky-300 to-blue-400', poison:'from-purple-400 to-violet-500',
+    ground:'from-yellow-500 to-amber-600', rock:'from-stone-400 to-stone-600',
+    bug:'from-lime-400 to-green-500', ghost:'from-violet-500 to-purple-700',
+    steel:'from-slate-400 to-gray-500', normal:'from-gray-300 to-gray-400',
+  };
+  const TB = {
+    fire:'bg-orange-500 text-white', water:'bg-blue-500 text-white',
+    grass:'bg-green-600 text-white', electric:'bg-yellow-400 text-gray-900',
+    ice:'bg-cyan-400 text-white', fighting:'bg-red-700 text-white',
+    poison:'bg-purple-500 text-white', ground:'bg-yellow-600 text-white',
+    flying:'bg-indigo-400 text-white', psychic:'bg-pink-500 text-white',
+    bug:'bg-lime-500 text-white', rock:'bg-yellow-700 text-white',
+    ghost:'bg-purple-700 text-white', dragon:'bg-indigo-600 text-white',
+    dark:'bg-gray-700 text-white', steel:'bg-slate-500 text-white',
+    fairy:'bg-pink-400 text-white', normal:'bg-gray-400 text-white',
+  };
+
+  let _pkData = null;
+
+  async function openPokeModal(id) {
+    const modal = document.getElementById('poke-modal');
+    const sheet = document.getElementById('poke-modal-sheet');
+    const content = document.getElementById('poke-modal-content');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    content.innerHTML = '<div class="py-16 flex justify-center"><div class="w-10 h-10 border-4 border-gray-200 border-t-[#1B2A4A] rounded-full animate-spin"></div></div>';
+    requestAnimationFrame(() => { sheet.style.transform = 'translateY(0)'; });
+    try {
+      const res = await fetch(`/pokedex/api/${id}`);
+      if (!res.ok) throw new Error();
+      _pkData = await res.json();
+      content.innerHTML = renderPokeModal(_pkData);
+    } catch {
+      content.innerHTML = '<div class="py-12 text-center text-gray-400 text-sm">Não foi possível carregar.</div>';
+    }
+  }
+
+  function closePokeModal() {
+    const sheet = document.getElementById('poke-modal-sheet');
+    sheet.style.transform = 'translateY(100%)';
+    document.body.style.overflow = '';
+    setTimeout(() => document.getElementById('poke-modal').classList.add('hidden'), 300);
+  }
+
+  function renderPokeModal(p) {
+    const t1 = p.form?.type1 || '', t2 = p.form?.type2 || '';
+    const grad = TG[t1] || 'from-gray-300 to-gray-400';
+    const name = pokeName(p.name_pt || p.name);
+    const num = String(p.id).padStart(3, '0');
+    const col = p.collection;
+
+    const badges = [t1, t2].filter(Boolean).map(t =>
+      `<span class="text-xs px-3 py-1 rounded-full font-bold capitalize ${TB[t]||'bg-gray-400 text-white'}">${t}</span>`
+    ).join('');
+    const legend = p.is_mythical
+      ? '<span class="bg-purple-100 text-purple-700 text-xs px-2.5 py-1 rounded-full font-bold">✦ Mítico</span>'
+      : p.is_legendary
+      ? '<span class="bg-yellow-100 text-yellow-700 text-xs px-2.5 py-1 rounded-full font-bold">★ Lendário</span>'
+      : '';
+    const shinyNote = p.form?.is_shiny_available
+      ? '<span class="text-xs text-gray-400">✨ Shiny disponível</span>' : '';
+
+    let collHtml = '';
+    if (col) {
+      const owned = col.owned && col.quantity > 0;
+      collHtml = `<div id="modal-col"
+        data-form-id="${col.form_id}" data-owned="${owned}" data-qty="${col.quantity}"
+        data-trade="${col.for_trade}" data-shiny="${col.has_shiny}"
+        class="mt-4 border-t border-gray-100 pt-4 space-y-2">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="modalToggleCapture()"
+            class="modal-cap text-sm font-bold px-4 py-2 rounded-lg transition-colors ${owned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}">
+            ${owned?'✓ Capturado':'+ Capturar'}
+          </button>
+          <div id="modal-ctl" class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 ${owned?'':'hidden'}">
+            <button onclick="modalAdjustQty(-1)" class="w-7 h-7 text-gray-600 hover:text-gray-900 font-bold text-xl leading-none">−</button>
+            <span id="modal-qty" class="text-sm font-black text-gray-800 min-w-[1.5rem] text-center">${col.quantity}</span>
+            <button onclick="modalAdjustQty(1)" class="w-7 h-7 text-gray-600 hover:text-gray-900 font-bold text-xl leading-none">+</button>
+          </div>
+        </div>
+        <div id="modal-extra" class="flex flex-wrap gap-2 ${owned?'':'hidden'}">
+          <button onclick="modalToggleTrade()"
+            class="modal-trade text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.for_trade?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-500'}">
+            ${col.for_trade?'🔄 Para troca':'Troca?'}
+          </button>
+          <button onclick="modalToggleShiny()"
+            class="modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}">
+            ${col.has_shiny?'⭐ Tenho Shiny!':'⭐ Shiny?'}
+          </button>
+        </div>
+      </div>`;
+    }
+
+    let evoHtml = '';
+    if (p.evolutions?.length) {
+      const items = p.evolutions.map(e => `
+        <div class="flex items-center gap-2">
+          <button onclick="openPokeModal(${e.from_id})" class="flex flex-col items-center hover:opacity-80 transition-opacity">
+            <img src="${e.from_sprite||''}" class="w-10 h-10 object-contain" />
+            <div class="text-[9px] text-gray-600 font-semibold mt-0.5 max-w-[3rem] truncate">${pokeName(e.from_name)}</div>
+          </button>
+          <div class="flex flex-col items-center text-gray-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            ${e.candy_cost?`<span class="text-[8px]">${e.candy_cost}🍬</span>`:''}
+          </div>
+          <button onclick="openPokeModal(${e.to_id})" class="flex flex-col items-center hover:opacity-80 transition-opacity">
+            <img src="${e.to_sprite||''}" class="w-10 h-10 object-contain" />
+            <div class="text-[9px] text-gray-600 font-semibold mt-0.5 max-w-[3rem] truncate">${pokeName(e.to_name)}</div>
+          </button>
+        </div>`).join('<span class="text-gray-200">|</span>');
+      evoHtml = `<div class="mt-4 border-t border-gray-100 pt-4">
+        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Cadeia evolutiva</div>
+        <div class="flex flex-wrap gap-3 items-center">${items}</div>
+      </div>`;
+    }
+
+    return `
+      <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-1"></div>
+      <div class="flex justify-between items-center px-4 pt-1 pb-1">
+        <span class="text-xs text-gray-400 font-mono">#${num} · Gen ${p.generation}</span>
+        <button onclick="closePokeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none">×</button>
+      </div>
+      <div class="bg-gradient-to-b ${grad} mx-4 rounded-2xl h-48 flex items-center justify-center relative">
+        ${p.form?.sprite_url?`<img src="${p.form.sprite_url}" class="w-36 h-36 object-contain drop-shadow-xl" alt="${name}"/>`:'<span class="text-6xl">❓</span>'}
+        ${p.is_mythical?'<span class="absolute top-2 left-2 bg-purple-500/90 text-white text-[9px] font-black px-2 py-0.5 rounded-full">✦ Mítico</span>':p.is_legendary?'<span class="absolute top-2 left-2 bg-yellow-400/90 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-full">★ Lendário</span>':''}
+      </div>
+      <div class="px-4 pt-3 pb-8">
+        <h2 id="poke-modal-title" class="text-2xl font-black text-gray-900">${name}</h2>
+        <div class="flex flex-wrap gap-2 mt-2 items-center">${badges} ${legend} ${shinyNote}</div>
+        ${collHtml}
+        ${evoHtml}
+        <a href="/pokedex/${p.id}" data-no-modal
+          class="mt-5 block text-center text-sm text-blue-600 hover:underline font-semibold">
+          Ver página completa →
+        </a>
+      </div>`;
+  }
+
+  function _col() { return document.getElementById('modal-col'); }
+
+  async function modalSave(owned, qty, trade, shiny) {
+    const c = _col(); if (!c) return;
+    const fd = new FormData();
+    fd.append('form_id', c.dataset.formId);
+    fd.append('owned', owned?'true':'false');
+    fd.append('quantity', qty);
+    fd.append('for_trade', trade?'true':'false');
+    fd.append('has_shiny', shiny?'true':'false');
+    fd.append('shiny_qty', shiny?1:0);
+    const r = await fetch(UPSERT_URL, {method:'POST', body:fd});
+    const d = await r.json();
+    if (!d.ok) return;
+    const isOwned = d.owned && d.quantity > 0;
+    c.dataset.owned = isOwned; c.dataset.qty = d.quantity;
+    c.dataset.trade = d.for_trade; c.dataset.shiny = d.has_shiny;
+    const capBtn = c.querySelector('.modal-cap');
+    const ctl = document.getElementById('modal-ctl');
+    const extra = document.getElementById('modal-extra');
+    const qtyEl = document.getElementById('modal-qty');
+    const tradeBtn = c.querySelector('.modal-trade');
+    const shinyBtn = c.querySelector('.modal-shiny');
+    if (capBtn) { capBtn.textContent = isOwned?'✓ Capturado':'+ Capturar'; capBtn.className=`modal-cap text-sm font-bold px-4 py-2 rounded-lg transition-colors ${isOwned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}`; }
+    if (ctl) ctl.classList.toggle('hidden', !isOwned);
+    if (extra) extra.classList.toggle('hidden', !isOwned);
+    if (qtyEl) qtyEl.textContent = d.quantity;
+    if (tradeBtn) { tradeBtn.textContent = d.for_trade?'🔄 Para troca':'Troca?'; tradeBtn.className=`modal-trade text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.for_trade?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-500'}`; }
+    if (shinyBtn) { shinyBtn.textContent = d.has_shiny?'⭐ Tenho Shiny!':'⭐ Shiny?'; shinyBtn.className=`modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}`; }
+    if (_pkData) {
+      const card = document.querySelector(`[data-poke-id="${_pkData.id}"]`);
+      if (card) {
+        card.classList.toggle('border-yellow-400', !!d.has_shiny);
+        card.classList.toggle('border-blue-300', !d.has_shiny && !!d.for_trade);
+        card.classList.toggle('border-gray-100', !d.has_shiny && !d.for_trade);
+      }
+    }
+  }
+
+  function modalToggleCapture() {
+    const c = _col(); const owned = c.dataset.owned==='true';
+    const qty = owned ? 0 : Math.max(1, parseInt(c.dataset.qty)||1);
+    modalSave(!owned, qty, !owned&&c.dataset.trade==='true', !owned&&c.dataset.shiny==='true');
+  }
+  function modalAdjustQty(d) {
+    const c = _col(); const qty = Math.max(0, parseInt(c.dataset.qty)+d);
+    modalSave(qty>0, qty, qty>0&&c.dataset.trade==='true', c.dataset.shiny==='true');
+  }
+  function modalToggleTrade() {
+    const c = _col();
+    modalSave(true, parseInt(c.dataset.qty)||1, c.dataset.trade!=='true', c.dataset.shiny==='true');
+  }
+  function modalToggleShiny() {
+    const c = _col();
+    modalSave(true, parseInt(c.dataset.qty)||1, c.dataset.trade==='true', c.dataset.shiny!=='true');
+  }
+
+  // Intercepta cliques em cards com data-poke-id
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('button')) return;
+    if (e.target.closest('a[target="_blank"]')) return;
+    if (e.target.closest('[data-no-modal]')) return;
+    const card = e.target.closest('[data-poke-id]');
+    if (!card) return;
+    e.preventDefault();
+    openPokeModal(parseInt(card.dataset.pokeId));
+  });
+
+  document.addEventListener('keydown', e => { if (e.key==='Escape') closePokeModal(); });
+
+  // Swipe down para fechar
+  (function() {
+    const sheet = document.getElementById('poke-modal-sheet');
+    let sy = 0;
+    sheet.addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, {passive:true});
+    sheet.addEventListener('touchend', e => { if (e.changedTouches[0].clientY - sy > 80) closePokeModal(); }, {passive:true});
+  })();
+  </script>
+
   {# ── Bottom Nav global (mobile, autenticado) — páginas com nav própria sobrescrevem o bloco ── #}
   {% block bottom_nav %}
   {% if current_user.is_authenticated %}
