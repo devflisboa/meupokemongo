@@ -115,6 +115,13 @@
       </div>
       {% endif %}
 
+      <!-- Badge lendário / mítico — canto superior esquerdo -->
+      {% if species.is_mythical %}
+      <span class="absolute top-1.5 left-1.5 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
+      {% elif species.is_legendary %}
+      <span class="absolute top-1.5 left-1.5 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
+      {% endif %}
+
       <!-- Owned checkmark badge -->
       {% if owned %}
       <div class="owned-badge absolute top-1.5 right-1.5 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center shadow">

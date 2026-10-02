@@ -142,6 +142,12 @@
         {% endif %}
       </div>
     </a>
+    {# Badge lendário / mítico — canto superior esquerdo #}
+    {% if form.species.is_mythical %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
+    {% elif form.species.is_legendary %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
+    {% endif %}
     {# Botão shiny — canto superior direito, só para o dono #}
     {% if current_user.is_authenticated and current_user.id == profile_user.id %}
     <button onclick="toggleShiny({{ form.id }}, this)"
@@ -186,11 +192,17 @@
   {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
   {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
   <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
-    class="poke-card missing-card bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
+    class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
       hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
       {{ 'hidden' if loop.index0 >= 30 }}"
     data-idx="{{ loop.index0 }}"
     data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    {# Badge lendário / mítico — canto superior esquerdo #}
+    {% if form.species.is_mythical %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
+    {% elif form.species.is_legendary %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
+    {% endif %}
     <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
       {% if form.sprite_url %}
       <img src="{{ form.sprite_url }}" alt="{{ pname }}"
@@ -232,8 +244,14 @@
   {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
   {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden
-    hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
+    hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all relative
     poke-card" data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
+    {# Badge lendário / mítico — canto superior esquerdo #}
+    {% if form.species.is_mythical %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
+    {% elif form.species.is_legendary %}
+    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
+    {% endif %}
     <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
       <div class="bg-gradient-to-br {{ grad }} p-3 flex flex-col items-center">
         {% if form.sprite_url %}
