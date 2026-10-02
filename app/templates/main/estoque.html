@@ -118,11 +118,11 @@
   {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
   {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
   {% set is_trade = collection_map[form.id].for_trade if form.id in collection_map else false %}
-  <div class="poke-card bg-white rounded-xl shadow-sm border overflow-hidden
+  <div class="poke-card relative bg-white rounded-xl shadow-sm border overflow-hidden
     {{ 'border-blue-300' if is_trade else 'border-gray-100' }}
     hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
     data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
-    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}">
+    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
       <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
         {% if form.sprite_url %}
         <img src="{{ form.sprite_url }}" alt="{{ pname }}"
@@ -132,23 +132,21 @@
         <span class="text-white/50 text-xs" aria-hidden="true">?</span>
         {% endif %}
       </div>
-    </a>
-    <div class="p-1 text-center">
-      <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
-      <div class="flex items-center justify-center gap-1 mt-0.5">
+      <div class="px-1 pt-1 pb-6 text-center">
+        <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+        <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
         {% if qty > 1 %}
         <span class="text-[7px] text-green-600 font-black border border-green-300 rounded px-0.5">×{{ qty }}</span>
         {% endif %}
-        <button onclick="toggleTrade({{ form.id }}, {{ qty }}, this)"
-          class="trade-btn text-[7px] px-1 rounded transition-colors
-            {{ 'bg-blue-500 text-white' if is_trade else 'bg-gray-100 text-gray-400 hover:bg-blue-100' }}"
-          title="{{ 'Para troca' if is_trade else 'Marcar para troca' }}"
-          aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">
-          🔄
-        </button>
       </div>
-    </div>
+    </a>
+    <button onclick="toggleTrade({{ form.id }}, {{ qty }}, this)"
+      class="trade-btn absolute bottom-1.5 right-1 w-7 h-7 flex items-center justify-center rounded-full text-[11px] transition-colors
+        {{ 'bg-blue-500 text-white' if is_trade else 'bg-gray-100 text-gray-400 hover:bg-blue-100' }}"
+      title="{{ 'Para troca' if is_trade else 'Marcar para troca' }}"
+      aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">
+      🔄
+    </button>
   </div>
   {% endfor %}
 </div>
@@ -223,7 +221,7 @@
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden
     hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
     poke-card" data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
-    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}">
+    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
       <div class="bg-gradient-to-br {{ grad }} p-3 flex flex-col items-center">
         {% if form.sprite_url %}
         <img src="{{ form.sprite_url }}" alt="{{ pname }}"
@@ -231,29 +229,31 @@
           onerror="this.style.display='none'" />
         {% endif %}
       </div>
-    </a>
-    <div class="p-2.5 text-center">
-      <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-      <div class="text-xs font-black text-gray-800 leading-tight">{{ pname }}</div>
-      <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
-        {% if form.type1 %}
-        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ tbadge }}">{{ form.type1 }}</span>
-        {% endif %}
-        {% if form.type2 %}
-        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">{{ form.type2 }}</span>
-        {% endif %}
-        {% if qty > 1 %}
-        <span class="text-[9px] text-green-600 font-black">×{{ qty }}</span>
-        {% endif %}
+      <div class="p-2.5 text-center{% if profile_user.trainer_code %} pb-1{% endif %}">
+        <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
+        <div class="text-xs font-black text-gray-800 leading-tight">{{ pname }}</div>
+        <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
+          {% if form.type1 %}
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ tbadge }}">{{ form.type1 }}</span>
+          {% endif %}
+          {% if form.type2 %}
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">{{ form.type2 }}</span>
+          {% endif %}
+          {% if qty > 1 %}
+          <span class="text-[9px] text-green-600 font-black">×{{ qty }}</span>
+          {% endif %}
+        </div>
       </div>
-      {% if profile_user.trainer_code %}
+    </a>
+    {% if profile_user.trainer_code %}
+    <div class="px-2 pb-2">
       <a href="https://wa.me/?text={{ ('Oi ' ~ profile_user.username ~ '! Vi seu estoque no MeuPokémonGO e quero trocar pelo ' ~ pname ~ ' (#' ~ '%03d' % form.species_id ~ '). Meu código: ____. Ver estoque: ' ~ share_url) | urlencode }}"
         target="_blank" rel="noopener"
-        class="mt-2 block text-[10px] font-bold bg-green-500 hover:bg-green-600 text-white py-1 rounded-lg transition-colors">
-        Quero esse!
+        class="block text-[10px] font-bold bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg transition-colors text-center">
+        Quero esse! 💬
       </a>
-      {% endif %}
     </div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -280,28 +280,6 @@
    title="Catalogar coleção" aria-label="Catalogar coleção">
   +
 </a>
-
-{# ══════════════════════════════════════════
-   BOTTOM NAV — mobile
-══════════════════════════════════════════ #}
-<nav id="bottom-nav"
-  class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 grid grid-cols-3 sm:hidden">
-  <button onclick="showTab('tenho')" id="bnav-tenho"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-[#1B2A4A] border-t-2 border-[#1B2A4A]">
-    <span aria-hidden="true">✓</span>
-    <span>Tenho <span class="text-green-600">{{ owned_forms|length }}</span></span>
-  </button>
-  <button onclick="showTab('faltantes')" id="bnav-faltantes"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
-    <span aria-hidden="true">✗</span>
-    <span>Faltam <span class="text-amber-500">{{ missing_forms|length }}</span></span>
-  </button>
-  <button onclick="showTab('troca')" id="bnav-troca"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
-    <span aria-hidden="true">🔄</span>
-    <span>Troca <span class="text-blue-600">{{ trade_forms|length }}</span></span>
-  </button>
-</nav>
 
 <script>
 const shareUrl     = {{ share_url | tojson }};
@@ -436,4 +414,32 @@ function copyLink() {
   });
 }
 </script>
+
+{% block bottom_nav %}
+<nav id="bottom-nav"
+  class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 grid grid-cols-3 sm:hidden">
+  <button onclick="showTab('tenho')" id="bnav-tenho"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-[#1B2A4A] border-t-2 border-[#1B2A4A]">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span>Tenho <span class="text-green-600">{{ owned_forms|length }}</span></span>
+  </button>
+  <button onclick="showTab('faltantes')" id="bnav-faltantes"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+    <span>Faltam <span class="text-amber-500">{{ missing_forms|length }}</span></span>
+  </button>
+  <button onclick="showTab('troca')" id="bnav-troca"
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+    </svg>
+    <span>Troca <span class="text-blue-600">{{ trade_forms|length }}</span></span>
+  </button>
+</nav>
+{% endblock %}
+
 {% endblock %}
