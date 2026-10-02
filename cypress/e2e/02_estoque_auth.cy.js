@@ -90,8 +90,8 @@ describe('Estoque autenticado', () => {
     cy.get('#bnav-faltantes').click()
     cy.get('#tab-content-faltantes').should('not.have.class', 'hidden')
     cy.get('#tab-content-tenho').should('have.class', 'hidden')
-    // Aba ativa tem borda
-    cy.get('#bnav-faltantes').should('have.class', 'text-[#1B2A4A]')
+    // Aba ativa tem texto branco
+    cy.get('#bnav-faltantes').should('have.class', 'text-white')
   })
 
   it('Estado vazio de trocas tem CTA', () => {

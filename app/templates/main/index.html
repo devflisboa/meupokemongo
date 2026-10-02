@@ -7,7 +7,8 @@
 {% if current_user.is_authenticated and stats %}
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
 
-  <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+  <a href="{{ url_for('collection.index') }}"
+    class="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
     <div class="flex-1 min-w-0">
       <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Estatísticas da Coleção</div>
@@ -19,9 +20,10 @@
         <div class="h-full bg-white rounded-full" style="width:{{ stats.percent }}%"></div>
       </div>
     </div>
-  </div>
+  </a>
 
-  <div class="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+  <a href="{{ url_for('collection.index') }}?show=missing"
+    class="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">⭐</div>
     <div class="flex-1 min-w-0">
       <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Pokémon Faltantes</div>
@@ -31,9 +33,10 @@
         <div class="h-full bg-white rounded-full" style="width:{{ [100 - stats.percent, 0]|max }}%"></div>
       </div>
     </div>
-  </div>
+  </a>
 
-  <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
+  <a href="{{ url_for('trades.index') }}"
+    class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🏆</div>
     <div class="flex-1 min-w-0">
       <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Recursos</div>
@@ -48,7 +51,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </a>
 
 </div>
 {% endif %}

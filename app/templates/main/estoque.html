@@ -304,9 +304,9 @@ function showTab(name) {
     // bottom nav
     const bnav = document.getElementById('bnav-' + t);
     if (bnav) {
-      bnav.classList.toggle('text-[#1B2A4A]', t === name);
-      bnav.classList.toggle('border-[#1B2A4A]', t === name);
-      bnav.classList.toggle('text-gray-400', t !== name);
+      bnav.classList.toggle('text-white', t === name);
+      bnav.classList.toggle('border-[#CC0000]', t === name);
+      bnav.classList.toggle('text-white/50', t !== name);
       bnav.classList.toggle('border-transparent', t !== name);
     }
   });
@@ -417,27 +417,27 @@ function copyLink() {
 
 {% block bottom_nav %}
 <nav id="bottom-nav"
-  class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 grid grid-cols-3 sm:hidden">
+  class="fixed bottom-0 left-0 right-0 z-40 bg-[#1B2A4A] border-t border-[#152238] grid grid-cols-3 sm:hidden">
   <button onclick="showTab('tenho')" id="bnav-tenho"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-[#1B2A4A] border-t-2 border-[#1B2A4A]">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-white border-t-2 border-[#CC0000]">
+    <svg class="w-4 h-4 text-[#CC0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
     </svg>
-    <span>Tenho <span class="text-green-600">{{ owned_forms|length }}</span></span>
+    <span>Tenho <span class="opacity-75">{{ owned_forms|length }}</span></span>
   </button>
   <button onclick="showTab('faltantes')" id="bnav-faltantes"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-white/50 border-t-2 border-transparent">
+    <svg class="w-4 h-4 text-[#CC0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
     </svg>
-    <span>Faltam <span class="text-amber-500">{{ missing_forms|length }}</span></span>
+    <span>Faltam <span class="opacity-75">{{ missing_forms|length }}</span></span>
   </button>
   <button onclick="showTab('troca')" id="bnav-troca"
-    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-gray-400 border-t-2 border-transparent">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    class="bnav-btn flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold text-white/50 border-t-2 border-transparent">
+    <svg class="w-4 h-4 text-[#CC0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
     </svg>
-    <span>Troca <span class="text-blue-600">{{ trade_forms|length }}</span></span>
+    <span>Troca <span class="opacity-75">{{ trade_forms|length }}</span></span>
   </button>
 </nav>
 {% endblock %}
