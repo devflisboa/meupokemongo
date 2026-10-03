@@ -132,7 +132,6 @@ def trade_binder(username: str):
     Trade Binder público (#18): link para divulgar — o que tenho para troca e o que procuro.
     Sem login. Logado, destaca o que o visitante tem e o dono procura (troca de mão dupla).
     """
-    from ...models.wishlist import Wishlist
     from ...services.matching_service import proximity_tier, TIER_LABEL
 
     owner = db.session.query(User).filter_by(username=username).first_or_404()
@@ -155,14 +154,10 @@ def trade_binder(username: str):
         .all()
     )
 
-    # O que o dono procura: ⭐ prioridades dele que ainda faltam
-    priority_forms = (
-        db.session.query(Form)
-        .join(Wishlist, Wishlist.form_id == Form.id)
-        .filter(Wishlist.user_id == owner.id, Form.id.notin_(list(owned) or [-1]))
-        .order_by(Form.species_id)
-        .all()
-    )
+    # O que o dono procura: TODOS os faltantes, já na ordem da inteligência da Wishlist
+    # (⭐ → exclusivos de região → Alta → Evoluir) — renderizados sob demanda no navegador
+    from ..wishlist.routes import build_wishlist
+    wl = build_wishlist(owner)
 
     # Visitante logado: o que ELE tem para troca e falta ao dono → convite de mão dupla
     i_can_offer, tier_label = [], None
@@ -183,7 +178,27 @@ def trade_binder(username: str):
         tier = proximity_tier(current_user, owner)
         tier_label = TIER_LABEL.get(tier) if tier is not None else "Fora do seu alcance de troca"
 
-    total_normal = db.session.query(Form).filter_by(form_name="normal").count()
+    can_offer_ids = {f.id for f in i_can_offer}
+    poke_name = current_app.jinja_env.filters["poke_name"]
+    wanted = [
+        {
+            "id": s.id,
+            "n": poke_name(s.name_pt or s.name),
+            "l": f.label,
+            "s": f.sprite_url or "",
+            "t": f.type1 or "",
+            "b": "m" if s.is_mythical else ("l" if s.is_legendary else ""),
+            "p": f.id in wl["priority_ids"],
+            "k": "evoluir" if f.id in wl["evolve_from"] else "alta",
+            "e": (wl["evolve_from"].get(f.id) or {}).get("name"),
+            "x": wl["exclusives"].get(f.id),
+            "v": f.id in can_offer_ids,  # o visitante tem para troca
+        }
+        for f, s in wl["missing"]
+    ]
+    # O que o visitante pode dar vem primeiro (é a troca que dá para fechar agora)
+    wanted.sort(key=lambda w: not w["v"])
+
     log_event("PAGE_VIEW", {"page": "trade_binder", "owner": owner.username})
     return render_template(
         "trades/binder.html",
@@ -191,8 +206,8 @@ def trade_binder(username: str):
         is_self=is_self,
         trade_forms=trade_forms,
         collection_map=owned,
-        priority_forms=priority_forms,
-        missing_count=total_normal - len(owned),
+        wanted=wanted,
+        missing_count=len(wanted),
         i_can_offer=i_can_offer,
         tier_label=tier_label,
         share_url=request.url.split("?")[0],

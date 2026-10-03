@@ -16,6 +16,17 @@ TYPES = [
 ]
 
 
+@bp.route("/api/names")
+def api_names():
+    """[[id, "Nome"], ...] — autocompletar do Pokémon favorito. Muda raramente: cache de 1 dia."""
+    from flask import current_app
+    poke_name = current_app.jinja_env.filters["poke_name"]
+    rows = db.session.query(Species.id, Species.name_pt, Species.name).order_by(Species.id).all()
+    resp = jsonify([[sid, poke_name(pt or en)] for sid, pt, en in rows])
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
 @bp.route("/api/<int:species_id>")
 def api_detail(species_id: int):
     species = db.session.get(Species, species_id)
@@ -67,13 +78,12 @@ def api_detail(species_id: int):
             ],
         }
 
-    # Formas regionais da espécie (#14) com o status do treinador logado
-    from ...data.regional import exclusive_info
-    regional = (
-        db.session.query(Form)
-        .filter(Form.species_id == species_id, Form.form_name != "normal")
-        .order_by(Form.form_name)
-        .all()
+    # Formas alternativas da espécie (#14: regional, mega, gmax, especial) com o status do treinador
+    from ...data.regional import exclusive_info, CATEGORIES
+    cat_order = list(CATEGORIES)
+    regional = sorted(
+        db.session.query(Form).filter(Form.species_id == species_id, Form.form_name != "normal").all(),
+        key=lambda f: (cat_order.index(f.category) if f.category in cat_order else 99, f.form_name),
     )
     reg_owned = {}
     if current_user.is_authenticated and regional:
@@ -91,6 +101,7 @@ def api_detail(species_id: int):
             {
                 "form_id": f.id,
                 "label": f.label,
+                "category": f.category,
                 "type1": f.type1,
                 "type2": f.type2,
                 "sprite_url": f.sprite_url,

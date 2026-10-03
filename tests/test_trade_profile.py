@@ -150,3 +150,37 @@ def test_delete_account_removes_everything(client, people):
     assert _db.session.get(User, people["ash"]) is None
     assert _db.session.query(UserCollection).filter_by(user_id=people["ash"]).count() == 0
     assert _db.session.query(TradeMatch).filter_by(wisher_id=people["ash"]).count() == 0
+
+
+# ── Pokémon favorito ─────────────────────────────────────────────────────────
+@pytest.mark.parametrize("raw", ["#9101 Lapras", "9101", "lapras", "Lapras"])
+def test_resolve_species(people, raw):
+    from app.blueprints.auth.routes import resolve_species
+    assert resolve_species(raw) == 9101
+
+
+def test_favorite_saved_and_sticker_on_binder(client, people):
+    _login(client, people["ash"])
+    r = client.post("/auth/onboarding", data={"favorite": "#9101 Lapras"})
+    assert r.status_code == 302
+    ash = _db.session.get(User, people["ash"])
+    assert ash.favorite_species_id == 9101
+    assert ash.favorite_gif_url.endswith("/showdown/9101.gif")
+
+    html = client.get("/trade/ash").get_data(as_text=True)
+    assert 'class="fav-sticker' in html and "showdown/9101.gif" in html and "official-artwork/9101.png" in html
+
+    client.post("/auth/onboarding", data={"favorite": ""})       # limpar
+    assert _db.session.get(User, people["ash"]).favorite_species_id is None
+    assert 'class="fav-sticker'not in client.get("/trade/ash").get_data(as_text=True)
+
+
+def test_favorite_invalid(client, people):
+    _login(client, people["ash"])
+    r = client.post("/auth/onboarding", data={"favorite": "Digimon"})
+    assert r.status_code == 200 and "Pokémon favorito não encontrado" in r.get_data(as_text=True)
+
+
+def test_api_names(client, people):
+    data = client.get("/pokedex/api/names").get_json()
+    assert [9101, "Lapras"] in data

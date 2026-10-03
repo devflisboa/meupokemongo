@@ -31,7 +31,7 @@ def sync_candy_cmd():
 @click.command("sync-forms")
 @with_appcontext
 def sync_forms_cmd():
-    """Importa as formas regionais (Alola, Galar, Hisui, Paldea) da PokeAPI."""
+    """Importa formas alternativas da PokeAPI: regionais, Mega, Gigantamax e especiais."""
     from .services.sync_service import sync_regional_forms
     sync_regional_forms(log=click.echo)
 

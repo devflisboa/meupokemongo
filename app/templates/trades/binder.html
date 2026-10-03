@@ -10,6 +10,12 @@
 <meta property="og:url" content="{{ share_url }}">
 <meta property="og:image" content="{{ og_image }}">
 <meta property="og:type" content="website">
+<style>
+  /* adesivo do Pokémon favorito: inclinado e "flutuando" */
+  .fav-sticker { transform: rotate(8deg); animation: fav-float 3s ease-in-out infinite; }
+  @keyframes fav-float { 0%, 100% { transform: rotate(8deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { .fav-sticker { animation: none; } }
+</style>
 {% endblock %}
 
 {% macro poke_tile(f, badge=None) %}
@@ -36,8 +42,20 @@
 <div class="max-w-4xl mx-auto">
 
   {# ── Cabeçalho do treinador ── #}
-  <div class="bg-[#1B2A4A] text-white rounded-2xl p-5 mb-5">
-    <div class="flex items-center gap-4">
+  <div class="relative bg-[#1B2A4A] text-white rounded-2xl p-5 mb-5">
+    {% if owner.favorite_species_id %}
+    {% set fav_name = (owner.favorite_species.name_pt or owner.favorite_species.name) | poke_name %}
+    {# Adesivo do Pokémon favorito: GIF animado; se não existir, arte oficial #}
+    <div class="fav-sticker absolute -top-4 right-3 z-10" title="Pokémon favorito: {{ fav_name }}" data-poke-id="{{ owner.favorite_species_id }}">
+      <div class="bg-white rounded-2xl p-1.5 shadow-lg ring-4 ring-white/60 cursor-pointer">
+        <img src="{{ owner.favorite_gif_url }}" data-art="{{ owner.favorite_art_url }}" alt="{{ fav_name }}"
+          class="w-16 h-16 object-contain" style="image-rendering: pixelated"
+          onerror="if (this.src !== this.dataset.art) { this.src = this.dataset.art; this.style.imageRendering = 'auto'; }" />
+      </div>
+      <div class="text-center -mt-1"><span class="inline-block bg-amber-400 text-amber-950 text-[9px] font-black px-1.5 rounded-full shadow">♥ {{ fav_name }}</span></div>
+    </div>
+    {% endif %}
+    <div class="flex items-center gap-4 {{ 'pr-20' if owner.favorite_species_id }}">
       <div class="w-14 h-14 rounded-full overflow-hidden bg-[#243660] border-2 border-white/30 flex-shrink-0 flex items-center justify-center text-xl font-black">
         {% if owner.avatar %}
         <img src="{{ url_for('auth.avatar', user_id=owner.id) }}" class="w-full h-full object-cover" alt="" />
@@ -105,18 +123,88 @@
     {% endif %}
   </section>
 
-  {# ── Procuro ── #}
+  {# ── Procuro: todos os faltantes, na ordem da inteligência da Wishlist ── #}
   <section class="mb-6">
-    <h2 class="font-black text-gray-900 mb-1">⭐ Procuro</h2>
-    <p class="text-xs text-gray-400 mb-3">
-      Faltam {{ missing_count }} na coleção de {{ owner.username }}.
-      <a href="{{ url_for('main.estoque', username=owner.username) }}#faltantes" class="text-blue-600 font-semibold hover:underline">Ver todos os faltantes →</a>
-    </p>
-    {% if priority_forms %}
-    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-      {% for f in priority_forms %}{{ poke_tile(f, badge='prioridade') }}{% endfor %}
+    <h2 class="font-black text-gray-900 mb-1">⭐ Procuro <span class="text-gray-400 font-bold text-sm">({{ missing_count }})</span></h2>
+    <p class="text-xs text-gray-400 mb-3">Em ordem de prioridade: ⭐ escolhidos → 🌍 exclusivos de região → 🔥 alta → 🧬 basta evoluir.</p>
+
+    {% set n_v = wanted | selectattr('v') | list | length %}
+    {% set n_x = wanted | selectattr('x') | list | length %}
+    {% set n_e = wanted | selectattr('k', 'equalto', 'evoluir') | list | length %}
+    <div class="flex flex-wrap gap-1.5 mb-3" id="wanted-filters">
+      {% for key, label, n in [('', 'Todos', missing_count), ('v', '🤝 Você tem', n_v), ('x', '🌍 Exclusivos', n_x),
+                               ('alta', '🔥 Alta', missing_count - n_e), ('evoluir', '🧬 Evoluir', n_e)] if n or key == '' %}
+      <button type="button" data-filter="{{ key }}" onclick="Wanted.setFilter('{{ key }}')"
+        class="wanted-filter text-xs font-bold border rounded-full px-3 py-1.5 {{ 'bg-[#1B2A4A] text-white border-[#1B2A4A]' if key == '' else 'bg-white text-gray-600 border-gray-200' }}">
+        {{ label }} <span class="opacity-60">{{ n }}</span>
+      </button>
+      {% endfor %}
+      <input id="wanted-search" type="search" placeholder="Buscar…" oninput="Wanted.setQuery(this.value)"
+        class="flex-1 min-w-32 bg-white border border-gray-200 rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400" />
     </div>
-    {% endif %}
+
+    <div id="wanted-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"></div>
+    <div id="wanted-sentinel" class="h-8"></div>
+    <p id="wanted-empty" class="hidden text-center text-sm text-gray-400 py-6">Nada com esse filtro.</p>
   </section>
 </div>
+
+<script>
+const WANTED = {{ wanted | tojson }};
+const Wanted = (function () {
+  const grid = document.getElementById('wanted-grid');
+  const empty = document.getElementById('wanted-empty');
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num = id => String(id).padStart(3, '0');
+  const PAGE = 30;
+  let list = WANTED, shown = 0, filter = '', query = '';
+
+  function card(w) {
+    const tag = w.v ? '<div class="text-[9px] font-black text-green-700 bg-green-50 rounded px-1">🤝 Você tem</div>'
+      : w.x ? `<div class="text-[9px] font-bold text-indigo-700 bg-indigo-50 rounded px-1 truncate" title="Exclusivo de região">🌍 ${esc(w.x)}</div>`
+      : w.k === 'evoluir' ? `<div class="text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate">🧬 ${esc(w.e || 'Evoluir')}</div>`
+      : '<div class="text-[9px] font-bold text-red-600 bg-red-50 rounded px-1">🔥 Alta</div>';
+    return `<div class="poke-card relative bg-white rounded-xl border ${w.v ? 'border-green-400 ring-1 ring-green-300' : w.p ? 'border-amber-400' : 'border-gray-100'}
+        shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow" data-poke-id="${w.id}">
+      ${w.p ? '<span class="absolute top-1 right-1 text-amber-500 text-xs" title="Prioridade">★</span>' : ''}
+      <div class="bg-gray-50 p-1"><img src="${esc(w.s)}" alt="${esc(w.n)}" class="w-14 h-14 mx-auto object-contain" loading="lazy"
+        onerror="this.style.visibility='hidden'" /></div>
+      <div class="px-1 py-1">
+        <div class="text-[9px] font-mono text-gray-400">#${num(w.id)}</div>
+        <div class="text-[11px] font-bold text-gray-800 truncate">${esc(w.n)}</div>
+        ${w.l ? `<div class="text-[9px] font-bold text-sky-700 truncate">${esc(w.l)}</div>` : ''}
+        <div class="mt-0.5">${tag}</div>
+      </div>
+    </div>`;
+  }
+  function more() {
+    if (shown >= list.length) return;
+    grid.insertAdjacentHTML('beforeend', list.slice(shown, shown + PAGE).map(card).join(''));
+    shown = Math.min(shown + PAGE, list.length);
+  }
+  function apply() {
+    const q = query.trim().toLowerCase();
+    list = WANTED.filter(w =>
+      (!filter || (filter === 'v' && w.v) || (filter === 'x' && w.x) || (filter === w.k)) &&
+      (!q || `${w.n.toLowerCase()} ${(w.l || '').toLowerCase()} ${num(w.id)}`.includes(q)));
+    shown = 0; grid.innerHTML = ''; more();
+    empty.classList.toggle('hidden', list.length > 0);
+  }
+  new IntersectionObserver(e => { if (e[0].isIntersecting) more(); }, { rootMargin: '300px' })
+    .observe(document.getElementById('wanted-sentinel'));
+  apply();
+  return {
+    setFilter(f) {
+      filter = f;
+      document.querySelectorAll('.wanted-filter').forEach(b => {
+        const on = b.dataset.filter === f;
+        b.classList.toggle('bg-[#1B2A4A]', on); b.classList.toggle('text-white', on); b.classList.toggle('border-[#1B2A4A]', on);
+        b.classList.toggle('bg-white', !on); b.classList.toggle('text-gray-600', !on); b.classList.toggle('border-gray-200', !on);
+      });
+      apply();
+    },
+    setQuery(q) { query = q; apply(); },
+  };
+})();
+</script>
 {% endblock %}

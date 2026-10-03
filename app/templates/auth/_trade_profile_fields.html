@@ -36,6 +36,25 @@
   <p class="text-[10px] text-gray-400 mt-1">Troca no Pokémon GO é presencial — a cidade coloca você perto de quem pode trocar.</p>
 </div>
 
+{% set fav = u.favorite_species %}
+{% set v_fav = f.favorite if f else (('#%03d ' % fav.id) ~ ((fav.name_pt or fav.name) | poke_name) if fav else '') %}
+<div>
+  <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
+    Pokémon favorito <span class="font-normal normal-case tracking-normal text-gray-400">(opcional)</span>
+  </label>
+  <div class="flex items-center gap-2">
+    <div class="w-14 h-14 flex-shrink-0 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center">
+      <img id="tp-fav-img" src="{{ u.favorite_gif_url or '' }}" data-art="{{ u.favorite_art_url or '' }}" alt=""
+        class="max-w-12 max-h-12 object-contain {{ '' if fav else 'hidden' }}"
+        onerror="if (this.dataset.art && this.src !== this.dataset.art) this.src = this.dataset.art" />
+    </div>
+    <input type="text" name="favorite" id="tp-fav" value="{{ v_fav }}" list="tp-pokes" autocomplete="off"
+      placeholder="Digite o nome ou número" class="{{ inp }}" />
+    <datalist id="tp-pokes"></datalist>
+  </div>
+  <p class="text-[10px] text-gray-400 mt-1">Aparece como adesivo animado no seu Trade Binder.</p>
+</div>
+
 <div class="space-y-2">
   <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300">
     <input type="checkbox" name="show_in_trades" {{ 'checked' if v_show }} class="mt-0.5 w-4 h-4 accent-[#1B2A4A]" />
@@ -88,5 +107,26 @@
   state.addEventListener('change', () => { city.value = ''; fill(); city.focus(); });
   if (state.value) fill();
   allow.addEventListener('change', () => box.classList.toggle('hidden', !allow.checked));
+
+  // Pokémon favorito: lista carregada sob demanda + prévia animada
+  const fav = document.getElementById('tp-fav');
+  const favList = document.getElementById('tp-pokes');
+  const favImg = document.getElementById('tp-fav-img');
+  const pad = n => String(n).padStart(3, '0');
+  let names = null;
+  fav.addEventListener('focus', async () => {
+    if (names) return;
+    names = await fetch("{{ url_for('pokedex.api_names') }}").then(r => r.json());
+    favList.innerHTML = names.map(([id, n]) => `<option value="#${pad(id)} ${n.replace(/"/g, '&quot;')}">`).join('');
+  }, { once: true });
+  fav.addEventListener('input', () => {
+    const m = fav.value.match(/^#?(\d{1,4})\b/);
+    if (!m) { favImg.classList.add('hidden'); return; }
+    const id = parseInt(m[1]);
+    const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/';
+    favImg.dataset.art = `${base}official-artwork/${id}.png`;
+    favImg.src = `${base}showdown/${id}.gif`;
+    favImg.classList.remove('hidden');
+  });
 })();
 </script>

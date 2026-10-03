@@ -105,6 +105,9 @@ Sem dados de contato e localização não existe ciclo de troca.
 
 > ✅ **Entregue em 02/10/2026** em `/trade/<usuario>` (sem login, com OG tags): tenho para troca (×qtd, ⭐, 100), ⭐ prioridades em "Procuro",
 > e para o visitante logado "Você tem N que fulano procura". Dono vê "Divulgar no WhatsApp"; link no perfil.
+> ➕ "Procuro" agora lista **todos** os faltantes na ordem da Wishlist (`build_wishlist`), sob demanda, com filtros
+> 🤝 Você tem / 🌍 / 🔥 / 🧬 e busca. **Pokémon favorito** (perfil/onboarding) aparece como adesivo animado
+> (GIF Showdown da PokeAPI; sem GIF → arte oficial).
 
 **Inspirado em:** Rare Candy (viralizou no TikTok em 2026)
 
@@ -161,6 +164,9 @@ Os dados já existem (`has_shiny`, `has_perfect`, `user_pokemon`). Em vez de "su
 > exclusivos no topo da Alta e filtro "Só por troca". Modal: aviso de exclusivo + "Formas regionais" com "+ Tenho".
 > Matching/mão dupla incluem formas regionais. % da Pokédex conta só formas normais.
 > Fora do escopo: catalogar por região e estoque público ainda mostram só formas normais.
+> ➕ **Ampliado em 02/10/2026:** além das regionais, Mega (97), Gigantamax (34) e Especiais (22: bonés do Pikachu,
+> todos os Totem, Darmanitan Zen) — 210 formas. Wishlist com 4 categorias liga/desliga (`?formas=regional,mega,gmax,especial`).
+> **Mega fica fora de trocas** (evolução temporária no GO; servidor recusa `for_trade`). Totem não existe no GO (aviso na categoria).
 
 **Por que importa para a premissa:** exclusivos de região (Farfetch'd, Heracross, Corsola, Tauros…)
 **só se conseguem por troca** — é o caso de uso mais forte do app.
@@ -257,4 +263,5 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 02/10/2026 | Ambiente E2E isolado (`scripts/e2e_server.py` + Pokédex real em fixture) | `918bf93` |
 | 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | `60e85a1` |
 | 02/10/2026 | **#24** proximidade + trocas de mão dupla · **#18** Trade Binder · **#15** progresso Shiny/100% · **#20** faltantes sob demanda | `fac64ef` |
-| 02/10/2026 | **#20b** aba Tenho sob demanda · **#14** formas regionais + exclusivos de região | ver `git log` |
+| 02/10/2026 | **#20b** aba Tenho sob demanda · **#14** formas regionais + exclusivos de região | `d6a62ab` |
+| 02/10/2026 | Formas Mega/Gigantamax/Especiais · Trade Binder "Procuro" com todos os faltantes priorizados · Pokémon favorito como adesivo animado | ver `git log` |

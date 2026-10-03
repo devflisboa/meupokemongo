@@ -57,22 +57,22 @@ def _walk_chain(node: dict) -> list[tuple[int, int]]:
 
 def sync_regional_forms(log=print) -> dict:
     """
-    #14: importa as formas regionais (Alola, Galar, Hisui, Paldea) como `Form`.
-    Usa a lista de variedades (/pokemon com id > 10000) — ~60 requisições, não 1025.
-    form_name = nome da variedade sem o nome da espécie ('rattata-alola' → 'alola').
+    #14: importa as formas alternativas como `Form` — regionais (Alola, Galar, Hisui, Paldea),
+    Mega, Gigantamax e especiais (bonés do Pikachu, Totem, Darmanitan Zen).
+    Usa a lista de variedades (/pokemon com id > 10000) — ~210 requisições, não 1025.
+    form_name = nome da variedade sem o nome da espécie ('charizard-mega-x' → 'mega-x').
     """
-    from ..data.regional import REGIONAL_VARIETY, REGIONAL_SKIP
+    from ..data.regional import variety_category
 
-    report = {"forms": 0, "skipped": 0, "errors": []}
+    report = {"forms": 0, "skipped": 0, "errors": [], "by_category": {}}
     try:
         listing = _get(f"{POKEAPI}/pokemon?limit=2000&offset=1025")["results"]
     except Exception as e:
         report["errors"].append(f"Falha ao listar variedades: {e}")
         return report
 
-    names = [r["name"] for r in listing
-             if REGIONAL_VARIETY.search(r["name"]) and r["name"] not in REGIONAL_SKIP]
-    log(f"[formas] {len(names)} formas regionais encontradas")
+    names = [r["name"] for r in listing if variety_category(r["name"])]
+    log(f"[formas] {len(names)} formas alternativas encontradas")
 
     for name in names:
         try:
@@ -96,14 +96,16 @@ def sync_regional_forms(log=print) -> dict:
             form.is_shiny_available = bool(artwork.get("front_shiny"))
             db.session.commit()
             report["forms"] += 1
+            cat = variety_category(name)
+            report["by_category"][cat] = report["by_category"].get(cat, 0) + 1
             log(f"[formas] {name} → #{species_id:03d} {form_name}")
         except Exception as e:
             db.session.rollback()
             report["errors"].append(f"{name}: {e}")
             log(f"[ERRO] {name}: {e}")
 
-    log(f"[formas] Concluído: {report['forms']} formas, {report['skipped']} sem espécie base, "
-        f"{len(report['errors'])} erros")
+    log(f"[formas] Concluído: {report['forms']} formas {report['by_category']}, "
+        f"{report['skipped']} sem espécie base, {len(report['errors'])} erros")
     return report
 
 

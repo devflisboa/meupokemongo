@@ -244,7 +244,8 @@ def upsert():
     entry.owned = owned
     entry.quantity = quantity
     entry.notes = notes
-    entry.for_trade = for_trade if (owned and quantity > 0) else False
+    # Mega Evolução é temporária no GO: não existe "Mega para troca"
+    entry.for_trade = for_trade if (owned and quantity > 0 and form.category != "mega") else False
     entry.has_shiny = has_shiny if owned else False
     entry.shiny_qty = shiny_qty if has_shiny else 0
     # has_perfect só muda quando enviado — telas que não conhecem o campo não o zeram

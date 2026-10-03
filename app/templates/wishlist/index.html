@@ -69,14 +69,24 @@
   <label class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 cursor-pointer">
     <input id="wish-prio" type="checkbox" class="accent-amber-500"> Só prioridades
   </label>
-  {% if regional_total %}
-  <a href="?{{ '' if include_regional else 'formas=1' }}" id="wish-regional-toggle"
-    class="flex items-center gap-1.5 border rounded-xl px-3 py-2 text-xs font-bold
-      {{ 'bg-[#1B2A4A] text-white border-[#1B2A4A]' if include_regional else 'bg-white text-gray-600 border-gray-200 hover:border-gray-300' }}">
-    {{ '✓' if include_regional else '+' }} Formas regionais (Alola, Galar, Hisui, Paldea)
-  </a>
-  {% endif %}
 </div>
+
+{# Formas alternativas (#14): cada categoria liga/desliga sem cadastro #}
+{% if category_totals %}
+<div class="flex flex-wrap items-center gap-1.5 mb-4" id="wish-categories">
+  <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mr-1">Incluir formas:</span>
+  {% for cat, name in category_names.items() if category_totals.get(cat) %}
+  {% set on = cat in categories %}
+  <a href="?{{ 'formas=' ~ category_links[cat] if category_links[cat] else '' }}" data-category="{{ cat }}"
+    class="text-xs font-bold border rounded-full px-3 py-1.5
+      {{ 'bg-[#1B2A4A] text-white border-[#1B2A4A]' if on else 'bg-white text-gray-600 border-gray-200 hover:border-gray-300' }}"
+    {% if cat == 'mega' %}title="Mega Evolução é temporária no GO: entra na coleção, mas não em trocas"{% endif %}
+    {% if cat == 'especial' %}title="Bonés do Pikachu, Totem e Darmanitan Zen — algumas não existem no Pokémon GO"{% endif %}>
+    {{ '✓' if on else '+' }} {{ name }} <span class="opacity-60">{{ category_totals[cat] }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div id="wish-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
   {% for form, sp in missing %}
@@ -106,7 +116,10 @@
       <div class="text-[9px] font-mono text-gray-400">#{{ '%03d' % sp.id }}</div>
       <div class="text-[11px] font-bold text-gray-800 leading-tight truncate">{{ pname }}</div>
       {% if form.label %}
-      <div class="text-[9px] font-bold text-sky-700 truncate">de {{ form.label }}</div>
+      {% set cat_color = {'regional': 'text-sky-700', 'mega': 'text-fuchsia-700', 'gmax': 'text-rose-700', 'especial': 'text-amber-700'} %}
+      <div class="text-[9px] font-bold truncate {{ cat_color.get(form.category, 'text-gray-500') }}">
+        {{ ('de ' ~ form.label) if form.category == 'regional' else form.label }}
+      </div>
       {% endif %}
       {% if excl %}
       <div class="mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 rounded px-1 truncate"

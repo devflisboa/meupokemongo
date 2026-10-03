@@ -12,6 +12,21 @@ from ...services.profile_service import (
 )
 
 
+def resolve_species(raw: str) -> int | None:
+    """'#025 Pikachu', '25' ou 'pikachu' → 25. None se não achar."""
+    from ...models.pokemon import Species
+    raw = raw.strip()
+    digits = raw.lstrip("#").split(" ")[0]
+    if digits.isdigit():
+        sp = db.session.get(Species, int(digits))
+        return sp.id if sp else None
+    key = raw.lower().replace(" ", "-")
+    sp = db.session.query(Species).filter(
+        db.or_(db.func.lower(Species.name_pt) == raw.lower(), db.func.lower(Species.name) == key)
+    ).first()
+    return sp.id if sp else None
+
+
 def _apply_trade_profile(user, form) -> str | None:
     """
     Aplica os campos do perfil de troca (#23) vindos de um formulário.
@@ -34,6 +49,16 @@ def _apply_trade_profile(user, form) -> str | None:
             user.state, user.city = uf, name
         else:
             user.state = user.city = None
+
+    if "favorite" in form:
+        raw = form.get("favorite", "").strip()
+        if raw:
+            species_id = resolve_species(raw)
+            if not species_id:
+                return "Pokémon favorito não encontrado. Escolha uma opção da lista."
+            user.favorite_species_id = species_id
+        else:
+            user.favorite_species_id = None
 
     if "trade_profile" in form:  # checkboxes: ausentes = desmarcados
         user.visibility = "public" if form.get("show_in_trades") == "on" else "private"

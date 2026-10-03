@@ -7,7 +7,7 @@ from ...models.collection import UserCollection
 from ...models.user import User
 from ...models.pokemon import Form, Species, EvolutionChain
 from ..collection.routes import REGIONS
-from ...data.regional import exclusive_info, trade_only_in_brazil
+from ...data.regional import exclusive_info, trade_only_in_brazil, form_category, CATEGORIES
 
 
 def _reachable_owner_filter(me: User):
@@ -21,8 +21,11 @@ def _reachable_owner_filter(me: User):
     )
 
 
-def get_missing_normal_forms(user_id: int, include_regional: bool = False) -> list[tuple[Form, Species]]:
-    """Wishlist automática: toda forma normal (e, se pedido, regional — #14) que o treinador não possui."""
+def get_missing_normal_forms(user_id: int, categories: set[str] | None = None) -> list[tuple[Form, Species]]:
+    """
+    Wishlist automática: toda forma normal que o treinador não possui, mais as formas
+    alternativas das categorias pedidas (#14: regional, mega, gmax, especial).
+    """
     owned_subq = (
         db.session.query(UserCollection.form_id)
         .filter(
@@ -37,26 +40,38 @@ def get_missing_normal_forms(user_id: int, include_regional: bool = False) -> li
         .join(Species, Species.id == Form.species_id)
         .filter(Form.id.notin_(owned_subq))
     )
-    if not include_regional:
+    if not categories:
         query = query.filter(Form.form_name == "normal")
-    return query.order_by(Species.id, Form.form_name != "normal", Form.form_name).all()
+    rows = query.order_by(Species.id, Form.form_name != "normal", Form.form_name).all()
+    if categories:
+        rows = [(f, s) for f, s in rows if f.form_name == "normal" or f.category in categories]
+    return rows
 
 
-@bp.route("/")
-@login_required
-def index():
-    include_regional = request.args.get("formas") == "1"
-    missing = get_missing_normal_forms(current_user.id, include_regional=include_regional)
+def _parse_categories(raw: str) -> set[str]:
+    """'?formas=regional,mega' → {'regional','mega'}; compatível com o antigo '?formas=1'."""
+    if raw == "1":
+        return {"regional"}
+    return {c for c in raw.split(",") if c in CATEGORIES}
+
+
+def build_wishlist(user: User, categories: set[str] | None = None, offers_for: User | None = None) -> dict:
+    """
+    A "inteligência" da wishlist num lugar só — usada na Wishlist e no Trade Binder (#18).
+    Ordem: ⭐ manual → Alta (exclusivos de região no topo) → Evoluir; dentro de cada grupo,
+    quem tem oferta de troca; por fim número da Pokédex.
+    `offers_for`: de quem contar as ofertas de troca (padrão: o próprio usuário, com proximidade).
+    """
+    missing = get_missing_normal_forms(user.id, categories=categories)
     missing_ids = [f.id for f, _ in missing]
-    regional_total = db.session.query(Form).filter(Form.form_name != "normal").count()
 
     # Prioridade = linha na tabela wishlists (opcional, um toque na estrela)
     priority_ids = {
-        row[0]
-        for row in db.session.query(Wishlist.form_id).filter_by(user_id=current_user.id).all()
+        row[0] for row in db.session.query(Wishlist.form_id).filter_by(user_id=user.id).all()
     }
 
     # Quantos outros treinadores oferecem cada faltante para troca
+    viewer = offers_for or user
     offers: dict[int, int] = {}
     if missing_ids:
         offers = dict(
@@ -64,9 +79,9 @@ def index():
             .join(User, User.id == UserCollection.user_id)
             .filter(
                 User.visibility != "private",  # só quem aparece nas trocas (D1)
-                _reachable_owner_filter(current_user),  # mesma regra de proximidade do matching (#24)
+                _reachable_owner_filter(viewer),  # mesma regra de proximidade do matching (#24)
                 UserCollection.form_id.in_(missing_ids),
-                UserCollection.user_id != current_user.id,
+                UserCollection.user_id != user.id,
                 UserCollection.owned.is_(True),
                 UserCollection.quantity > 0,
                 UserCollection.for_trade.is_(True),
@@ -75,7 +90,7 @@ def index():
             .all()
         )
 
-    evolve_from = get_evolve_sources(current_user.id, missing_ids)
+    evolve_from = get_evolve_sources(user.id, missing_ids)
 
     # Exclusivos de outra região do mundo: no Brasil, só por troca (#14)
     exclusives = {
@@ -84,9 +99,6 @@ def index():
         if f.form_name == "normal" and trade_only_in_brazil(s.id)
     }
 
-    # ⭐ manual primeiro; depois Alta (nada da família) antes de Evoluir;
-    # dentro da Alta, exclusivos de região (só por troca) no topo;
-    # depois quem tem oferta de troca; por fim número da Pokédex
     missing.sort(key=lambda fs: (
         fs[0].id not in priority_ids,
         fs[0].id in evolve_from,
@@ -95,16 +107,39 @@ def index():
         fs[1].id,
         fs[0].form_name != "normal",
     ))
+    return {
+        "missing": missing,
+        "priority_ids": priority_ids,
+        "offers": offers,
+        "evolve_from": evolve_from,
+        "exclusives": exclusives,
+    }
+
+
+@bp.route("/")
+@login_required
+def index():
+    categories = _parse_categories(request.args.get("formas", ""))
+    wl = build_wishlist(current_user, categories=categories)
+
+    # Total de formas por categoria (para os botões liga/desliga)
+    category_totals: dict[str, int] = {}
+    for (name,) in db.session.query(Form.form_name).filter(Form.form_name != "normal"):
+        cat = form_category(name)
+        if cat:
+            category_totals[cat] = category_totals.get(cat, 0) + 1
+    category_links = {
+        cat: ",".join(sorted(categories ^ {cat}))  # liga/desliga só esta categoria
+        for cat in CATEGORIES
+    }
 
     return render_template(
         "wishlist/index.html",
-        missing=missing,
-        priority_ids=priority_ids,
-        offers=offers,
-        evolve_from=evolve_from,
-        exclusives=exclusives,
-        include_regional=include_regional,
-        regional_total=regional_total,
+        **wl,
+        categories=categories,
+        category_names=CATEGORIES,
+        category_totals=category_totals,
+        category_links=category_links,
         regions=REGIONS,
     )
 

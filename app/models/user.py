@@ -25,6 +25,10 @@ class User(UserMixin, db.Model):
     can_trade_remote = db.Column(db.Boolean, default=False, nullable=False)  # "Topo trocar à distância"
     whatsapp = db.Column(db.String(20), nullable=True)        # só dígitos, com DDI 55
     allow_whatsapp = db.Column(db.Boolean, default=False, nullable=False)    # consentimento explícito (LGPD)
+
+    # Pokémon favorito — vira "adesivo" animado no Trade Binder
+    favorite_species_id = db.Column(db.Integer, db.ForeignKey("species.id"), nullable=True)
+    favorite_species = db.relationship("Species")
     created_at = db.Column(db.DateTime, default=now_br, nullable=False)
     updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
@@ -47,6 +51,21 @@ class User(UserMixin, db.Model):
         if self.city and self.state:
             return f"{self.city}/{self.state}"
         return self.state or ""
+
+    @property
+    def favorite_gif_url(self) -> str | None:
+        """GIF animado (sprites estilo Showdown da PokeAPI); a página cai na arte oficial se não existir."""
+        if not self.favorite_species_id:
+            return None
+        return ("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/"
+                f"{self.favorite_species_id}.gif")
+
+    @property
+    def favorite_art_url(self) -> str | None:
+        if not self.favorite_species_id:
+            return None
+        return ("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"
+                f"{self.favorite_species_id}.png")
 
     @property
     def needs_onboarding(self) -> bool:

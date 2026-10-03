@@ -481,27 +481,42 @@
     </details>`;
   }
 
-  // ── Formas regionais (#14): marcar "tenho" com um toque ──
+  // ── Outras formas (#14): regionais, Mega, Gigantamax, especiais — marcar "tenho" com um toque ──
+  const FORM_CATEGORY = {
+    regional: {name: 'Regionais', note: ''},
+    mega: {name: 'Mega Evolução', note: 'Temporária no GO — conta na coleção, mas não se troca.'},
+    gmax: {name: 'Gigantamax', note: ''},
+    especial: {name: 'Especiais', note: 'Algumas (como Totem) não existem no Pokémon GO.'},
+  };
   function renderRegionalForms(p) {
     const forms = p.regional_forms || [];
     if (!forms.length) return '';
-    const logged = !!p.collection;
-    const items = forms.map(f => `
-      <div class="flex items-center gap-2 bg-gray-50 rounded-xl p-2" data-regional-form="${f.form_id}">
+    const groups = {};
+    forms.forEach(f => (groups[f.category || 'especial'] ||= []).push(f));
+    return `<div class="mt-4 border-t border-gray-100 pt-4 space-y-3">
+      <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Outras formas</div>
+      ${Object.entries(groups).map(([cat, list]) => `
+        <div>
+          <div class="text-[11px] font-bold text-gray-600">${FORM_CATEGORY[cat]?.name || cat}
+            ${FORM_CATEGORY[cat]?.note ? `<span class="font-normal text-gray-400">· ${FORM_CATEGORY[cat].note}</span>` : ''}</div>
+          <div class="grid gap-2 sm:grid-cols-2 mt-1">${list.map(f => renderFormRow(f, !!p.collection)).join('')}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+  function renderFormRow(f, logged) {
+    const title = f.category === 'regional' ? `de ${_esc(f.label)}` : _esc(f.label);
+    return `
+      <div class="flex items-center gap-2 bg-gray-50 rounded-xl p-2" data-regional-form="${f.form_id}" data-category="${f.category}">
         <img src="${_esc(f.sprite_url || '')}" class="w-12 h-12 object-contain ${f.owned ? '' : 'opacity-50 grayscale'}" alt="" onerror="this.style.visibility='hidden'" />
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-bold text-gray-800 truncate">de ${_esc(f.label)}</div>
+          <div class="text-sm font-bold text-gray-800 truncate">${title}</div>
           <div class="flex gap-1 mt-0.5">${[f.type1, f.type2].filter(Boolean).map(t =>
             `<span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold ${TB[t] || 'bg-gray-400 text-white'}">${TYPE_PT[t] || t}</span>`).join('')}</div>
         </div>
         ${logged ? `<button onclick="toggleRegionalForm(${f.form_id}, ${!f.owned}, this)"
           class="regional-btn text-xs font-bold px-3 py-1.5 rounded-lg ${f.owned ? 'bg-green-100 text-green-700' : 'bg-white border border-gray-200 text-gray-600'}">
           ${f.owned ? '✓ Tenho' : '+ Tenho'}</button>` : ''}
-      </div>`).join('');
-    return `<div class="mt-4 border-t border-gray-100 pt-4">
-      <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Formas regionais</div>
-      <div class="grid gap-2 sm:grid-cols-2">${items}</div>
-    </div>`;
+      </div>`;
   }
 
   async function toggleRegionalForm(formId, own, btn) {

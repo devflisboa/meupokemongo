@@ -64,7 +64,9 @@ def run_matching_for_user(user_id: int) -> int:
         db.session.query(UserCollection)
         .join(Form, Form.id == UserCollection.form_id)
         .filter(
-            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14)
+            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14),
+            # exceto Mega — Mega Evolução é temporária no GO e não se troca
+            ~Form.form_name.like("mega%"),
             UserCollection.form_id.notin_(_owned_subq(user_id)),
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,
@@ -135,7 +137,9 @@ def get_reciprocal_trades(user_id: int, limit: int = 20) -> list[dict]:
         db.session.query(UserCollection.user_id, Form)
         .join(Form, Form.id == UserCollection.form_id)
         .filter(
-            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14)
+            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14),
+            # exceto Mega — Mega Evolução é temporária no GO e não se troca
+            ~Form.form_name.like("mega%"),
             UserCollection.form_id.notin_(_owned_subq(user_id)),
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,
@@ -155,6 +159,7 @@ def get_reciprocal_trades(user_id: int, limit: int = 20) -> list[dict]:
         db.session.query(Form)
         .join(UserCollection, UserCollection.form_id == Form.id)
         .filter(
+            ~Form.form_name.like("mega%"),
             UserCollection.user_id == user_id,
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,

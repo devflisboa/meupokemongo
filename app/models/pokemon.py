@@ -43,15 +43,22 @@ class Form(db.Model):
 
     @property
     def label(self) -> str:
-        """'' para a forma normal; 'Alola', 'Paldea (Combate)'... para formas regionais (#14)."""
+        """'' para a forma normal; 'Alola', 'Mega X', 'Gigantamax', 'Boné Original'... (#14)."""
         from ..data.regional import form_label
         return form_label(self.form_name)
 
     @property
+    def category(self) -> str | None:
+        """None (normal) | 'regional' | 'mega' | 'gmax' | 'especial'."""
+        from ..data.regional import form_category
+        return form_category(self.form_name)
+
+    @property
     def display_name(self) -> str:
-        """'Rattata' / 'Rattata de Alola'."""
+        """'Rattata' · 'Rattata de Alola' · 'Mega Charizard X' · 'Charizard Gigantamax'."""
+        from ..data.regional import form_display_name
         name = (self.species.name_pt or self.species.name).removesuffix("-normal").replace("-", " ").title()
-        return f"{name} de {self.label}" if self.label else name
+        return form_display_name(name, self.form_name)
 
     def __repr__(self) -> str:
         return f"<Form {self.species_id} {self.form_name}>"
