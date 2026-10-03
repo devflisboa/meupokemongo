@@ -36,14 +36,13 @@ git pull --ff-only origin main
 docker-compose -f docker-compose.prod.yml build web
 
 echo '[3/4] Recriando container web...'
-# Container criado fora do compose (sem label) bloqueia o 'up' com conflito de nome
-if docker inspect `$W >/dev/null 2>&1; then
-  if [ -z "`$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' `$W)" ]; then
-    echo '   container sem label do compose - removendo'
-    docker rm -f `$W
-  fi
-fi
-docker-compose -f docker-compose.prod.yml up -d web
+# docker-compose 1.29.2 + Docker Engine novo quebra no 'recreate' (KeyError 'ContainerConfig')
+# e deixa o servico fora do ar. Por isso: remove e cria do zero (inclui container manual
+# sem label do compose e restos '<hash>_meupokemongo_web_1' de recreate que falhou).
+for c in `$(docker ps -a --format '{{.Names}}' | grep -E '(^|_)meupokemongo_web_1$'); do
+  docker rm -f `$c >/dev/null && echo "   removido `$c"
+done
+docker-compose -f docker-compose.prod.yml up -d --no-deps web
 
 echo '[4/4] Migracoes + health check...'
 for i in `$(seq 1 20); do
@@ -63,12 +62,16 @@ echo "   health / -> HTTP `$code"
 echo "   versao no servidor: `$(git rev-parse --short HEAD)"
 "@
 
-# Script vai via stdin (o PS 5.1 remove aspas de argumentos de exe nativo).
-# Bash nao aceita CRLF nem BOM.
-$OutputEncoding = New-Object System.Text.UTF8Encoding $false
-$remoteCmd = $remoteCmd -replace "`r", ""
-$remoteCmd | & ssh -i "$Key" -p $Port -o StrictHostKeyChecking=no $Server "bash -s"
-if ($LASTEXITCODE -ne 0) { Write-Error "Falha no servidor remoto"; exit 1 }
+# Script vai por arquivo + redirecionamento do cmd: o PS 5.1 remove aspas de argumentos
+# de exe nativo e poe BOM no pipe (o bash ignoraria o 'set -e'). Bash nao aceita CRLF.
+$TempDir = "D:\.ClaudeCode\.temp"
+New-Item -ItemType Directory -Force $TempDir | Out-Null
+$ScriptFile = Join-Path $TempDir "deploy_meupokemongo.sh"
+[IO.File]::WriteAllText($ScriptFile, ($remoteCmd -replace "`r", ""), (New-Object System.Text.UTF8Encoding $false))
+cmd /c "ssh -i `"$Key`" -p $Port -o StrictHostKeyChecking=no $Server `"bash -s`" < `"$ScriptFile`""
+$sshExit = $LASTEXITCODE
+Remove-Item $ScriptFile -Force -ErrorAction SilentlyContinue
+if ($sshExit -ne 0) { Write-Error "Falha no servidor remoto"; exit 1 }
 
 Write-Host ""
 Write-Host "Deploy concluido! ($localHead)" -ForegroundColor Green
