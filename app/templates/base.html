@@ -233,7 +233,8 @@
   {% endwith %}
 
   <!-- CONTEÚDO PRINCIPAL -->
-  <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-5 pb-20 sm:pb-5">
+  {# o espaço da barra inferior fixa (mobile) fica no rodapé, não aqui — senão sobra um vão entre o conteúdo e o rodapé #}
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-5">
     {% if current_user.is_authenticated and current_user.needs_onboarding
           and request.endpoint not in ('auth.onboarding', 'auth.perfil') %}
     <a href="{{ url_for('auth.onboarding') }}"
@@ -265,7 +266,7 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="border-t border-gray-200 bg-white text-center text-xs text-gray-400 py-3 mt-2">
+  <footer class="border-t border-gray-200 bg-white text-center text-xs text-gray-400 pt-3 pb-20 sm:pb-3">
     MeuPokémonGO &bull; v1.0 &bull; Feito com Flask + Tailwind CSS &bull;
     Dados: <a href="https://pokeapi.co" target="_blank" rel="noopener" class="hover:text-gray-600 underline">PokéAPI</a>
     &amp; <a href="https://pokemongo.com" target="_blank" rel="noopener" class="hover:text-gray-600 underline">Pokémon GO</a>
