@@ -57,6 +57,10 @@ def create_app(env: str | None = None) -> Flask:
             name = name[:-7]
         return name.replace("-", " ").title()
 
+    from .data.sprites import sprite_small, sprite_anim
+    app.add_template_filter(sprite_small, "sprite_small")
+    app.add_template_filter(sprite_anim, "sprite_anim")
+
     @app.context_processor
     def inject_notifications():
         from flask_login import current_user

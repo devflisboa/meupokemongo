@@ -264,4 +264,5 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | `60e85a1` |
 | 02/10/2026 | **#24** proximidade + trocas de mão dupla · **#18** Trade Binder · **#15** progresso Shiny/100% · **#20** faltantes sob demanda | `fac64ef` |
 | 02/10/2026 | **#20b** aba Tenho sob demanda · **#14** formas regionais + exclusivos de região | `d6a62ab` |
-| 02/10/2026 | Formas Mega/Gigantamax/Especiais · Trade Binder "Procuro" com todos os faltantes priorizados · Pokémon favorito como adesivo animado | ver `git log` |
+| 02/10/2026 | Formas Mega/Gigantamax/Especiais · Trade Binder "Procuro" com todos os faltantes priorizados · Pokémon favorito como adesivo animado | `c4d3f2a` |
+| 02/10/2026 | Imagens: sprite 96 px nas grades (~100× mais leve), GIF animado em destaques (modal com GIF shiny, "você tem", adesivo), "reduzir movimento" respeitado · Engrenagem = Admin (só administradores) + "ver como" no Trade Binder · Pressionar e segurar abre a carta expandida | ver `git log` |

@@ -207,9 +207,7 @@
     <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
       <div class="bg-gradient-to-br {{ grad }} p-3 flex flex-col items-center">
         {% if form.sprite_url %}
-        <img src="{{ form.sprite_url }}" alt="{{ pname }}"
-          class="w-14 h-14 object-contain drop-shadow" loading="lazy"
-          onerror="this.style.display='none'" />
+        <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-14 h-14 object-contain drop-shadow" loading="lazy" onerror="spriteFallback(this)" />
         {% endif %}
       </div>
       <div class="p-2.5 text-center{% if profile_user.trainer_code %} pb-1{% endif %}">
@@ -309,7 +307,7 @@ const LEGEND_BADGE = {
   l: '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>',
 };
 const spriteBox = (p, extra = '') => `<div class="bg-gradient-to-br ${TYPE_GRAD[p.t] || 'from-gray-300 to-gray-400'} p-1 flex items-center justify-center min-h-[44px]">${
-  p.s ? `<img src="${esc(p.s)}" alt="${esc(p.n)}" class="w-9 h-9 object-contain ${extra}" loading="lazy" onerror="this.style.display='none'" />`
+  p.s ? `<img src="${esc(p.s)}" data-art="${esc(p.a || '')}" alt="${esc(p.n)}" class="sprite-sm w-9 h-9 object-contain ${extra}" loading="lazy" onerror="spriteFallback(this)" />`
       : '<span class="text-white/50 text-xs" aria-hidden="true">?</span>'}</div>`;
 
 function lazyGrid(gridId, sentinelId, data, cardFn) {

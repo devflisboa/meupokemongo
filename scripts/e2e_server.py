@@ -63,7 +63,8 @@ def seed(app):
         db.session.bulk_insert_mappings(EvolutionChain, data["evolutions"])
 
         felipe = User(username=E2E_USER, email="felipe@e2e.test", trainer_code="1111 2222 3333",
-                      visibility="public", state="CE", city="Fortaleza", favorite_species_id=25)
+                      visibility="public", state="CE", city="Fortaleza", favorite_species_id=25,
+                      is_admin=True)  # como em produção: felipe é admin (engrenagem / "ver como")
         # Misty liberou WhatsApp (botão "Propor troca"); "novato" ainda não fez o onboarding
         misty = User(username=E2E_FRIEND, email="misty@e2e.test", trainer_code="4444 5555 6666",
                      visibility="public", state="CE", city="Fortaleza", can_trade_remote=True,

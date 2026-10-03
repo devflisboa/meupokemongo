@@ -54,8 +54,7 @@
         <div class="flex flex-wrap gap-1">
           {% for f in forms[:8] %}
           <div class="w-11 text-center" data-poke-id="{{ f.species_id }}" title="{{ f.display_name }}">
-            <img src="{{ f.sprite_url }}" alt="" class="w-10 h-10 mx-auto object-contain bg-gray-50 rounded-lg" loading="lazy"
-              onerror="this.style.visibility='hidden'" />
+            <img src="{{ f.sprite_url | sprite_small }}" data-art="{{ f.sprite_url }}" alt="" class="sprite-sm w-10 h-10 mx-auto object-contain bg-gray-50 rounded-lg" loading="lazy" onerror="spriteFallback(this)" />
             <div class="text-[8px] text-gray-500 truncate">{{ f.display_name }}</div>
           </div>
           {% endfor %}
@@ -85,9 +84,7 @@
     <!-- Sprite header -->
     <div class="bg-gradient-to-br {{ grad }} p-4 flex items-center gap-3 relative">
       {% if match.form.sprite_url %}
-      <img src="{{ match.form.sprite_url }}" alt="{{ sp.name }}"
-        class="w-16 h-16 object-contain drop-shadow-md"
-        onerror="this.style.display='none'" />
+      <img src="{{ match.form.sprite_url | sprite_small }}" data-art="{{ match.form.sprite_url }}" alt="{{ sp.name }}" class="sprite-sm w-16 h-16 object-contain drop-shadow-md" loading="lazy" onerror="spriteFallback(this)" />
       {% else %}
       <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
         <span class="text-2xl">?</span>

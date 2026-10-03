@@ -5,6 +5,7 @@ from ...extensions import db
 from ...models.pokemon import Species, Form, EvolutionChain
 from ...models.collection import UserCollection
 from ...models.individual import UserPokemon
+from ...data.sprites import sprite_small, sprite_anim
 from ...services.analytics_service import log_event
 
 PER_PAGE = 24
@@ -105,6 +106,7 @@ def api_detail(species_id: int):
                 "type1": f.type1,
                 "type2": f.type2,
                 "sprite_url": f.sprite_url,
+                "sprite_small": sprite_small(f.sprite_url),
                 "owned": bool(reg_owned.get(f.id) and reg_owned[f.id].owned and reg_owned[f.id].quantity > 0),
             }
             for f in regional
@@ -121,6 +123,9 @@ def api_detail(species_id: int):
             "type1": default_form.type1,
             "type2": default_form.type2,
             "sprite_url": default_form.sprite_url,
+            # modal = destaque: GIF animado (shiny se o treinador tem); arte oficial como fallback
+            "sprite_anim": sprite_anim(default_form.sprite_url),
+            "sprite_anim_shiny": sprite_anim(default_form.sprite_url, shiny=True),
             "is_shiny_available": default_form.is_shiny_available,
         } if default_form else None,
         "collection": collection_data,
@@ -128,10 +133,10 @@ def api_detail(species_id: int):
             {
                 "from_id": e.from_form.species_id,
                 "from_name": e.from_form.species.name_pt or e.from_form.species.name,
-                "from_sprite": e.from_form.sprite_url,
+                "from_sprite": sprite_small(e.from_form.sprite_url),
                 "to_id": e.to_form.species_id,
                 "to_name": e.to_form.species.name_pt or e.to_form.species.name,
-                "to_sprite": e.to_form.sprite_url,
+                "to_sprite": sprite_small(e.to_form.sprite_url),
                 "candy_cost": e.candy_cost,
             }
             for e in evolutions

@@ -86,9 +86,7 @@
         <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
           class="group flex flex-col items-center bg-gradient-to-br {{ grad }} rounded-xl p-2 hover:scale-105 transition-transform">
           {% if form.sprite_url %}
-          <img src="{{ form.sprite_url }}" alt="{{ form.species.name }}"
-            class="w-10 h-10 object-contain drop-shadow" loading="lazy"
-            onerror="this.style.display='none'" />
+          <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ form.species.name }}" class="sprite-sm w-10 h-10 object-contain drop-shadow" loading="lazy" onerror="spriteFallback(this)" />
           {% else %}
           <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
             <span class="text-xs text-white/60 font-mono">{{ '%03d' % form.species_id }}</span>
@@ -127,9 +125,7 @@
         <div class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ grad }} flex items-center justify-center flex-shrink-0">
             {% if form.sprite_url %}
-            <img src="{{ form.sprite_url }}" alt="{{ form.species.name }}"
-              class="w-8 h-8 object-contain" loading="lazy"
-              onerror="this.style.display='none'" />
+            <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ form.species.name }}" class="sprite-sm w-8 h-8 object-contain" loading="lazy" onerror="spriteFallback(this)" />
             {% endif %}
           </div>
           <div class="flex-1 min-w-0">

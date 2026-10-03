@@ -153,7 +153,7 @@
         <div class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
           <div class="flex items-center gap-2.5 min-w-0">
             {% if form.sprite_url %}
-            <img src="{{ form.sprite_url }}" alt="{{ pname }}" class="w-10 h-10 object-contain flex-shrink-0" loading="lazy" />
+            <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-10 h-10 object-contain flex-shrink-0" loading="lazy" onerror="spriteFallback(this)" />
             {% else %}
             <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center text-lg">❓</div>
             {% endif %}
@@ -203,7 +203,7 @@
         {% set to_name = (to_form.species.name_pt or to_form.species.name) | poke_name %}
         <div class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
           {% if from_form.sprite_url %}
-          <img src="{{ from_form.sprite_url }}" alt="{{ from_name }}" class="w-10 h-10 object-contain flex-shrink-0 mt-0.5" loading="lazy" />
+          <img src="{{ from_form.sprite_url | sprite_small }}" data-art="{{ from_form.sprite_url }}" alt="{{ from_name }}" class="sprite-sm w-10 h-10 object-contain flex-shrink-0 mt-0.5" loading="lazy" onerror="spriteFallback(this)" />
           {% else %}
           <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 mt-0.5"></div>
           {% endif %}

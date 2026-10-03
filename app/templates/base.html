@@ -11,6 +11,27 @@
   {% block head %}{% endblock %}
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Sprites pixel art (grades e GIFs): nítidos, sem borrão.
+       O sprite de 96 px tem muita borda transparente — o scale compensa para o Pokémon não parecer miúdo. */
+    .sprite-sm { image-rendering: pixelated; scale: 1.45; }  /* 'scale' não conflita com hover:scale-* (transform) */
+    .sprite-anim { image-rendering: pixelated; }
+    /* Pressionar e segurar um card: sem menu nativo de imagem e com "afundar" enquanto segura */
+    [data-poke-id] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    [data-poke-id] img { -webkit-user-drag: none; }
+    [data-poke-id].poke-pressing { transform: scale(0.94); transition: transform .45s ease-out; filter: brightness(.95); }
+  </style>
+  <script>
+    /* Imagens: GIF só onde é destaque; "reduzir movimento" do sistema = imagem parada (data-static) */
+    const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function spriteFallback(img) {
+      /* sprite pequeno/GIF ausente → arte oficial (data-art); sem nada → esconde */
+      if (img.dataset.art && img.src !== img.dataset.art) { img.src = img.dataset.art; img.classList.remove('sprite-sm', 'sprite-anim'); }
+      else img.style.visibility = 'hidden';
+    }
+    if (REDUCE_MOTION) document.addEventListener('DOMContentLoaded', () =>
+      document.querySelectorAll('img[data-static]').forEach(i => { i.src = i.dataset.static; i.classList.remove('sprite-anim'); }));
+  </script>
   <script>
     /* Injeta X-CSRFToken automaticamente em todos os fetch POST/PATCH/PUT/DELETE */
     (function() {
@@ -126,14 +147,17 @@
             {% endif %}
           </a>
           {% endif %}
-          <!-- Configurações (ainda sem ação — oculto no mobile para não estourar a largura) -->
-          <button class="hidden sm:inline-flex p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          {% if current_user.is_authenticated and current_user.is_admin %}
+          <!-- Engrenagem = Admin (só administradores): usuários, "ver como" cada treinador, painel, sync -->
+          <a href="{{ url_for('admin.usuarios') }}" id="admin-gear" title="Administração"
+            class="inline-flex p-2 text-yellow-300 hover:text-yellow-200 hover:bg-white/10 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-          </button>
+          </a>
+          {% endif %}
           <!-- Avatar / Auth -->
           {% if current_user.is_authenticated %}
           <a href="{{ url_for('auth.perfil') }}" class="flex-shrink-0">
@@ -356,7 +380,7 @@
       const items = p.evolutions.map(e => `
         <div class="flex items-center gap-2">
           <button onclick="openPokeModal(${e.from_id})" class="flex flex-col items-center hover:opacity-80 transition-opacity">
-            <img src="${e.from_sprite||''}" class="w-10 h-10 object-contain" />
+            <img src="${e.from_sprite||''}" class="sprite-sm w-10 h-10 object-contain" />
             <div class="text-[9px] text-gray-600 font-semibold mt-0.5 max-w-[3rem] truncate">${pokeName(e.from_name)}</div>
           </button>
           <div class="flex flex-col items-center text-gray-400">
@@ -364,7 +388,7 @@
             ${e.candy_cost?`<span class="text-[8px]">${e.candy_cost}🍬</span>`:''}
           </div>
           <button onclick="openPokeModal(${e.to_id})" class="flex flex-col items-center hover:opacity-80 transition-opacity">
-            <img src="${e.to_sprite||''}" class="w-10 h-10 object-contain" />
+            <img src="${e.to_sprite||''}" class="sprite-sm w-10 h-10 object-contain" />
             <div class="text-[9px] text-gray-600 font-semibold mt-0.5 max-w-[3rem] truncate">${pokeName(e.to_name)}</div>
           </button>
         </div>`).join('<span class="text-gray-200">|</span>');
@@ -381,7 +405,10 @@
         <button onclick="closePokeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none">×</button>
       </div>
       <div class="bg-gradient-to-b ${grad} mx-4 rounded-2xl h-48 flex items-center justify-center relative">
-        ${p.form?.sprite_url?`<img src="${p.form.sprite_url}" class="w-36 h-36 object-contain drop-shadow-xl" alt="${name}"/>`:'<span class="text-6xl">❓</span>'}
+        ${p.form?.sprite_url ? `<img id="modal-sprite" src="${modalSpriteSrc(p, col?.has_shiny)}" data-art="${_esc(p.form.sprite_url)}"
+            class="${REDUCE_MOTION ? '' : 'sprite-anim '}w-36 h-36 object-contain drop-shadow-xl" alt="${name}" onerror="spriteFallback(this)"/>`
+          : '<span class="text-6xl">❓</span>'}
+        ${col?.has_shiny && !REDUCE_MOTION ? '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Shiny</span>' : ''}
         ${p.is_mythical?'<span class="absolute top-2 left-2 bg-purple-500/90 text-white text-[9px] font-black px-2 py-0.5 rounded-full">✦ Mítico</span>':p.is_legendary?'<span class="absolute top-2 left-2 bg-yellow-400/90 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-full">★ Lendário</span>':''}
       </div>
       <div class="px-4 pt-3 pb-8">
@@ -400,6 +427,21 @@
           Ver página completa →
         </a>
       </div>`;
+  }
+
+  // ── Imagem do modal: GIF animado (shiny se o treinador tem); "reduzir movimento" = arte parada ──
+  function modalSpriteSrc(p, shiny) {
+    if (REDUCE_MOTION) return p.form.sprite_url;
+    return (shiny ? p.form.sprite_anim_shiny : p.form.sprite_anim) || p.form.sprite_url;
+  }
+  function refreshModalSprite(shiny) {
+    const img = document.getElementById('modal-sprite');
+    if (!img || !_pkData?.form) return;
+    img.src = modalSpriteSrc(_pkData, shiny);
+    const box = img.parentElement;
+    box.querySelector('.modal-shiny-tag')?.remove();
+    if (shiny && !REDUCE_MOTION) box.insertAdjacentHTML('beforeend',
+      '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Shiny</span>');
   }
 
   // ── Efetividade de tipos (multiplicadores do Pokémon GO) ──
@@ -507,7 +549,7 @@
     const title = f.category === 'regional' ? `de ${_esc(f.label)}` : _esc(f.label);
     return `
       <div class="flex items-center gap-2 bg-gray-50 rounded-xl p-2" data-regional-form="${f.form_id}" data-category="${f.category}">
-        <img src="${_esc(f.sprite_url || '')}" class="w-12 h-12 object-contain ${f.owned ? '' : 'opacity-50 grayscale'}" alt="" onerror="this.style.visibility='hidden'" />
+        <img src="${_esc(f.sprite_small || f.sprite_url || '')}" data-art="${_esc(f.sprite_url || '')}" class="sprite-sm w-12 h-12 object-contain ${f.owned ? '' : 'opacity-50 grayscale'}" alt="" onerror="spriteFallback(this)" />
         <div class="flex-1 min-w-0">
           <div class="text-sm font-bold text-gray-800 truncate">${title}</div>
           <div class="flex gap-1 mt-0.5">${[f.type1, f.type2].filter(Boolean).map(t =>
@@ -676,7 +718,9 @@
     if (!d.ok) return;
     const isOwned = d.owned && d.quantity > 0;
     c.dataset.owned = isOwned; c.dataset.qty = d.quantity;
+    const shinyChanged = String(d.has_shiny) !== c.dataset.shiny;
     c.dataset.trade = d.for_trade; c.dataset.shiny = d.has_shiny; c.dataset.perfect = d.has_perfect;
+    if (shinyChanged) refreshModalSprite(d.has_shiny);  // GIF normal ↔ shiny na hora
     const perfectBtn = c.querySelector('.modal-perfect');
     if (perfectBtn) { perfectBtn.textContent = d.has_perfect?'💯 Tenho 100%!':'💯 100%?'; perfectBtn.className=`modal-perfect text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.has_perfect?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}`; }
     const capBtn = c.querySelector('.modal-cap');
@@ -725,15 +769,52 @@
   }
 
   // Intercepta cliques em cards com data-poke-id
-  // clique simples = modal normal · duplo clique = carta expandida com todos os detalhes
+  // clique simples = modal normal · duplo clique OU pressionar e segurar = carta expandida com todos os detalhes
   let _clickTimer = null;
+  let _suppressClick = false;
+
+  function _pokeCardFrom(target) {
+    if (target.closest('button, a[target="_blank"], [data-no-modal], input, select, textarea')) return null;
+    return target.closest('[data-poke-id]');
+  }
+
+  // ── Pressionar e segurar (~450 ms) ──
+  (function () {
+    const HOLD_MS = 450, MOVE_TOL = 10;
+    let timer = null, startX = 0, startY = 0, pressed = null;
+    const cancel = () => {
+      clearTimeout(timer); timer = null;
+      pressed?.classList.remove('poke-pressing'); pressed = null;
+    };
+    document.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;               // só botão principal / toque
+      const card = _pokeCardFrom(e.target);
+      if (!card) return;
+      startX = e.clientX; startY = e.clientY; pressed = card;
+      card.classList.add('poke-pressing');
+      timer = setTimeout(() => {
+        const id = parseInt(card.dataset.pokeId);
+        cancel();
+        _suppressClick = true;                  // o click que vem ao soltar não reabre
+        clearTimeout(_clickTimer); _clickTimer = null;
+        navigator.vibrate?.(15);                // resposta tátil no celular
+        openPokeModal(id, true);
+      }, HOLD_MS);
+    });
+    document.addEventListener('pointermove', e => {
+      if (timer && (Math.abs(e.clientX - startX) > MOVE_TOL || Math.abs(e.clientY - startY) > MOVE_TOL)) cancel();
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => document.addEventListener(t, () => timer && cancel()));
+    window.addEventListener('scroll', () => timer && cancel(), { passive: true });
+    // sem o menu "salvar imagem" do celular ao segurar um card
+    document.addEventListener('contextmenu', e => { if (_pokeCardFrom(e.target)) e.preventDefault(); });
+  })();
+
   document.addEventListener('click', function(e) {
-    if (e.target.closest('button')) return;
-    if (e.target.closest('a[target="_blank"]')) return;
-    if (e.target.closest('[data-no-modal]')) return;
-    const card = e.target.closest('[data-poke-id]');
+    const card = _pokeCardFrom(e.target);
     if (!card) return;
     e.preventDefault();
+    if (_suppressClick) { _suppressClick = false; return; }
     const id = parseInt(card.dataset.pokeId);
     if (_clickTimer) {
       clearTimeout(_clickTimer); _clickTimer = null;

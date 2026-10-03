@@ -93,9 +93,7 @@
       hover:scale-[1.05] active:scale-95">
     <div class="bg-gradient-to-br {{ grad }} p-1.5 flex items-center justify-center min-h-[52px]">
       {% if form.sprite_url %}
-      <img src="{{ form.sprite_url }}" alt="{{ pname }}"
-        class="w-10 h-10 object-contain drop-shadow" loading="lazy"
-        onerror="this.style.display='none'" />
+      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-10 h-10 object-contain drop-shadow" loading="lazy" onerror="spriteFallback(this)" />
       {% else %}
       <span class="text-white/50 text-xs">?</span>
       {% endif %}

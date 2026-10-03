@@ -1,5 +1,6 @@
 from datetime import date
 from flask import render_template, abort, request, jsonify, current_app
+from ...data.sprites import sprite_small
 from flask_login import current_user
 from . import bp
 from ...extensions import csrf
@@ -185,7 +186,8 @@ def trade_binder(username: str):
             "id": s.id,
             "n": poke_name(s.name_pt or s.name),
             "l": f.label,
-            "s": f.sprite_url or "",
+            "s": sprite_small(f.sprite_url),
+            "a": f.sprite_url or "",
             "t": f.type1 or "",
             "b": "m" if s.is_mythical else ("l" if s.is_legendary else ""),
             "p": f.id in wl["priority_ids"],
@@ -211,6 +213,8 @@ def trade_binder(username: str):
         i_can_offer=i_can_offer,
         tier_label=tier_label,
         share_url=request.url.split("?")[0],
+        all_users=(db.session.query(User).order_by(User.username).all()
+                   if current_user.is_authenticated and current_user.is_admin else []),
     )
 
 
@@ -257,7 +261,8 @@ def estoque(username: str):
             "id": f.species_id,
             "n": poke_name(f.species.name_pt or f.species.name),
             "t": f.type1 or "",
-            "s": f.sprite_url or "",
+            "s": sprite_small(f.sprite_url),  # grade: sprite 96 px (~1 KB)
+            "a": f.sprite_url or "",          # fallback: arte oficial
             "b": "m" if f.species.is_mythical else ("l" if f.species.is_legendary else ""),
         }
 

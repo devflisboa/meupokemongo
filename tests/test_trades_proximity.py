@@ -145,7 +145,7 @@ def test_estoque_missing_as_json_not_html(client, town):
     assert "missing-card" not in html.split("const MISSING")[0].split("tab-content-faltantes")[1]
     data = json.loads(re.search(r"const MISSING = (\[.*?\]);", html, re.S).group(1))
     assert {p["id"] for p in data} == {9201, 9202}
-    assert set(data[0]) == {"id", "n", "t", "s", "b"}
+    assert set(data[0]) == {"id", "n", "t", "s", "a", "b"}
 
     # #20b: aba Tenho também vem como JSON (sem cards no HTML), com o estado dos toggles
     assert 'class="poke-card' not in html.split('id="tab-content-tenho"')[1].split('id="tab-content-faltantes"')[0]

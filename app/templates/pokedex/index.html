@@ -142,9 +142,7 @@
      class="rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group bg-white block">
     <div class="bg-gradient-to-b {{ bg }} h-24 flex items-center justify-center relative">
       {% if form and form.sprite_url %}
-      <img src="{{ form.sprite_url }}" alt="{{ display_name }}"
-           class="w-16 h-16 object-contain drop-shadow group-hover:scale-110 transition-transform duration-200"
-           loading="lazy" onerror="this.style.display='none'" />
+      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ display_name }}" class="sprite-sm w-16 h-16 object-contain drop-shadow group-hover:scale-110 transition-transform duration-200" loading="lazy" onerror="spriteFallback(this)" />
       {% else %}
       <span class="text-3xl select-none">❓</span>
       {% endif %}

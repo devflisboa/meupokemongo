@@ -127,9 +127,7 @@
     <!-- Sprite area -->
     <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-2 pb-1 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:72px">
       {% if form and form.sprite_url %}
-      <img src="{{ form.sprite_url }}" alt="{{ species.name }}"
-        class="w-14 h-14 object-contain drop-shadow-sm lazy" loading="lazy"
-        onerror="this.style.display='none'" />
+      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ species.name }}" class="sprite-sm w-14 h-14 object-contain drop-shadow-sm lazy" loading="lazy" onerror="spriteFallback(this)" />
       {% else %}
       <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
         <span class="text-lg text-white/60 font-mono">{{ '%03d' % species.id }}</span>
