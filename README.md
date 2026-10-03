@@ -2,7 +2,7 @@
 
 Portfólio pessoal para gerenciar coleção de Pokémon GO — rastreia capturas, evoluções pendentes, oportunidades de troca e estatísticas de progresso. Acesso público por link, sem obrigatoriedade de login para visualizar o estoque de um treinador.
 
-**Produção:** http://casakek.duckdns.org:5001
+**Produção:** https://meupokemongo.duckdns.org
 
 ---
 
@@ -14,32 +14,32 @@ Portfólio pessoal para gerenciar coleção de Pokémon GO — rastreia capturas
     <td align="center"><b>Dashboard (mobile)</b></td>
   </tr>
   <tr>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/A1-home-sem-debug-1280.png" alt="Home desktop" /></td>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/M-home-390x844.png" alt="Home mobile" /></td>
+    <td><img src="docs/screenshots/A1-home-sem-debug-1280.png" alt="Home desktop" /></td>
+    <td><img src="docs/screenshots/M-home-390x844.png" alt="Home mobile" /></td>
   </tr>
   <tr>
     <td align="center"><b>Estoque público (desktop)</b></td>
     <td align="center"><b>Estoque público (mobile)</b></td>
   </tr>
   <tr>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/M-estoque-1280x800.png" alt="Estoque desktop" /></td>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/M-estoque-390x844.png" alt="Estoque mobile" /></td>
+    <td><img src="docs/screenshots/M-estoque-1280x800.png" alt="Estoque desktop" /></td>
+    <td><img src="docs/screenshots/M-estoque-390x844.png" alt="Estoque mobile" /></td>
   </tr>
   <tr>
     <td align="center"><b>Catalogar por região</b></td>
     <td align="center"><b>Bottom navigation mobile</b></td>
   </tr>
   <tr>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/J36-regioes-1280.png" alt="Catalogar por região" /></td>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/I28-bottom-nav-375.png" alt="Bottom nav mobile" /></td>
+    <td><img src="docs/screenshots/J36-regioes-1280.png" alt="Catalogar por região" /></td>
+    <td><img src="docs/screenshots/I28-bottom-nav-375.png" alt="Bottom nav mobile" /></td>
   </tr>
   <tr>
     <td align="center"><b>Oportunidades de troca</b></td>
     <td align="center"><b>Progresso de captura</b></td>
   </tr>
   <tr>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/F21-aba-troca-1280.png" alt="Trocas" /></td>
-    <td><img src="cypress/screenshots/audit_uxui.cy.js/B5-progresso-1280.png" alt="Progresso" /></td>
+    <td><img src="docs/screenshots/F21-aba-troca-1280.png" alt="Trocas" /></td>
+    <td><img src="docs/screenshots/B5-progresso-1280.png" alt="Progresso" /></td>
   </tr>
 </table>
 
@@ -310,9 +310,12 @@ docker compose up -d
 docker exec meupokemongo-web-1 flask db upgrade
 
 # 3. Sincronizar Pokédex com PokéAPI (~15 min, 1025 espécies)
-docker exec meupokemongo-web-1 flask sync-pokedex
+docker exec meupokemongo-web-1 flask sync-pokemon --limit 1025
 
-# 4. Acessar
+# 4. Custos de doces do GO (pogoapi) — o sync acima já roda isto no final
+docker exec meupokemongo-web-1 flask sync-candy
+
+# 5. Acessar
 # http://localhost:5000
 ```
 
@@ -327,56 +330,55 @@ flask run
 
 ---
 
-## Testes E2E (Cypress)
+## Testes
 
 ```bash
-# Instalar dependências
-npm install
-
-# Rodar suite de auditoria UX/UI (modo headless)
-npx cypress run --spec cypress/e2e/audit_uxui.cy.js
-
-# Modo interativo
-npx cypress open
+# Unitários / integração (SQLite em memória — não precisa de MySQL)
+python -m pytest -q
 ```
 
-Screenshots são gerados automaticamente em `cypress/screenshots/`.
+### E2E
+
+Os testes de tela rodam contra um **servidor isolado**: SQLite descartável em `D:\.ClaudeCode\.temp`,
+Pokédex real em `cypress/fixtures/pokedex_seed.json` e treinadores de teste semeados
+(`felipe` / `misty`, senha `e2e-senha-teste`). Nunca toca MySQL local nem produção.
+
+```bash
+python scripts/e2e_server.py      # sobe em http://localhost:5001
+npx cypress run --spec cypress/e2e/05_novidades.cy.js
+```
+
+> ⚠️ Na máquina de dev atual o Cypress 16 (Electron 41) cai com "Illegal instruction".
+> Os fluxos foram validados com Playwright — ver `docs/BACKLOG.md` → Dívida técnica.
+
+Screenshots do Cypress ficam em `cypress/screenshots/` (fora do git). As imagens do README ficam em `docs/screenshots/`.
 
 ---
 
 ## Deploy em produção
 
 ```powershell
-# Apenas código (sem rebuild da imagem Docker)
 .\deploy.ps1
-
-# Com rebuild completo
-.\deploy.ps1 -Build
 ```
 
-O script executa: `git push` → SSH no servidor → `git pull` → rebuild Docker (se `-Build`) → restart do container.
+O script, de ponta a ponta:
+
+1. `git push` para o GitHub (avisa se houver alteração local não commitada)
+2. No servidor: `git pull` + **build da imagem** com o container antigo ainda no ar
+   (o `docker-compose.prod.yml` não monta volume — o código fica dentro da imagem)
+3. Remove o container `web` e cria do zero
+   (contorna o bug `ContainerConfig` do docker-compose 1.29.2 no *recreate*)
+4. `flask db upgrade` + health check em `/` — falha o deploy se não responder 200
 
 **Servidor:** `casakek.duckdns.org:64622`  
 **Pasta:** `/home/felipe/sistemas/MEUPOKEMONGO`  
-**Container:** `meupokemongo_web_1` (porta `5001`)
+**Container:** `meupokemongo_web_1` (porta `5001`, atrás do Nginx Proxy Manager em `https://meupokemongo.duckdns.org`)
 
-Rebuild manual direto no servidor:
-```bash
-docker build -t meupokemongo_web .
-docker rm -f meupokemongo_web_1
-docker run -d --name meupokemongo_web_1 \
-  --network meupokemongo_default \
-  --restart unless-stopped \
-  -p 5001:5000 \
-  --env-file .env \
-  -e DB_HOST=meupokemongo_db_1 \
-  -e DB_PORT=3306 \
-  meupokemongo_web
-```
+> Não recrie o container com `docker run` manual: ele fica sem os labels do compose e quebra o próximo deploy.
 
-Acesso ao banco em produção:
+Acesso ao banco em produção (a senha vem da variável do próprio container):
 ```bash
-docker exec meupokemongo_db_1 mysql -u root -ppokemon123prod meupokemongo
+docker exec -it meupokemongo_db_1 sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" meupokemongo'
 ```
 
 ---
@@ -414,11 +416,18 @@ docker exec meupokemongo_db_1 mysql -u root -ppokemon123prod meupokemongo
 Projeto pessoal / portfólio — dados de Pokémon GO pertencem à Niantic / The Pokémon Company.
 
 
-## Roadmap
+## Backlog e próximos passos
 
-- [ ] **Login via Google** (OAuth) — entrar sem senha; cadastro cai direto no onboarding curto
-- [ ] Perfil de troca: código de amigo, país/estado/cidade, troca à distância, consentimento de contato
-- [ ] Todos os treinadores se enxergam (sem exigir amizade no app); privacidade via "aparecer nas trocas"
-- [ ] Matching por proximidade e trocas recíprocas ("você tem o que eu quero e eu tenho o que você quer")
-- [ ] Formas regionais (Alola, Galar, Hisui, Paldea) no sync, coleção e wishlist
-- [ ] E2E: Cypress 16 (Electron 41) cai com "Illegal instruction" na máquina de dev — avaliar Playwright
+Premissa: **o app existe para encontrar treinadores para trocar.** Backlog completo, decisões de produto
+e histórico de entregas em [`docs/BACKLOG.md`](docs/BACKLOG.md).
+
+| Ordem | # | Próximo | Esforço |
+|-------|---|---------|---------|
+| 1 | #23 | **Perfil de troca + visibilidade aberta** — código de amigo, cidade (IBGE), contato com consentimento; todos se enxergam | ~1 dia |
+| 2 | #24 | **Matching por cidade + troca recíproca** | ~1 dia |
+| 3 | #18 | **Trade Binder público** `/trade/<usuario>` | ~3 h |
+| 4 | #25 | **Login com Google** | ~½ dia |
+| 5 | #20 | Faltantes sob demanda (desempenho) | ~3 h |
+| 6 | #15 | Progresso Shiny e 100% | ~3 h |
+| 7 | #14 | Formas regionais + exclusivos de região | ~1–2 dias |
+| 8 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |

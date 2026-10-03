@@ -20,3 +20,7 @@ migrations/versions/__pycache__/
 WhatsApp Image*
 *.jpeg
 *.jpg
+
+# Cypress: artefatos gerados (imagens do README ficam em docs/screenshots/)
+cypress/screenshots/
+cypress/videos/
