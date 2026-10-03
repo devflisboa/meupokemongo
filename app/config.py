@@ -31,7 +31,9 @@ class Config:
     TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_ADMIN_CHAT_ID = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "")
 
-    RATELIMIT_DEFAULT = "200 per day;50 per hour"
+    # Limite global folgado: cada toggle/±/modal é uma requisição; catalogar gera centenas.
+    # Rotas sensíveis (login/registro) têm limite próprio e rígido.
+    RATELIMIT_DEFAULT = "3000 per hour;300 per minute"
     RATELIMIT_STORAGE_URL = "memory://"
 
 

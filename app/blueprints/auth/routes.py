@@ -2,7 +2,7 @@ from io import BytesIO
 from flask import render_template, redirect, url_for, flash, request, abort, make_response
 from flask_login import login_user, logout_user, login_required, current_user
 from . import bp
-from ...extensions import db
+from ...extensions import db, limiter
 from ...models.user import User
 from ...models.friendship import Friendship
 from ...models.collection import UserCollection
@@ -11,6 +11,7 @@ from ...services.collection_service import get_collection_stats
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute;60 per hour", methods=["POST"])  # anti força bruta
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("main.index"))
@@ -26,6 +27,7 @@ def login():
 
 
 @bp.route("/registro", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def registro():
     if current_user.is_authenticated:
         return redirect(url_for("main.index"))

@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .config import config_map
 from .extensions import db, migrate, login_manager, csrf, limiter
 
@@ -11,6 +12,10 @@ def create_app(env: str | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(cfg)
     app.config["SQLALCHEMY_DATABASE_URI"] = cfg.SQLALCHEMY_DATABASE_URI
+
+    # Atrás do Nginx Proxy Manager (1 salto): usa o IP real do cliente (rate limit)
+    # e o esquema https correto nas URLs geradas
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     db.init_app(app)
     migrate.init_app(app, db)
