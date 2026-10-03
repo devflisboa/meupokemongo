@@ -73,11 +73,11 @@ class User(UserMixin, db.Model):
     @property
     def theme(self) -> dict:
         """Cores do card personalizado: gradiente do tipo do favorito (ou o azul padrão)."""
-        from ..data.i18n import TYPE_GRAD, LIGHT_TYPES
+        from ..data.i18n import TYPE_THEME, LIGHT_TYPES
         t = self.favorite_type
-        if not t or t not in TYPE_GRAD:
+        if not t or t not in TYPE_THEME:
             return {"grad": "from-[#1B2A4A] to-[#243660]", "dark_text": False, "type": None}
-        return {"grad": TYPE_GRAD[t], "dark_text": t in LIGHT_TYPES, "type": t}
+        return {"grad": TYPE_THEME[t], "dark_text": t in LIGHT_TYPES, "type": t}
 
     @property
     def favorite_art_url(self) -> str | None:

@@ -95,7 +95,7 @@ def test_ptbr_texts(client, town):
 def test_theme_from_favorite_type(town):
     misty = _db.session.query(User).filter_by(username="misty").one()   # favorito: Charmander (fogo)
     assert misty.favorite_type == "fire"
-    assert misty.theme == {"grad": "from-orange-400 to-red-500", "dark_text": False, "type": "fire"}
+    assert misty.theme == {"grad": "from-orange-700 to-red-700", "dark_text": False, "type": "fire"}
     ash = _db.session.query(User).filter_by(username="ash").one()        # sem favorito → azul padrão
     assert ash.theme["type"] is None and "1B2A4A" in ash.theme["grad"]
 
@@ -103,7 +103,7 @@ def test_theme_from_favorite_type(town):
 def test_treinadores_cards_colored_by_favorite(client, town):
     _login(client, town["ash"])
     html = client.get("/treinadores").get_data(as_text=True)
-    assert 'data-theme="fire"' in html and "from-orange-400 to-red-500" in html
+    assert 'data-theme="fire"' in html and "from-orange-700 to-red-700" in html
     assert 'data-theme="padrao"' in html
     binder = client.get("/trade/misty").get_data(as_text=True)
     assert 'id="binder-header"' in binder and 'data-theme="fire"' in binder
@@ -119,3 +119,19 @@ def test_favorite_nudge_only_without_favorite(client, town):
     _db.session.commit()
     _login(client, town["ash"])
     assert 'id="fav-nudge"' not in client.get("/treinadores").get_data(as_text=True)
+
+
+def test_theme_palette_covers_all_types():
+    from app.data.i18n import TYPE_THEME, LIGHT_TYPES
+    assert set(TYPE_THEME) == set(TYPE_PT)          # os 18 tipos têm tema
+    assert LIGHT_TYPES <= set(TYPE_PT)
+    # contraste ≥ 4,5:1 medido no navegador (Playwright) em 03/10/2026; tons escuros para texto branco
+    for t in set(TYPE_PT) - LIGHT_TYPES:
+        assert any(f"-{n}" in TYPE_THEME[t] for n in ("600", "700", "800", "900")), t
+
+
+def test_single_entrar_link_when_logged_out(client):
+    from flask import g
+    g.pop("_login_user", None)
+    html = client.get("/").get_data(as_text=True)
+    assert html.split("</header>")[0].count('href="/auth/login"') == 1

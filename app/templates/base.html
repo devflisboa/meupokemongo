@@ -140,12 +140,7 @@
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             Catalogar
           </a>
-          {% else %}
-          <a href="{{ url_for('auth.login') }}"
-             class="px-4 py-1.5 rounded-full transition-colors text-gray-300 hover:text-white hover:bg-white/10">
-            Entrar
-          </a>
-          {% endif %}
+          {% endif %}{# deslogado: "Entrar" fica só à direita, junto do "Cadastrar" #}
         </div>
 
         <!-- Direita: Bell · Gear · Avatar -->

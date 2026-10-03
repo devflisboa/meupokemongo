@@ -36,6 +36,21 @@ TYPE_GRAD = {
 # tipos de cor clara: texto escuro fica legível
 LIGHT_TYPES = {"electric", "ice", "fairy", "flying", "normal", "ground", "bug"}
 
+# Tema do card do treinador (cor do tipo do favorito). Paleta própria, mais profunda que
+# TYPE_GRAD, para o texto branco passar de 4,5:1 (WCAG AA) — medido nos 18 tipos.
+# Tipos claros (LIGHT_TYPES) usam texto escuro sobre o tom claro.
+TYPE_THEME = {
+    "fire": "from-orange-700 to-red-700", "water": "from-blue-600 to-cyan-700",
+    "grass": "from-green-700 to-emerald-800", "electric": "from-yellow-300 to-amber-400",
+    "psychic": "from-pink-600 to-fuchsia-700", "ice": "from-cyan-300 to-blue-400",
+    "dragon": "from-indigo-600 to-purple-700", "dark": "from-gray-700 to-gray-900",
+    "fairy": "from-pink-300 to-rose-400", "fighting": "from-red-600 to-orange-700",
+    "flying": "from-sky-300 to-blue-400", "poison": "from-purple-600 to-violet-700",
+    "ground": "from-yellow-500 to-amber-600", "rock": "from-stone-600 to-stone-700",
+    "bug": "from-lime-400 to-green-500", "ghost": "from-violet-600 to-purple-800",
+    "steel": "from-slate-600 to-gray-700", "normal": "from-gray-300 to-gray-400",
+}
+
 
 def tipo(type_name: str | None) -> str:
     """'grass' → 'Planta'. Desconhecido → capitalizado; None → ''."""
