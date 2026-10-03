@@ -38,12 +38,33 @@
       {% endif %}
     </p>
   </div>
-  <div class="w-full sm:w-48 bg-gray-200 rounded-full h-2 flex-shrink-0">
-    {% if total_species > 0 %}
-    <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ [total_owned / total_species * 100, 100]|min }}%"></div>
-    {% endif %}
+  <div class="flex items-center gap-3 w-full sm:w-auto">
+    <div class="flex-1 sm:w-48 bg-gray-200 rounded-full h-2">
+      {% if total_species > 0 %}
+      <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ [total_owned / total_species * 100, 100]|min }}%"></div>
+      {% endif %}
+    </div>
+    {# Catalogar saiu do menu e mora aqui, em destaque #}
+    <a href="{{ url_for('collection.catalogar') }}" id="btn-catalogar"
+      class="flex-shrink-0 bg-[#CC0000] hover:bg-red-700 text-white text-sm font-black px-4 py-2 rounded-xl shadow active:scale-95 transition-all">
+      📋 Catalogar por região
+    </a>
   </div>
 </div>
+
+{# Quem ainda não marcou nada: o caminho mais rápido é catalogar por região #}
+{% if total_owned == 0 %}
+<a href="{{ url_for('collection.catalogar') }}" id="catalogar-convite"
+  class="block mb-5 rounded-2xl bg-gradient-to-br from-[#1B2A4A] to-[#CC0000] text-white p-5 shadow-lg hover:shadow-xl transition-shadow">
+  <div class="text-2xl">📋</div>
+  <div class="font-black text-lg mt-1">Comece marcando o que você tem</div>
+  <p class="text-sm text-white/80 mt-1">
+    Escolha uma região e toque só nos Pokémon que <b>faltam</b> — o resto é marcado como seu.
+    Em poucos minutos sua Lista de Desejos e as trocas já funcionam.
+  </p>
+  <span class="inline-block mt-3 bg-white text-[#1B2A4A] font-black text-sm px-4 py-2 rounded-xl">Catalogar por região →</span>
+</a>
+{% endif %}
 
 <!-- Progresso Brilhante / 100% (#15) — toque para filtrar -->
 <div class="grid grid-cols-3 gap-2 mb-5" id="special-progress">

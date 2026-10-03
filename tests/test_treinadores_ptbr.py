@@ -149,3 +149,44 @@ def test_footer_themed_and_signed(client, town):
     _login(client, misty.id)
     html = client.get("/treinadores").get_data(as_text=True)
     assert 'id="site-footer" data-theme="fire"' in html
+
+
+# ── Menu de 5 itens (03/10/2026) ─────────────────────────────────────────────
+def _bottom_nav(html):
+    return html.split("Bottom Nav global")[1].split("</nav>")[0] if "Bottom Nav global" in html \
+        else html.split('grid grid-cols-5 sm:hidden')[1].split("</nav>")[0]
+
+
+def test_menu_cinco_itens_logado(client, town):
+    import re
+    _login(client, town["ash"])
+    html = client.get("/").get_data(as_text=True)
+    nav = html.split('grid grid-cols-5 sm:hidden')[1].split("</nav>")[0]
+    assert re.findall(r"<span>([^<]+)</span>", nav) == ["Início", "Coleção", "Desejos", "Trocas", "Treinadores"]
+    desktop = html.split('<div class="hidden md:flex')[1].split("Direita: Bell")[0]
+    for label in ("Coleção", "Desejos", "Trocas", "Treinadores"):
+        assert f"\n            {label}\n" in desktop
+    assert "Catalogar\n" not in desktop and "Pokédex\n" not in desktop.split("{% else %}")[0]
+
+
+def test_menu_visitante(client, town):
+    import re
+    from flask import g
+    g.pop("_login_user", None)
+    html = client.get("/treinadores").get_data(as_text=True)
+    desktop = html.split("Início")[1].split("Cadastrar")[0]
+    assert "Pokédex" in desktop and "Treinadores" in desktop and "Desejos" not in desktop
+
+
+def test_colecao_tem_catalogar_e_convite(client, town):
+    _login(client, town["ash"])                       # ash tem 1 capturado: botão, sem convite
+    html = client.get("/collection/").get_data(as_text=True)
+    assert 'id="btn-catalogar"' in html and 'id="catalogar-convite"' not in html
+    novato = User(username="novato", email="n@x.test")
+    novato.set_password("x"); _db.session.add(novato); _db.session.commit()
+    _login(client, novato.id)                         # nada marcado: convite para catalogar
+    assert 'id="catalogar-convite"' in client.get("/collection/").get_data(as_text=True)
+    # Pokédex continua existindo e acende "Coleção" no menu
+    pk = client.get("/pokedex/").get_data(as_text=True)
+    nav = pk.split('grid grid-cols-5 sm:hidden')[1].split("</nav>")[0]
+    assert 'id="bnav-colecao"' in nav and "border-[#CC0000]" in nav.split('id="bnav-colecao"')[1].split("</a>")[0]
