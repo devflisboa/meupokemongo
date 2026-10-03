@@ -183,4 +183,12 @@ def sync_pokemon(limit: int = 151, offset: int = 0, log=print) -> dict:
             log(f"[ERRO] {msg}")
 
     log(f"\n[sync] Concluído! Espécies={report['species']} Formas={report['forms']} Evoluções={report['evolutions']} Erros={len(report['errors'])}")
+
+    # Custos de doces do GO (pogoapi) — falha aqui não invalida o sync principal
+    try:
+        from .candy_service import sync_candy_costs
+        sync_candy_costs(log=log)
+    except Exception as e:
+        report["errors"].append(f"Doces (pogoapi): {e}")
+        log(f"[ERRO] Doces (pogoapi): {e}")
     return report

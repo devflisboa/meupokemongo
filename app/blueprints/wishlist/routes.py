@@ -77,20 +77,23 @@ def index():
     )
 
 
-def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, str]:
+def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, dict]:
     """
     Prioridade automática pela cadeia evolutiva.
     Para cada faltante, procura uma pré-evolução (qualquer etapa anterior) que o treinador possui:
     se achar, basta evoluir com doces → prioridade "Evoluir" (mais fácil).
     Sem nada da linha anterior → fica de fora do dict → prioridade "Alta".
-    Retorna {form_id_faltante: nome da pré-evolução possuída}.
+    Retorna {form_id_faltante: {"name": pré-evolução possuída, "candy": doces somados ou None}}.
     """
     if not missing_ids:
         return {}
 
-    parents: dict[int, list[int]] = {}
-    for from_id, to_id in db.session.query(EvolutionChain.from_form_id, EvolutionChain.to_form_id).all():
-        parents.setdefault(to_id, []).append(from_id)
+    # to_form → [(from_form, doces)]
+    parents: dict[int, list[tuple[int, int | None]]] = {}
+    for from_id, to_id, candy in db.session.query(
+        EvolutionChain.from_form_id, EvolutionChain.to_form_id, EvolutionChain.candy_cost
+    ).all():
+        parents.setdefault(to_id, []).append((from_id, candy))
 
     owned_ids = {
         row[0]
@@ -101,19 +104,20 @@ def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, str]:
         ).all()
     }
 
-    source: dict[int, int] = {}
+    source: dict[int, tuple[int, int | None]] = {}  # faltante → (pré-evolução possuída, doces)
     for fid in missing_ids:
-        # sobe a cadeia (BFS) até achar a etapa possuída mais próxima
-        queue, seen = list(parents.get(fid, [])), set()
+        # sobe a cadeia (BFS) até achar a etapa possuída mais próxima, somando os doces
+        queue, seen = [(p, c) for p, c in parents.get(fid, [])], set()
         while queue:
-            p = queue.pop(0)
+            p, cost = queue.pop(0)
             if p in seen:
                 continue
             seen.add(p)
             if p in owned_ids:
-                source[fid] = p
+                source[fid] = (p, cost)
                 break
-            queue.extend(parents.get(p, []))
+            for gp, c in parents.get(p, []):
+                queue.append((gp, None if cost is None or c is None else cost + c))
 
     if not source:
         return {}
@@ -121,10 +125,10 @@ def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, str]:
         f.id: (s.name_pt or s.name)
         for f, s in db.session.query(Form, Species)
         .join(Species, Species.id == Form.species_id)
-        .filter(Form.id.in_(set(source.values())))
+        .filter(Form.id.in_({p for p, _ in source.values()}))
         .all()
     }
-    return {fid: names.get(pid, "") for fid, pid in source.items()}
+    return {fid: {"name": names.get(pid, ""), "candy": cost} for fid, (pid, cost) in source.items()}
 
 
 @bp.route("/priority/<int:form_id>", methods=["POST"])

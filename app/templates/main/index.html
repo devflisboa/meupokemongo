@@ -189,9 +189,9 @@
     {# Evolution Pending #}
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">⬆ Evoluções Pendentes</h3>
-        {% if pending_evolutions %}
-        <span class="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ pending_evolutions|length }} Pronto{{ 's' if pending_evolutions|length > 1 else '' }}</span>
+        <h3 class="font-bold text-sm text-gray-800">🧬 Vitórias rápidas <span class="font-normal text-gray-400 text-xs">— é só evoluir</span></h3>
+        {% if quick_wins_total %}
+        <span class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ quick_wins_total }}</span>
         {% endif %}
       </div>
       {% if pending_evolutions %}
@@ -211,21 +211,17 @@
             <div class="text-xs font-semibold text-gray-800 truncate">
               {{ from_name }} <span class="text-gray-400 font-normal">→</span> {{ to_name }}
             </div>
-            {% if evo.candy_cost %}
-            <div class="text-[10px] text-gray-500 mt-0.5">{{ evo.candy_cost }} Doces</div>
-            <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
+            <div class="text-[10px] text-green-700 font-bold mt-0.5">
+              {% if evo.candy_cost %}{{ evo.candy_cost }} 🍬 para evoluir{% else %}Você já tem {{ from_name }} — é só evoluir{% endif %}
             </div>
-            {% else %}
-            <div class="text-[10px] text-green-600 font-bold mt-0.5">Pronto para Evoluir!</div>
-            <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full bg-green-500 rounded-full" style="width:100%"></div>
-            </div>
-            {% endif %}
           </div>
         </div>
         {% endfor %}
       </div>
+      <a href="{{ url_for('wishlist.index', kind='evoluir') }}"
+        class="block text-center text-xs font-bold text-blue-600 hover:bg-blue-50 py-2.5 border-t border-gray-100">
+        Ver todas{% if quick_wins_total %} ({{ quick_wins_total }}){% endif %} na Wishlist →
+      </a>
       {% else %}
       <div class="px-4 py-8 text-center text-sm text-gray-400">
         {% if current_user.is_authenticated %}

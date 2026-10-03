@@ -47,11 +47,11 @@
 
     <!-- NAVBAR -->
     <nav class="bg-[#1B2A4A] text-white">
-      <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
+      <div class="max-w-7xl mx-auto px-4 flex items-center justify-between gap-2 h-14">
 
-        <!-- Logo: Pokéball SVG + nome -->
-        <a href="{{ url_for('main.index') }}" class="flex items-center gap-2.5 font-extrabold text-lg tracking-tight flex-shrink-0">
-          <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8">
+        <!-- Logo: Pokéball SVG + nome (encolhe no mobile em vez de empurrar os botões) -->
+        <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 font-extrabold text-base sm:text-lg tracking-tight min-w-0">
+          <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 flex-shrink-0">
             <!-- Base branca -->
             <circle cx="20" cy="20" r="19" fill="#E5E5E5"/>
             <!-- Metade vermelha (topo) -->
@@ -68,7 +68,7 @@
             <circle cx="20" cy="20" r="4.5" fill="white"/>
             <circle cx="20" cy="20" r="4.5" fill="none" stroke="#1B2A4A" stroke-width="1.5"/>
           </svg>
-          <span>MeuPokémonGO</span>
+          <span class="truncate">MeuPokémonGO</span>
         </a>
 
         <!-- Links centrais — pills -->
@@ -113,8 +113,9 @@
         </div>
 
         <!-- Direita: Bell · Gear · Avatar -->
-        <div class="flex items-center gap-1.5">
-          <!-- Notificações -->
+        <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          {% if current_user.is_authenticated %}
+          <!-- Notificações (só logado — deslogado não há o que notificar) -->
           <a href="{{ url_for('friends.index') }}" class="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,8 +125,9 @@
             <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-black">{{ notif_count if notif_count < 10 else '9+' }}</span>
             {% endif %}
           </a>
-          <!-- Configurações -->
-          <button class="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          {% endif %}
+          <!-- Configurações (ainda sem ação — oculto no mobile para não estourar a largura) -->
+          <button class="hidden sm:inline-flex p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -147,11 +149,11 @@
           <a href="{{ url_for('auth.logout') }}" class="text-xs text-gray-400 hover:text-white ml-1 font-bold">Sair</a>
           {% else %}
           <a href="{{ url_for('auth.login') }}"
-             class="text-xs text-gray-300 hover:text-white font-bold px-3 py-1.5 rounded-full hover:bg-white/10 transition-colors">
+             class="text-xs text-gray-300 hover:text-white font-bold px-2 sm:px-3 py-1.5 rounded-full hover:bg-white/10 transition-colors whitespace-nowrap">
             Entrar
           </a>
           <a href="{{ url_for('auth.registro') }}"
-             class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors ml-1">
+             class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors whitespace-nowrap">
             Cadastrar
           </a>
           {% endif %}

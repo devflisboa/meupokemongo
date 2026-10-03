@@ -89,7 +89,9 @@
       <div class="text-[11px] font-bold text-gray-800 leading-tight truncate">{{ pname }}</div>
       {% if evo_src is not none %}
       <div class="mt-0.5 text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate"
-        title="Você tem {{ evo_src | poke_name }} — basta evoluir">🧬 Evoluir de {{ evo_src | poke_name }}</div>
+        title="Você tem {{ evo_src.name | poke_name }} — basta evoluir{% if evo_src.candy %} ({{ evo_src.candy }} doces){% endif %}">
+        🧬 {{ evo_src.name | poke_name }}{% if evo_src.candy %} · {{ evo_src.candy }}🍬{% endif %}
+      </div>
       {% else %}
       <div class="mt-0.5 text-[9px] font-bold text-red-600 bg-red-50 rounded px-1">🔥 Alta</div>
       {% endif %}
@@ -159,6 +161,9 @@
   [search, region, onlyOffers, onlyPrio, kind].forEach(el => el.addEventListener('input', apply));
   window._wishApply = apply;
   window.setKind = k => { kind.value = kind.value === k ? '' : k; apply(); };
+  // Link do painel: /wishlist/?kind=evoluir já abre filtrado
+  const initialKind = new URLSearchParams(location.search).get('kind');
+  if (initialKind) { kind.value = initialKind; apply(); }
 })();
 
 async function togglePriority(formId, btn) {

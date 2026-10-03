@@ -84,12 +84,17 @@ def index():
     missing = []
     pending_evolutions = []
     matches = []
+    quick_wins_total = 0
 
     if current_user.is_authenticated:
+        from ..wishlist.routes import get_missing_normal_forms, get_evolve_sources
         stats = get_collection_stats(current_user.id)
         missing = get_missing_pokemon(current_user.id)[:5]
         pending_evolutions = get_pending_evolutions(current_user.id)[:3]
         matches = get_active_matches_for_user(current_user.id)[:4]
+        # Mesma regra da Wishlist: faltantes que basta evoluir de algo que já possui
+        missing_ids = [f.id for f, _ in get_missing_normal_forms(current_user.id)]
+        quick_wins_total = len(get_evolve_sources(current_user.id, missing_ids))
 
     total_trainers = db.session.query(User).count()
 
@@ -103,6 +108,7 @@ def index():
         stats=stats,
         missing=missing,
         pending_evolutions=pending_evolutions,
+        quick_wins_total=quick_wins_total,
         matches=matches,
         total_trainers=total_trainers,
         game_events=GAME_EVENTS,

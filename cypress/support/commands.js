@@ -1,5 +1,5 @@
-// Login via formulário — hardcoded defaults para Cypress 16 (Cypress.env() removido)
-Cypress.Commands.add('login', (username = 'felipe', password = 'livia8731') => {
+// Login via formulário. Credenciais SÓ de teste, semeadas por scripts/e2e_server.py
+Cypress.Commands.add('login', (username = 'felipe', password = 'e2e-senha-teste') => {
   cy.session([username, password], () => {
     cy.visit('/auth/login')
     cy.get('input[name="username"]').type(username)

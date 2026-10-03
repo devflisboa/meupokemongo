@@ -14,9 +14,10 @@ module.exports = defineConfig({
     screenshotsFolder: 'cypress/screenshots',
     specPattern: 'cypress/e2e/**/*.cy.js',
     supportFile: 'cypress/support/e2e.js',
+    // Roda contra o servidor isolado: python scripts/e2e_server.py (SQLite descartável)
     env: {
       username: 'felipe',
-      password: 'livia8731',
+      password: 'e2e-senha-teste',
     },
   },
 })

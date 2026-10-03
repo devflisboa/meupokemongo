@@ -10,6 +10,8 @@ from ...services.analytics_service import log_event
 @bp.route("/")
 @login_required
 def index():
+    # Matching automático ao abrir a tela — o usuário não precisa clicar em "Buscar matches"
+    run_matching_for_user(current_user.id)
     matches = get_active_matches_for_user(current_user.id)
     return render_template("trades/index.html", matches=matches)
 

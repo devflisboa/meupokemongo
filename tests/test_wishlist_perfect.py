@@ -71,20 +71,41 @@ def test_wishlist_auto_priority_by_evolution(client, world):
     f3 = Form(species_id=9003, form_name="normal"); f4 = Form(species_id=9004, form_name="normal")
     _db.session.add_all([f3, f4]); _db.session.flush()
     _db.session.add_all([
-        EvolutionChain(from_form_id=world["f1"], to_form_id=world["f2"]),
-        EvolutionChain(from_form_id=world["f2"], to_form_id=f3.id),
+        EvolutionChain(from_form_id=world["f1"], to_form_id=world["f2"], candy_cost=25),
+        EvolutionChain(from_form_id=world["f2"], to_form_id=f3.id, candy_cost=100),
         UserCollection(user_id=world["u1"], form_id=world["f1"], owned=True, quantity=1),
     ])
     _db.session.commit()
 
     src = get_evolve_sources(world["u1"], [world["f2"], f3.id, f4.id])
-    assert src == {world["f2"]: "Bulbasaur", f3.id: "Bulbasaur"}  # 2 etapas também conta
-    assert f4.id not in src                                        # nada da família -> Alta
+    assert src == {
+        world["f2"]: {"name": "Bulbasaur", "candy": 25},
+        f3.id: {"name": "Bulbasaur", "candy": 125},   # 2 etapas: doces somados
+    }
+    assert f4.id not in src                           # nada da família -> Alta
 
     _login(client, world["u1"])
     html = client.get("/wishlist/").get_data(as_text=True)
-    assert "Evoluir de Bulbasaur" in html and "🔥 Alta" in html
+    assert "Bulbasaur · 125🍬" in html and "🔥 Alta" in html
     _db.session.query(EvolutionChain).delete(); _db.session.commit()
+
+
+def test_sync_candy_costs_fills_chains(app, world):
+    from app.models.pokemon import EvolutionChain
+    from app.services.candy_service import sync_candy_costs
+
+    _db.session.add(EvolutionChain(from_form_id=world["f1"], to_form_id=world["f2"]))
+    _db.session.commit()
+    r = sync_candy_costs(costs={(9001, 9002): 25}, log=lambda *_: None)
+    assert r == {"updated": 1, "missing": 0}
+    assert _db.session.query(EvolutionChain).one().candy_cost == 25
+    _db.session.query(EvolutionChain).delete(); _db.session.commit()
+
+
+def test_home_and_trades_render_logged(client, world):
+    _login(client, world["u1"])
+    assert "Vitórias rápidas" in client.get("/").get_data(as_text=True)
+    assert client.get("/trades/").status_code == 200  # roda o matching automático
 
 
 def test_wishlist_priority_toggle(client, world):

@@ -9,7 +9,7 @@ def get_missing_pokemon(user_id: int) -> list[Form]:
         UserCollection.user_id == user_id,
         UserCollection.owned.is_(True),
         UserCollection.quantity > 0,
-    ).subquery()
+    ).scalar_subquery()
 
     return db.session.query(Form).filter(Form.id.notin_(owned_form_ids)).all()
 

@@ -20,6 +20,14 @@ def sync_pokemon_cmd(limit, offset):
             click.echo(f"  • {e}")
 
 
+@click.command("sync-candy")
+@with_appcontext
+def sync_candy_cmd():
+    """Preenche o custo de doces das evoluções (fonte: pogoapi.net)."""
+    from .services.candy_service import sync_candy_costs
+    sync_candy_costs(log=click.echo)
+
+
 @click.command("create-admin")
 @click.argument("username")
 @click.argument("email")
@@ -41,3 +49,4 @@ def create_admin_cmd(username, email, password):
 def register_commands(app):
     app.cli.add_command(sync_pokemon_cmd)
     app.cli.add_command(create_admin_cmd)
+    app.cli.add_command(sync_candy_cmd)
