@@ -132,6 +132,8 @@ Cerca de 70% já existe: aba **"Para troca"** do estoque público `/estoque/<usu
 
 > ✅ **Entregue em 02/10/2026.** Faltantes vão como JSON compacto (`MISSING`) e o JS desenha 30 por vez; a busca filtra o JSON.
 > `/estoque/<usuario>#faltantes` abre direto a aba.
+> ⚠️ **Pendente (20b):** com coleção grande o peso migrou para a aba **Tenho** — em produção `/estoque/felipe`
+> (698 possuídos) ainda tem ~816 KB. Aplicar o mesmo render sob demanda na aba Tenho (cards têm botões ⭐/🔄 do dono).
 
 **Status: parcial.** O estoque público já tem abas Tenho / Faltantes / Troca com scroll infinito (30 por vez),
 mas os ~770 cards de faltantes vêm **todos no HTML** (ocultos) — peso no celular.
