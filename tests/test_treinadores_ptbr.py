@@ -136,3 +136,16 @@ def test_single_entrar_link_when_logged_out(client):
     g.pop("_login_user", None)
     html = client.get("/").get_data(as_text=True)
     assert html.split("</header>")[0].count('href="/auth/login"') == 1
+
+
+def test_footer_themed_and_signed(client, town):
+    from flask import g
+    g.pop("_login_user", None)
+    html = client.get("/treinadores").get_data(as_text=True)
+    foot = html.split('id="site-footer"')[1]
+    assert "Desenvolvido por Felipe Lisboa" in foot and 'data-theme="padrao"' in html
+    assert "Feito com Flask" not in html and "v1.0" not in foot
+    misty = _db.session.query(User).filter_by(username="misty").one()  # favorito: fogo
+    _login(client, misty.id)
+    html = client.get("/treinadores").get_data(as_text=True)
+    assert 'id="site-footer" data-theme="fire"' in html

@@ -266,10 +266,15 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="border-t border-gray-200 bg-white text-center text-xs text-gray-400 pt-3 pb-20 sm:pb-3">
-    MeuPokémonGO &bull; v1.0 &bull; Feito com Flask + Tailwind CSS &bull;
-    Dados: <a href="https://pokeapi.co" target="_blank" rel="noopener" class="hover:text-gray-600 underline">PokéAPI</a>
-    &amp; <a href="https://pokemongo.com" target="_blank" rel="noopener" class="hover:text-gray-600 underline">Pokémon GO</a>
+  {# Rodapé na cor do tipo do Pokémon favorito (mesmo tema do card); sem favorito = azul padrão #}
+  {% set ft = current_user.theme if current_user.is_authenticated else {'grad': 'from-[#1B2A4A] to-[#243660]', 'dark_text': False, 'type': None} %}
+  <footer id="site-footer" data-theme="{{ ft.type or 'padrao' }}"
+    class="bg-gradient-to-r {{ ft.grad }} text-center pt-4 pb-20 sm:pb-4 {{ 'text-gray-900' if ft.dark_text else 'text-white' }}">
+    <div class="text-sm font-bold">Desenvolvido por Felipe Lisboa</div>
+    <div class="text-[10px] mt-1 {{ 'text-gray-800/70' if ft.dark_text else 'text-white/60' }}">
+      Pokémon e Pokémon GO são marcas de seus respectivos donos ·
+      Dados: <a href="https://pokeapi.co" target="_blank" rel="noopener" class="underline hover:opacity-80">PokéAPI</a>
+    </div>
   </footer>
 
   {# ── Pokémon Quick Modal ── #}
