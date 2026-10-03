@@ -34,7 +34,7 @@
       {{ total_species }} espécies capturadas
       {% if total_species > 0 %}
       <span class="ml-1 text-gray-300">·</span>
-      <span class="ml-1 font-semibold text-green-600">{{ (total_owned / total_species * 100) | round(1) }}%</span>
+      <span class="ml-1 font-semibold text-green-600">{{ ((total_owned / total_species * 100) | round(1)) | string | replace(".", ",") }}%</span>
       {% endif %}
     </p>
   </div>

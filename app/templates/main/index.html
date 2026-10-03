@@ -1,284 +1,202 @@
 {% extends "base.html" %}
+{% from "_contact.html" import contact_buttons %}
 {% block title %}Início{% endblock %}
 
 {% block content %}
+{# Início (redesenho 03/10/2026): 1. Painel → 2. Central de Trocas → 3. Feed. Dados: services/home_service.py #}
+{% set u = current_user %}
+{% set txt = 'text-gray-900' if theme.dark_text else 'text-white' %}
+{% set sub = 'text-gray-800/80' if theme.dark_text else 'text-white/80' %}
+{% set chip = 'bg-black/10' if theme.dark_text else 'bg-white/15' %}
+<div class="max-w-5xl mx-auto space-y-8">
 
-{# ─── STATS CARDS ─── #}
-{% if current_user.is_authenticated and stats %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+{# ═════════════════════════ 1. PAINEL ═════════════════════════ #}
+<section id="home-painel" aria-label="Painel">
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br {{ theme.grad }} p-5 sm:p-6 shadow-lg" data-theme="{{ theme.type or 'padrao' }}">
+    {% if u.favorite_species_id %}
+    <img src="{{ u.favorite_gif_url }}" data-static="{{ u.favorite_art_url }}" data-art="{{ u.favorite_art_url }}" alt=""
+      class="sprite-anim absolute right-3 bottom-2 w-24 h-24 sm:w-32 sm:h-32 object-contain drop-shadow-xl opacity-95 pointer-events-none"
+      onerror="spriteFallback(this)" />
+    {% endif %}
+    <div class="relative {{ 'pr-24 sm:pr-36' if u.favorite_species_id }}">
+      <h1 class="text-2xl sm:text-3xl font-black {{ txt }}">Olá, {{ u.username }}!</h1>
+      <p class="text-sm {{ sub }}">
+        {% if u.location_label %}📍 {{ u.location_label }}{% else %}Bom te ver por aqui{% endif %}
+        {% if not u.favorite_species_id %} · <a href="{{ url_for('auth.perfil') }}#favorito" class="underline font-bold">🎨 escolher favorito</a>{% endif %}
+      </p>
 
-  <a href="{{ url_for('collection.index') }}"
-    class="bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
-    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
-    <div class="flex-1 min-w-0">
-      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Estatísticas da Coleção</div>
-      <div class="text-3xl font-black leading-none">
-        {{ stats.owned }}<span class="text-xl font-normal opacity-70"> / {{ stats.total }}</span>
-      </div>
-      <div class="text-xs opacity-75 mt-1">Pokémon Coletados &bull; {{ stats.percent }}% Completo</div>
-      <div class="mt-2.5 h-1.5 bg-white/25 rounded-full overflow-hidden">
-        <div class="h-full bg-white rounded-full" style="width:{{ stats.percent }}%"></div>
-      </div>
-    </div>
-  </a>
+      <a href="{{ url_for('collection.index') }}" class="mt-4 flex items-center gap-4 group">
+        {# anel de progresso da Pokédex #}
+        {% set pct = stats.percent %}
+        <svg viewBox="0 0 36 36" class="w-20 h-20 flex-shrink-0 -rotate-90" aria-hidden="true">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3.5" class="{{ 'stroke-black/10' if theme.dark_text else 'stroke-white/20' }}" />
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke-width="3.5" stroke-linecap="round"
+            class="{{ 'stroke-gray-900' if theme.dark_text else 'stroke-white' }}"
+            stroke-dasharray="{{ pct }} 100" pathLength="100" />
+        </svg>
+        <div class="{{ txt }}">
+          <div class="text-3xl font-black leading-none">{{ pct | string | replace('.', ',') }}%</div>
+          <div class="text-xs {{ sub }} mt-1">{{ stats.owned }} de {{ stats.total }} espécies · <span class="group-hover:underline">ver coleção →</span></div>
+        </div>
+      </a>
 
-  <a href="{{ url_for('collection.index') }}?show=missing"
-    class="bg-gradient-to-br from-amber-400 to-amber-600 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
-    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">⭐</div>
-    <div class="flex-1 min-w-0">
-      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Pokémon Faltantes</div>
-      <div class="text-3xl font-black leading-none">{{ stats.missing }}</div>
-      <div class="text-xs opacity-75 mt-1">espécies ainda não capturadas</div>
-      <div class="mt-2.5 h-1.5 bg-white/25 rounded-full overflow-hidden">
-        <div class="h-full bg-white rounded-full" style="width:{{ [100 - stats.percent, 0]|max }}%"></div>
-      </div>
-    </div>
-  </a>
-
-  {# Comunidade: cada metade é um link — Trocas e Treinadores #}
-  <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
-    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🏆</div>
-    <div class="flex-1 min-w-0">
-      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Comunidade</div>
-      <div class="grid grid-cols-2 gap-2 mt-1">
-        <a href="{{ url_for('trades.index') }}" class="rounded-xl px-2 py-1 hover:bg-white/15 active:scale-95 transition-all">
-          <div class="text-xs opacity-75">Trocas 🔄</div>
-          <div class="text-3xl font-black leading-none">{{ matches|length }}</div>
-        </a>
-        <a href="{{ url_for('main.treinadores') }}" id="card-treinadores" class="rounded-xl px-2 py-1 hover:bg-white/15 active:scale-95 transition-all">
-          <div class="text-xs opacity-75">Treinadores 👥</div>
-          <div class="text-3xl font-black leading-none">{{ total_trainers }}</div>
-        </a>
+      <div class="flex flex-wrap gap-1.5 mt-4">
+        {% for key, icon, label in [('shiny', '⭐', 'Brilhantes'), ('perfect', '💯', '100%'), ('shundo', '✨', 'Brilhante 100%')] %}
+        <a href="{{ url_for('collection.index', show=key if key != 'shundo' else 'shiny') }}"
+          class="text-xs font-bold {{ txt }} {{ chip }} rounded-full px-3 py-1 hover:opacity-80">{{ icon }} {{ special[key] }} {{ label }}</a>
+        {% endfor %}
       </div>
     </div>
   </div>
 
-</div>
-{% endif %}
-
-{# ─── LAYOUT: Grid + Sidebar ─── #}
-<div class="flex flex-col lg:flex-row gap-5">
-
-  {# ══ ESQUERDA: Eventos Pokémon GO ══ #}
-  <div class="flex-1 min-w-0">
-
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-bold text-base text-gray-800 flex items-center gap-2">
-        <svg viewBox="0 0 24 24" class="w-5 h-5 flex-shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3" y="4" width="18" height="16" rx="2" fill="#1B2A4A"/>
-          <rect x="3" y="4" width="18" height="5" rx="2" fill="#CC0000"/>
-          <rect x="7" y="11" width="10" height="1.5" rx="0.75" fill="white" fill-opacity="0.6"/>
-          <rect x="7" y="14" width="7" height="1.5" rx="0.75" fill="white" fill-opacity="0.6"/>
-        </svg>
-        Eventos Pokémon GO
-      </h2>
-      <a href="{{ events_page_url }}" target="_blank" rel="noopener"
-         class="text-xs text-blue-600 hover:underline font-semibold">Ver no site oficial →</a>
+  {# progresso por região — toque abre o catalogar daquela região #}
+  <div class="mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-sm font-black text-gray-800">Progresso por região</h2>
+      <a href="{{ url_for('collection.catalogar') }}" class="text-xs font-bold text-blue-600 hover:underline">Catalogar →</a>
     </div>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {% for ev in game_events %}
-      <a href="{{ ev.url }}" target="_blank" rel="noopener"
-         class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group block">
-
-        {# Capa com imagem real do evento #}
-        <div class="relative h-32 overflow-hidden bg-gray-200">
-          <img src="{{ ev.image_url }}"
-               alt="{{ ev.title }}"
-               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-               loading="lazy" />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-
-          {# Badge de categoria sobreposto #}
-          <span class="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide
-                       bg-black/50 text-white backdrop-blur-sm px-2 py-0.5 rounded-full">
-            {{ ev.category }}
-          </span>
-
-          {# Seta no canto #}
-          <span class="absolute top-2 right-2 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all text-sm leading-none">→</span>
-
-          {# Título sobre a imagem #}
-          <div class="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
-            <p class="text-white font-bold text-xs leading-tight line-clamp-2">{{ ev.title }}</p>
-          </div>
-        </div>
-
-        {# Corpo #}
-        <div class="p-3">
-          <div class="flex items-center gap-1.5 mb-1.5">
-            <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <span class="text-[10px] font-semibold text-gray-500">{{ ev.date }}</span>
-          </div>
-          <p class="text-xs text-gray-600 leading-snug">{{ ev.description }}</p>
-          <div class="mt-2.5 flex items-center justify-between">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ ev.badge }}">
-              {{ ev.category }}
-            </span>
-            <span class="text-[10px] font-semibold text-blue-600 group-hover:underline">
-              Saiba mais →
-            </span>
-          </div>
-        </div>
-
+    <div class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5" id="home-regions">
+      {% for r in regions %}
+      <a href="{{ url_for('collection.catalogar', regiao=r.name) }}" class="flex items-center gap-2 group" title="{{ r.owned }} de {{ r.total }}">
+        <span class="w-14 text-xs font-bold text-gray-600 group-hover:text-blue-600">{{ r.name }}</span>
+        <span class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <span class="block h-full rounded-full {{ 'bg-emerald-500' if r.pct == 100 else ('bg-green-500' if r.pct >= 70 else ('bg-amber-400' if r.pct >= 35 else 'bg-red-400')) }}" style="width: {{ r.pct }}%"></span>
+        </span>
+        <span class="w-9 text-right text-[11px] font-black text-gray-700">{{ r.pct }}%</span>
       </a>
       {% endfor %}
     </div>
+  </div>
+</section>
 
-    <p class="text-[10px] text-gray-400 mt-3 text-right">
-      Dados de eventos via
-      <a href="https://pokemongo.com/pt-BR" target="_blank" rel="noopener"
-         class="underline hover:text-gray-600">pokemongo.com</a>
-    </p>
-
+{# ═════════════════════════ 2. CENTRAL DE TROCAS ═════════════════════════ #}
+<section id="home-trocas" aria-label="Central de Trocas">
+  <div class="flex items-end justify-between mb-3">
+    <div>
+      <h2 class="text-lg font-black text-gray-900">🤝 Central de Trocas</h2>
+      <p class="text-xs text-gray-400">Quem tem o que te falta — e precisa do que você tem.</p>
+    </div>
+    <a href="{{ url_for('trades.index') }}" class="text-xs font-bold text-blue-600 hover:underline flex-shrink-0">Ver trocas →</a>
   </div>
 
-  {# ══ DIREITA: Sidebar ══ #}
-  <div class="w-full lg:w-80 space-y-4 flex-shrink-0">
-
-    {# Missing Pokémon #}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">📍 Pokémon Faltando</h3>
-        {% if stats %}
-        <span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ stats.missing }} Faltando</span>
-        {% endif %}
-      </div>
-      {% if missing %}
-      <div class="divide-y divide-gray-50">
-        {% for form in missing %}
-        {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
-        <div class="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
-          <div class="flex items-center gap-2.5 min-w-0">
-            {% if form.sprite_url %}
-            <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-10 h-10 object-contain flex-shrink-0" loading="lazy" onerror="spriteFallback(this)" />
-            {% else %}
-            <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 flex items-center justify-center text-lg">❓</div>
-            {% endif %}
-            <div class="min-w-0">
-              <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-              <div class="text-sm font-bold text-gray-800 truncate">{{ pname }}</div>
-              <div class="text-[10px] text-gray-400 capitalize">
-                {% if form.species.is_legendary %}Lendário
-                {% elif form.species.is_mythical %}Mítico
-                {% else %}Normal{% endif %}
-                {% if form.type1 %} &bull; {{ form.type1 | title }}{% endif %}
-              </div>
-            </div>
-          </div>
-          <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
-             class="flex-shrink-0 text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors ml-2">
-            Ver
-          </a>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="px-4 py-8 text-center text-sm text-gray-400">
-        {% if current_user.is_authenticated %}
-        🎉 Você capturou todos!
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver sua coleção.
-        {% endif %}
-      </div>
-      {% endif %}
-    </div>
-
-    {# Evolution Pending #}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">🧬 Vitórias rápidas <span class="font-normal text-gray-400 text-xs">— é só evoluir</span></h3>
-        {% if quick_wins_total %}
-        <span class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{{ quick_wins_total }}</span>
-        {% endif %}
-      </div>
-      {% if pending_evolutions %}
-      <div class="divide-y divide-gray-50">
-        {% for evo in pending_evolutions %}
-        {% set from_form = evo.from_form %}
-        {% set to_form = evo.to_form %}
-        {% set from_name = (from_form.species.name_pt or from_form.species.name) | poke_name %}
-        {% set to_name = (to_form.species.name_pt or to_form.species.name) | poke_name %}
-        <div class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-          {% if from_form.sprite_url %}
-          <img src="{{ from_form.sprite_url | sprite_small }}" data-art="{{ from_form.sprite_url }}" alt="{{ from_name }}" class="sprite-sm w-10 h-10 object-contain flex-shrink-0 mt-0.5" loading="lazy" onerror="spriteFallback(this)" />
-          {% else %}
-          <div class="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0 mt-0.5"></div>
-          {% endif %}
-          <div class="flex-1 min-w-0">
-            <div class="text-xs font-semibold text-gray-800 truncate">
-              {{ from_name }} <span class="text-gray-400 font-normal">→</span> {{ to_name }}
-            </div>
-            <div class="text-[10px] text-green-700 font-bold mt-0.5">
-              {% if evo.candy_cost %}{{ evo.candy_cost }} 🍬 para evoluir{% else %}Você já tem {{ from_name }} — é só evoluir{% endif %}
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      <a href="{{ url_for('wishlist.index', kind='evoluir') }}"
-        class="block text-center text-xs font-bold text-blue-600 hover:bg-blue-50 py-2.5 border-t border-gray-100">
-        Ver todas{% if quick_wins_total %} ({{ quick_wins_total }}){% endif %} na Lista de Desejos →
+  {% if reciprocal %}
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for r in reciprocal %}
+    {% set o = r.user %}{% set th = o.theme %}
+    <div class="bg-white rounded-2xl shadow-sm border border-green-200 overflow-hidden home-reciprocal">
+      <a href="{{ url_for('main.trade_binder', username=o.username) }}" class="block bg-gradient-to-r {{ th.grad }} px-3 py-2">
+        <div class="font-black {{ 'text-gray-900' if th.dark_text else 'text-white' }} truncate">{{ o.username }}</div>
+        <div class="text-[11px] {{ 'text-gray-800/80' if th.dark_text else 'text-white/80' }}">{{ r.tier_label }}{% if o.location_label %} · {{ o.location_label }}{% endif %}</div>
       </a>
-      {% else %}
-      <div class="px-4 py-8 text-center text-sm text-gray-400">
-        {% if current_user.is_authenticated %}
-        Nenhuma evolução pendente.
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver evoluções.
-        {% endif %}
-      </div>
-      {% endif %}
-    </div>
-
-    {# Trade Opportunities #}
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <h3 class="font-bold text-sm text-gray-800">🔄 Oportunidades de Troca</h3>
-        {% if matches %}
-        <span class="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-          {{ matches|length }} Novo{{ 's' if matches|length > 1 else '' }}
-        </span>
-        {% endif %}
-      </div>
-      {% if matches %}
-      <div class="p-3 grid grid-cols-2 gap-2">
-        {% for match in matches %}
-        {% set pokemon_name = (match.form.species.name_pt or match.form.species.name) | poke_name %}
-        <div class="border border-gray-100 rounded-xl p-3 flex flex-col gap-2">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700 flex-shrink-0">
-              {{ match.owner.username[0].upper() }}
-            </div>
-            <div class="min-w-0">
-              <div class="text-[10px] font-bold text-gray-800 truncate">{{ match.owner.username }}</div>
-              <span class="text-green-500 text-[9px]">✓ verificado</span>
-            </div>
-          </div>
-          <div class="text-[10px] text-gray-500 leading-tight">
-            Quer: <span class="font-semibold text-gray-700">{{ pokemon_name }}</span>
-          </div>
-          <a href="{{ url_for('trades.whatsapp_click', match_id=match.id) }}"
-             class="block text-center bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold py-1.5 rounded-lg transition-colors">
-            Propor Troca
-          </a>
+      <div class="p-3">
+        <div class="flex items-center justify-between text-xs font-bold mb-2">
+          <span class="text-green-700">Recebe {{ r.they_have|length }}</span>
+          <span class="text-gray-300">⇄</span>
+          <span class="text-blue-700">Oferece {{ r.i_have|length }}</span>
         </div>
-        {% endfor %}
+        <div class="flex justify-between gap-1 mb-3">
+          <div class="flex -space-x-2">{% for f in r.they_have[:3] %}<img src="{{ f.sprite_url | sprite_small }}" data-art="{{ f.sprite_url }}" title="{{ f.display_name }}" class="sprite-sm w-10 h-10 bg-green-50 rounded-full ring-2 ring-white" loading="lazy" onerror="spriteFallback(this)" />{% endfor %}</div>
+          <div class="flex -space-x-2">{% for f in r.i_have[:3] %}<img src="{{ f.sprite_url | sprite_small }}" data-art="{{ f.sprite_url }}" title="{{ f.display_name }}" class="sprite-sm w-10 h-10 bg-blue-50 rounded-full ring-2 ring-white" loading="lazy" onerror="spriteFallback(this)" />{% endfor %}</div>
+        </div>
+        {{ contact_buttons(o, 'Oi ' ~ o.username ~ '! Vi no MeuPokémonGO que dá para fazermos uma troca de mão dupla: você tem '
+             ~ r.they_names ~ ' e eu tenho ' ~ r.i_names ~ ' para você.'
+             ~ (' Meu código de amigo: ' ~ u.trainer_code if u.trainer_code else ''), compact=True) }}
       </div>
-      {% else %}
-      <div class="px-4 py-8 text-center text-sm text-gray-400">
-        {% if current_user.is_authenticated %}
-        Nenhuma oportunidade de troca.
-        {% else %}
-        <a href="{{ url_for('auth.login') }}" class="text-blue-600 hover:underline font-semibold">Faça login</a> para ver trocas.
-        {% endif %}
-      </div>
-      {% endif %}
     </div>
-
+    {% endfor %}
   </div>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-dashed border-gray-200 p-5 text-center text-sm text-gray-500">
+    Nenhuma troca de mão dupla ainda. Marque 🔄 nos seus Pokémon repetidos no
+    <a href="{{ url_for('main.estoque', username=u.username) }}" class="text-blue-600 font-bold hover:underline">seu estoque</a>
+    — assim quem procura encontra você.
+  </div>
+  {% endif %}
+
+  {# o que fazer agora: atalhos para a Lista de Desejos já filtrada #}
+  <h3 class="text-sm font-black text-gray-800 mt-5 mb-2">⚡ O que fazer agora</h3>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2" id="home-acoes">
+    {% for href, icon, n, label, color in [
+      (url_for('wishlist.index', kind='evoluir'), '🧬', n_evolve, 'é só evoluir', 'bg-green-50 border-green-200 text-green-800'),
+      (url_for('wishlist.index', kind='exclusivo'), '🌍', n_exclusive, 'só por troca', 'bg-indigo-50 border-indigo-200 text-indigo-800'),
+      (url_for('trades.index'), '🔄', n_offers, 'com oferta de troca', 'bg-blue-50 border-blue-200 text-blue-800'),
+      (url_for('wishlist.index', kind='alta'), '🔥', n_alta, 'prioridade alta', 'bg-red-50 border-red-200 text-red-800'),
+    ] %}
+    <a href="{{ href }}" class="border rounded-2xl px-3 py-3 {{ color }} hover:shadow-md active:scale-95 transition-all">
+      <div class="text-2xl font-black leading-none">{{ icon }} {{ n }}</div>
+      <div class="text-xs font-bold mt-1">{{ label }}</div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {# treinadores ao alcance de troca #}
+  <div class="flex items-center justify-between mt-5 mb-2">
+    <h3 class="text-sm font-black text-gray-800">👥 Treinadores perto de você</h3>
+    <a href="{{ url_for('main.treinadores') }}" class="text-xs font-bold text-blue-600 hover:underline">Todos ({{ total_trainers }}) →</a>
+  </div>
+  {% if nearby %}
+  <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" id="home-perto">
+    {% for t in nearby %}
+    {% set o = t.user %}{% set th = o.theme %}
+    <a href="{{ url_for('main.trade_binder', username=o.username) }}" class="flex-shrink-0 w-20 text-center group" title="{{ t.tier_label }}">
+      <div class="relative w-16 h-16 mx-auto rounded-full bg-gradient-to-br {{ th.grad }} p-0.5 group-hover:scale-105 transition-transform">
+        <div class="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+          {% if o.favorite_species_id %}
+          <img src="{{ o.favorite_art_url | sprite_small }}" data-art="{{ o.favorite_art_url }}" alt="" class="sprite-sm w-12 h-12 object-contain" loading="lazy" onerror="spriteFallback(this)" />
+          {% elif o.avatar %}<img src="{{ url_for('auth.avatar', user_id=o.id) }}" alt="" class="w-full h-full object-cover" loading="lazy" />
+          {% else %}<span class="font-black text-gray-700">{{ o.username[0].upper() }}</span>{% endif %}
+        </div>
+        <span class="absolute -bottom-1 -right-1 text-xs">{{ '📍' if t.tier == 0 else ('🌐' if t.tier == 1 else '❔') }}</span>
+      </div>
+      <div class="text-[11px] font-bold text-gray-700 truncate mt-1">{{ o.username }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Ninguém ao seu alcance ainda.
+    {% if not u.city %}<a href="{{ url_for('auth.onboarding') }}" class="text-blue-600 font-bold hover:underline">Informe sua cidade</a>.{% endif %}</p>
+  {% endif %}
+</section>
+
+{# ═════════════════════════ 3. FEED ═════════════════════════ #}
+<section id="home-feed" aria-label="Novidades">
+  <h2 class="text-lg font-black text-gray-900 mb-3">🗞️ Novidades</h2>
+  {% if feed %}
+  <ul class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
+    {% for i in feed %}
+    <li>
+      <a href="{{ url_for('main.trade_binder', username=i.user.username) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 feed-item" data-kind="{{ i.kind }}">
+        {% if i.kind == 'offer' %}
+        <img src="{{ i.form.sprite_url | sprite_small }}" data-art="{{ i.form.sprite_url }}" alt="" class="sprite-sm w-11 h-11 flex-shrink-0 bg-green-50 rounded-xl" loading="lazy" onerror="spriteFallback(this)" />
+        <div class="min-w-0 flex-1 text-sm text-gray-700">
+          <b>{{ i.user.username }}</b> tem <b>{{ i.form.display_name }}</b> para troca
+          <span class="text-green-700 font-bold">— você procura!</span>
+        </div>
+        {% else %}
+        <div class="w-11 h-11 flex-shrink-0 rounded-xl bg-gradient-to-br {{ i.user.theme.grad }} flex items-center justify-center text-lg">👋</div>
+        <div class="min-w-0 flex-1 text-sm text-gray-700">
+          <b>{{ i.user.username }}</b> entrou no app{% if i.user.location_label %} · {{ i.user.location_label }}{% endif %}
+          {% if i.user.can_trade_remote %}<span class="text-gray-400"> · troca à distância</span>{% endif %}
+        </div>
+        {% endif %}
+        <span class="text-[11px] text-gray-400 flex-shrink-0">{{ i.ago }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="bg-white rounded-2xl border border-dashed border-gray-200 p-5 text-center text-sm text-gray-500">
+    Sem novidades por perto ainda. Quando alguém marcar para troca algo que você procura, aparece aqui.
+  </div>
+  {% endif %}
+
+  {# eventos do GO: faixa deslizante #}
+  <div class="flex items-center justify-between mt-5 mb-2">
+    <h3 class="text-sm font-black text-gray-800">📅 Eventos Pokémon GO</h3>
+    <a href="{{ events_page_url }}" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline">Site oficial →</a>
+  </div>
+  {% include "main/_events_strip.html" %}
+</section>
 
 </div>
 {% endblock %}

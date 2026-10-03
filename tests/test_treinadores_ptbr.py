@@ -76,7 +76,8 @@ def test_treinadores_logged_order_and_badges(client, town):
 def test_dashboard_card_links_to_treinadores(client, town):
     _login(client, town["ash"])
     html = client.get("/").get_data(as_text=True)
-    assert 'id="card-treinadores"' in html and 'href="/treinadores"' in html
+    # Início novo: "Treinadores perto de você" com link para todos
+    assert 'id="home-trocas"' in html and 'href="/treinadores"' in html
 
 
 def test_ptbr_texts(client, town):

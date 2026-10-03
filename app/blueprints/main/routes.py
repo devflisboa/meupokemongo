@@ -79,39 +79,56 @@ GAME_EVENTS = [
 
 @bp.route("/")
 def index():
+    """
+    Início (redesenho 03/10/2026) — logado: Painel → Central de Trocas → Feed.
+    Sem login: página de apresentação. Dados em services/home_service.py.
+    """
+    from ...services import home_service as hs
     log_event("PAGE_VIEW", {"page": "home"})
-
-    stats = None
-    missing = []
-    pending_evolutions = []
-    matches = []
-    quick_wins_total = 0
-
-    if current_user.is_authenticated:
-        from ..wishlist.routes import get_missing_normal_forms, get_evolve_sources
-        stats = get_collection_stats(current_user.id)
-        missing = get_missing_pokemon(current_user.id)[:5]
-        pending_evolutions = get_pending_evolutions(current_user.id)[:3]
-        matches = get_active_matches_for_user(current_user.id)[:4]
-        # Mesma regra da Wishlist: faltantes que basta evoluir de algo que já possui
-        missing_ids = [f.id for f, _ in get_missing_normal_forms(current_user.id)]
-        quick_wins_total = len(get_evolve_sources(current_user.id, missing_ids))
 
     # mesmo critério da página /treinadores: só quem aparece nas trocas
     total_trainers = db.session.query(User).filter(User.visibility != "private").count()
-
     today = date.today()
-    events_page_url = (
-        f"https://pokemongo.com/pt-BR/events/{_MONTH_EN[today.month]}-{today.year}"
-    )
+    events_page_url = f"https://pokemongo.com/pt-BR/events/{_MONTH_EN[today.month]}-{today.year}"
+
+    if not current_user.is_authenticated:
+        total_offers = db.session.query(UserCollection).filter(
+            UserCollection.for_trade.is_(True), UserCollection.owned.is_(True), UserCollection.quantity > 0
+        ).count()
+        return render_template(
+            "main/landing.html",
+            showcase=hs.showcase_trainers(),
+            total_trainers=total_trainers,
+            total_offers=total_offers,
+            game_events=GAME_EVENTS,
+            events_page_url=events_page_url,
+        )
+
+    from ..wishlist.routes import build_wishlist
+    from ...services.matching_service import get_reciprocal_trades, run_matching_for_user
+    me = current_user
+    run_matching_for_user(me.id)  # mantém "Trocas" do menu e o sino em dia
+    wl = build_wishlist(me)
+    missing_ids = {f.id for f, _ in wl["missing"]}
+    n_evolve = len(wl["evolve_from"])
+    n_exclusive = len(wl["exclusives"])
 
     return render_template(
         "main/index.html",
-        stats=stats,
-        missing=missing,
-        pending_evolutions=pending_evolutions,
-        quick_wins_total=quick_wins_total,
-        matches=matches,
+        # 1. Painel
+        stats=get_collection_stats(me.id),
+        special=hs.special_progress(me.id),
+        regions=hs.region_progress(me.id),
+        theme=me.theme,
+        # 2. Central de Trocas
+        reciprocal=get_reciprocal_trades(me.id, limit=3),
+        n_evolve=n_evolve,
+        n_exclusive=n_exclusive,
+        n_alta=len(missing_ids) - n_evolve,
+        n_offers=sum(1 for f, _ in wl["missing"] if wl["offers"].get(f.id)),
+        nearby=hs.nearby_trainers(me),
+        # 3. Feed
+        feed=hs.build_feed(me, missing_ids),
         total_trainers=total_trainers,
         game_events=GAME_EVENTS,
         events_page_url=events_page_url,

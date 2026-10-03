@@ -84,7 +84,7 @@
           <div class="flex-1 bg-gray-100 rounded-full h-2">
             <div class="bg-green-500 h-2 rounded-full transition-all" style="width: {{ stats.percent }}%"></div>
           </div>
-          <span class="text-[10px] text-gray-500 font-semibold flex-shrink-0">{{ stats.percent }}%</span>
+          <span class="text-[10px] text-gray-500 font-semibold flex-shrink-0">{{ stats.percent | string | replace(".", ",") }}%</span>
         </div>
         {% if needed > 0 and stats.percent < 100 %}
         <a href="{{ url_for('collection.catalogar') }}"

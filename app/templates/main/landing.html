@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Ache quem tem o Pokémon que falta{% endblock %}
+{% block head %}
+<meta property="og:title" content="MeuPokémonGO — ache quem tem o Pokémon que falta na sua coleção">
+<meta property="og:description" content="Marque o que você tem, a lista do que falta se monta sozinha e o app mostra treinadores perto de você para trocar.">
+<meta property="og:image" content="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png">
+<meta property="og:type" content="website">
+{% endblock %}
+
+{% block content %}
+{# Início sem login: apresentação do app (redesenho 03/10/2026) #}
+<div class="max-w-5xl mx-auto space-y-10" id="landing">
+
+  {# ── Chamada ── #}
+  <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1B2A4A] via-[#243660] to-[#CC0000] text-white p-6 sm:p-10 shadow-xl">
+    <img src="/img/t/25.webp" alt="" class="absolute -right-4 -bottom-6 w-40 sm:w-56 opacity-90 drop-shadow-2xl pointer-events-none" />
+    <div class="relative max-w-md">
+      <h1 class="text-3xl sm:text-4xl font-black leading-tight">Ache quem tem o Pokémon que falta na sua coleção.</h1>
+      <p class="mt-3 text-white/80 text-sm sm:text-base">
+        Marque o que você tem. A lista do que falta se monta sozinha — e o app mostra
+        treinadores perto de você para trocar.
+      </p>
+      <div class="mt-5 flex flex-wrap gap-2">
+        <a href="{{ url_for('auth.registro') }}" class="bg-white text-[#1B2A4A] font-black px-5 py-3 rounded-xl hover:bg-gray-100 shadow">Criar conta grátis</a>
+        <a href="{{ url_for('main.treinadores') }}" class="bg-white/15 hover:bg-white/25 font-bold px-5 py-3 rounded-xl">Ver treinadores</a>
+      </div>
+      <p class="mt-4 text-xs text-white/70 pr-28 sm:pr-0">{{ total_trainers }} treinadores · {{ total_offers }} Pokémon disponíveis para troca</p>
+    </div>
+  </section>
+
+  {# ── Como funciona ── #}
+  <section aria-label="Como funciona">
+    <h2 class="text-lg font-black text-gray-900 mb-3">Como funciona</h2>
+    <div class="grid sm:grid-cols-3 gap-3">
+      {% for n, icon, title, text in [
+        (1, '📋', 'Marque o que você tem', 'Catalogue por região com poucos toques — ou importe do PokeGenie.'),
+        (2, '⭐', 'A lista do que falta se monta sozinha', 'Já priorizada: exclusivos de região, prioridade alta e o que é só evoluir.'),
+        (3, '🤝', 'Ache treinadores perto para trocar', 'Trocas de mão dupla: eles têm o que te falta e você tem o que falta para eles.'),
+      ] %}
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#1B2A4A] text-white text-xs font-black flex items-center justify-center">{{ n }}</span>
+          <span class="text-xl">{{ icon }}</span>
+        </div>
+        <h3 class="font-black text-gray-900 mt-2">{{ title }}</h3>
+        <p class="text-sm text-gray-500 mt-1">{{ text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Vitrine de treinadores reais ── #}
+  {% if showcase %}
+  <section aria-label="Treinadores">
+    <div class="flex items-end justify-between mb-3">
+      <h2 class="text-lg font-black text-gray-900">👥 Treinadores no app</h2>
+      <a href="{{ url_for('main.treinadores') }}" class="text-xs font-bold text-blue-600 hover:underline">Ver todos →</a>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="landing-showcase">
+      {% for s in showcase %}
+      {% set o = s.user %}{% set th = o.theme %}
+      <a href="{{ url_for('main.trade_binder', username=o.username) }}" class="relative rounded-2xl overflow-hidden bg-gradient-to-br {{ th.grad }} p-3 min-h-[96px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+        {% if o.favorite_species_id %}
+        <img src="{{ o.favorite_art_url | sprite_small }}" data-art="{{ o.favorite_art_url }}" alt="" class="sprite-sm absolute right-1 bottom-0 w-16 h-16 object-contain drop-shadow-lg" loading="lazy" onerror="spriteFallback(this)" />
+        {% endif %}
+        <div class="relative pr-14">
+          <div class="font-black truncate {{ 'text-gray-900' if th.dark_text else 'text-white' }}">{{ o.username }}</div>
+          <div class="text-[11px] truncate {{ 'text-gray-800/80' if th.dark_text else 'text-white/80' }}">{% if o.location_label %}📍 {{ o.location_label }}{% else %}&nbsp;{% endif %}</div>
+          <div class="mt-2 inline-block whitespace-nowrap text-[11px] font-black rounded-full px-2 py-0.5 {{ 'bg-black/10 text-gray-900' if th.dark_text else 'bg-white/20 text-white' }}">🔄 {{ s.for_trade }} para troca</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Eventos do GO ── #}
+  <section aria-label="Eventos">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-lg font-black text-gray-900">📅 Eventos Pokémon GO</h2>
+      <a href="{{ events_page_url }}" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 hover:underline">Site oficial →</a>
+    </div>
+    {% include "main/_events_strip.html" %}
+  </section>
+
+  {# ── Chamada final ── #}
+  <section class="text-center bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+    <h2 class="text-xl font-black text-gray-900">Bora completar essa Pokédex?</h2>
+    <p class="text-sm text-gray-500 mt-1">Leva menos de um minuto. Depois é só marcar o que você tem.</p>
+    <a href="{{ url_for('auth.registro') }}" class="inline-block mt-4 bg-red-600 hover:bg-red-700 text-white font-black px-6 py-3 rounded-xl shadow">Criar conta grátis</a>
+  </section>
+</div>
+{% endblock %}

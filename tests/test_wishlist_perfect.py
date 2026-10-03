@@ -104,7 +104,7 @@ def test_sync_candy_costs_fills_chains(app, world):
 
 def test_home_and_trades_render_logged(client, world):
     _login(client, world["u1"])
-    assert "Vitórias rápidas" in client.get("/").get_data(as_text=True)
+    assert "Central de Trocas" in client.get("/").get_data(as_text=True)
     assert client.get("/trades/").status_code == 200  # roda o matching automático
 
 

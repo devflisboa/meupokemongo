@@ -63,7 +63,7 @@
     <div class="text-xs opacity-75 mt-0.5">Faltantes</div>
   </div>
   <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-4 text-center shadow">
-    <div class="text-3xl font-black">{{ stats.percent }}%</div>
+    <div class="text-3xl font-black">{{ stats.percent | string | replace(".", ",") }}%</div>
     <div class="text-xs opacity-75 mt-0.5">Completo</div>
   </div>
 </div>
