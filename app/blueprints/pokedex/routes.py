@@ -4,6 +4,7 @@ from . import bp
 from ...extensions import db
 from ...models.pokemon import Species, Form, EvolutionChain
 from ...models.collection import UserCollection
+from ...models.individual import UserPokemon
 from ...services.analytics_service import log_event
 
 PER_PAGE = 24
@@ -56,6 +57,14 @@ def api_detail(species_id: int):
             "quantity": entry.quantity if entry else 0,
             "for_trade": entry.for_trade if entry else False,
             "has_shiny": entry.has_shiny if entry else False,
+            "has_perfect": entry.has_perfect if entry else False,
+            "individuals": [
+                ind.to_dict()
+                for ind in db.session.query(UserPokemon)
+                .filter_by(user_id=current_user.id, form_id=default_form.id)
+                .order_by(UserPokemon.iv_pct.desc(), UserPokemon.cp.desc())
+                .all()
+            ],
         }
 
     return jsonify({

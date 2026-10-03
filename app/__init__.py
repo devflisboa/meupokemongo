@@ -18,7 +18,7 @@ def create_app(env: str | None = None) -> Flask:
     csrf.init_app(app)
     limiter.init_app(app)
 
-    from .models import user, pokemon, collection, wishlist, friendship, trade, event  # noqa: F401
+    from .models import user, pokemon, collection, wishlist, friendship, trade, event, individual  # noqa: F401
 
     from .blueprints.main import bp as main_bp
     from .blueprints.auth import bp as auth_bp

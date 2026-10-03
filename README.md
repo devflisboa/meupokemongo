@@ -59,11 +59,18 @@ Portfólio pessoal para gerenciar coleção de Pokémon GO — rastreia capturas
 - Marcar/desmarcar como capturado com quantidade
 - Disponibilizar para troca (`for_trade`)
 - Rastrear Shiny: flag `has_shiny` + quantidade de shinies
+- Selo **100% IV** (`has_perfect`) — toggle manual ou automático (exemplar 15/15/15)
 - Modal de detalhe (bottom sheet) ao tocar/clicar em qualquer card — sem sair da página
   - Incremento/decremento de quantidade
-  - Toggle capturado, troca e shiny
+  - Toggle capturado, troca, shiny e 100%
+  - **Fraquezas e resistências** como defensor e como atacante (multiplicadores do GO: 1,6× / 0,625× / 0,39×)
   - Cadeia evolutiva navegável dentro do modal
-- Importação em lote via CSV exportado pelo app **PokeGenie**
+  - **Duplo clique** abre a carta expandida (tela cheia) com todos os exemplares e detalhes
+- Exemplares individuais (`user_pokemon`): CP, HP, IVs, nível, golpes, sortudo, sombroso/purificado,
+  favorito, peso/altura, rank PvP GL/UL/LC e a linha original completa (`raw`)
+  - Cadastro manual rápido no modal (tudo opcional) para quem não tem PokeGenie Pro
+- Importação em lote via CSV exportado pelo app **PokeGenie** (recurso do PokeGenie **Pro**) —
+  reimportar substitui os exemplares importados antes; os manuais são preservados
 
 ### Catalogar por região
 - Seleção individual ou em massa por região (Kanto, Johto… Paldea)
@@ -81,14 +88,16 @@ Portfólio pessoal para gerenciar coleção de Pokémon GO — rastreia capturas
 - Badges lendário/mítico em todos os cards das três abas
 
 ### Sistema de trocas
-- Engine de matching automático cruza wishlist × estoque de outros treinadores
+- Engine de matching automático cruza a wishlist automática (tudo que falta) × estoque de outros treinadores
 - Lista de oportunidades de troca com foto do Pokémon, nome do dono e código de treinador
 - Clique em "Contato via WhatsApp" gera mensagem pré-preenchida e redireciona para wa.me
 - Ciclo de vida do match: `active → contacted → completed / cancelled`
 - Sincronia manual via `/trades/sync` para atualizar matches após mudanças na coleção
 
 ### Wishlist (lista de desejos)
-- Adicionar/remover Pokémon à lista de desejos
+- **Automática**: lista sozinha todas as espécies que faltam na coleção — nada a cadastrar
+- ⭐ opcional para priorizar (grava em `wishlists`); prioridades e faltantes com oferta de troca aparecem primeiro
+- Mostra quantos treinadores oferecem cada faltante para troca; filtros por nome, região, oferta e prioridade
 - Usada pelo matching engine para encontrar treinadores que têm o que você quer
 
 ### Amigos

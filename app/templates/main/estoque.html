@@ -169,6 +169,9 @@
         {% if qty > 1 %}
         <span class="text-[7px] text-green-600 font-black border border-green-300 rounded px-0.5">×{{ qty }}</span>
         {% endif %}
+        {% if collection_map[form.id].has_perfect %}
+        <span class="text-[7px] bg-emerald-500 text-white font-black rounded px-0.5" title="100% IV">100</span>
+        {% endif %}
       </div>
     </a>
     {# Badge lendário / mítico — canto superior esquerdo #}
@@ -302,6 +305,9 @@
           {% endif %}
           {% if qty > 1 %}
           <span class="text-[9px] text-green-600 font-black">×{{ qty }}</span>
+          {% endif %}
+          {% if form.id in collection_map and collection_map[form.id].has_perfect %}
+          <span class="text-[9px] px-1 rounded bg-emerald-500 text-white font-black" title="100% IV">100</span>
           {% endif %}
         </div>
       </div>

@@ -14,6 +14,7 @@ class UserCollection(db.Model):
     for_trade = db.Column(db.Boolean, default=False, nullable=False)
     has_shiny = db.Column(db.Boolean, default=False, nullable=False)
     shiny_qty = db.Column(db.Integer, default=0, nullable=False)
+    has_perfect = db.Column(db.Boolean, default=False, nullable=False)  # possui exemplar 100% IV (15/15/15)
     notes = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=now_br)
     updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)

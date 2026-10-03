@@ -252,10 +252,16 @@
 
   let _pkData = null;
 
-  async function openPokeModal(id) {
+  let _pkExpanded = false;
+
+  // expand=true (duplo clique): carta em tela cheia com todos os exemplares abertos
+  async function openPokeModal(id, expand = false) {
     const modal = document.getElementById('poke-modal');
     const sheet = document.getElementById('poke-modal-sheet');
     const content = document.getElementById('poke-modal-content');
+    _pkExpanded = expand;
+    sheet.style.maxHeight = expand ? '100vh' : '';
+    sheet.style.height = expand ? '100vh' : '';
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     content.innerHTML = '<div class="py-16 flex justify-center"><div class="w-10 h-10 border-4 border-gray-200 border-t-[#1B2A4A] rounded-full animate-spin"></div></div>';
@@ -265,6 +271,7 @@
       if (!res.ok) throw new Error();
       _pkData = await res.json();
       content.innerHTML = renderPokeModal(_pkData);
+      if (expand) document.getElementById('modal-individuals')?.scrollIntoView({behavior: 'smooth', block: 'start'});
     } catch {
       content.innerHTML = '<div class="py-12 text-center text-gray-400 text-sm">Não foi possível carregar.</div>';
     }
@@ -300,7 +307,7 @@
       const owned = col.owned && col.quantity > 0;
       collHtml = `<div id="modal-col"
         data-form-id="${col.form_id}" data-owned="${owned}" data-qty="${col.quantity}"
-        data-trade="${col.for_trade}" data-shiny="${col.has_shiny}"
+        data-trade="${col.for_trade}" data-shiny="${col.has_shiny}" data-perfect="${col.has_perfect}"
         class="mt-4 border-t border-gray-100 pt-4 space-y-2">
         <div class="flex flex-wrap gap-2">
           <button onclick="modalToggleCapture()"
@@ -322,7 +329,12 @@
             class="modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}">
             ${col.has_shiny?'⭐ Tenho Shiny!':'⭐ Shiny?'}
           </button>
+          <button onclick="modalTogglePerfect()"
+            class="modal-perfect text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.has_perfect?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}">
+            ${col.has_perfect?'💯 Tenho 100%!':'💯 100%?'}
+          </button>
         </div>
+        ${renderIndividuals(col)}
       </div>`;
     }
 
@@ -363,6 +375,7 @@
         <h2 id="poke-modal-title" class="text-2xl font-black text-gray-900">${name}</h2>
         <div class="flex flex-wrap gap-2 mt-2 items-center">${badges} ${legend} ${shinyNote}</div>
         ${collHtml}
+        ${renderTypeMatchups([t1, t2].filter(Boolean))}
         ${evoHtml}
         <a href="/pokedex/${p.id}" data-no-modal
           class="mt-5 block text-center text-sm text-blue-600 hover:underline font-semibold">
@@ -371,10 +384,210 @@
       </div>`;
   }
 
+  // ── Efetividade de tipos (multiplicadores do Pokémon GO) ──
+  const TYPE_PT = {normal:'Normal', fire:'Fogo', water:'Água', electric:'Elétrico', grass:'Planta', ice:'Gelo',
+    fighting:'Lutador', poison:'Venenoso', ground:'Terra', flying:'Voador', psychic:'Psíquico', bug:'Inseto',
+    rock:'Pedra', ghost:'Fantasma', dragon:'Dragão', dark:'Sombrio', steel:'Aço', fairy:'Fada'};
+  const ALL_TYPES = Object.keys(TYPE_PT);
+  // atacante → [super efetivo], [pouco efetivo], [sem efeito nos jogos principais]
+  const CHART = {
+    normal:   [[], ['rock','steel'], ['ghost']],
+    fire:     [['grass','ice','bug','steel'], ['fire','water','rock','dragon'], []],
+    water:    [['fire','ground','rock'], ['water','grass','dragon'], []],
+    electric: [['water','flying'], ['electric','grass','dragon'], ['ground']],
+    grass:    [['water','ground','rock'], ['fire','grass','poison','flying','bug','dragon','steel'], []],
+    ice:      [['grass','ground','flying','dragon'], ['fire','water','ice','steel'], []],
+    fighting: [['normal','ice','rock','dark','steel'], ['poison','flying','psychic','bug','fairy'], ['ghost']],
+    poison:   [['grass','fairy'], ['poison','ground','rock','ghost'], ['steel']],
+    ground:   [['fire','electric','poison','rock','steel'], ['grass','bug'], ['flying']],
+    flying:   [['grass','fighting','bug'], ['electric','rock','steel'], []],
+    psychic:  [['fighting','poison'], ['psychic','steel'], ['dark']],
+    bug:      [['grass','psychic','dark'], ['fire','fighting','poison','flying','ghost','steel','fairy'], []],
+    rock:     [['fire','ice','flying','bug'], ['fighting','ground','steel'], []],
+    ghost:    [['psychic','ghost'], ['dark'], ['normal']],
+    dragon:   [['dragon'], ['steel'], ['fairy']],
+    dark:     [['psychic','ghost'], ['fighting','dark','fairy'], []],
+    steel:    [['ice','rock','fairy'], ['fire','water','electric','steel'], []],
+    fairy:    [['fighting','dragon','dark'], ['fire','poison','steel'], []],
+  };
+  // No GO: super efetivo 1.6×, pouco efetivo 0.625×, "imune" vira 0.390625×
+  function typeMult(atk, def) {
+    const [se, nve, imm] = CHART[atk] || [[], [], []];
+    if (se.includes(def)) return 1.6;
+    if (nve.includes(def)) return 0.625;
+    if (imm.includes(def)) return 0.390625;
+    return 1;
+  }
+  function _multLabel(m) { return (Math.round(m * 1000) / 1000).toString().replace('.', ',') + '×'; }
+  function _typeChips(list) {
+    return list.map(([t, m]) =>
+      `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${TB[t]||'bg-gray-400 text-white'}">${TYPE_PT[t]}${m !== undefined ? ` <span class="opacity-80">${_multLabel(m)}</span>` : ''}</span>`
+    ).join(' ') || '<span class="text-[11px] text-gray-300">—</span>';
+  }
+  function _row(label, color, html) {
+    return `<div><div class="text-[11px] font-bold ${color} mb-1">${label}</div><div class="flex flex-wrap gap-1">${html}</div></div>`;
+  }
+
+  function renderTypeMatchups(types) {
+    if (!types.length) return '';
+    // Como defensor: dano recebido de cada tipo de ataque
+    const def = ALL_TYPES.map(a => [a, types.reduce((m, t) => m * typeMult(a, t), 1)]);
+    const weak = def.filter(([, m]) => m > 1.001).sort((x, y) => y[1] - x[1]);
+    const resist = def.filter(([, m]) => m < 0.999).sort((x, y) => x[1] - y[1]);
+    const neutral = def.filter(([, m]) => Math.abs(m - 1) <= 0.001);
+
+    // Como atacante: golpes de cada tipo do Pokémon (com STAB) contra cada tipo defensor
+    const atkHtml = types.map(t => {
+      const vs = ALL_TYPES.map(d => [d, typeMult(t, d)]);
+      return `<div class="space-y-1.5">
+        <div class="text-[11px] font-black text-gray-700">Golpes ${TYPE_PT[t]}</div>
+        ${_row('Forte contra (1,6×)', 'text-green-600', _typeChips(vs.filter(([, m]) => m > 1).map(([d]) => [d])))}
+        ${_row('Fraco contra', 'text-red-500', _typeChips(vs.filter(([, m]) => m < 1).sort((x, y) => x[1] - y[1])))}
+      </div>`;
+    }).join('<div class="border-t border-gray-100"></div>');
+
+    return `<details class="mt-4 border-t border-gray-100 pt-4" ${_pkExpanded ? 'open' : ''}>
+      <summary class="cursor-pointer select-none text-xs font-bold text-gray-500 uppercase tracking-wider">Fraquezas e resistências</summary>
+      <div class="mt-3 grid gap-4 sm:grid-cols-2">
+        <div class="space-y-2">
+          <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">🛡️ Como defensor</div>
+          ${_row('Fraquezas (recebe mais dano)', 'text-red-500', _typeChips(weak))}
+          ${_row('Resistências (recebe menos dano)', 'text-green-600', _typeChips(resist))}
+          ${_row('Dano normal (1×)', 'text-gray-500', _typeChips(neutral.map(([t]) => [t])))}
+        </div>
+        <div class="space-y-2">
+          <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">⚔️ Como atacante</div>
+          ${atkHtml}
+        </div>
+      </div>
+    </details>`;
+  }
+
+  // ── Exemplares individuais (PokeGenie ou cadastro manual) ──
+  function _esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function _fmt(v, suf = '') { return v === null || v === undefined || v === '' ? '—' : `${v}${suf}`; }
+
+  function _ivBar(label, v) {
+    const pct = v === null || v === undefined ? 0 : Math.round(v / 15 * 100);
+    const color = v === 15 ? 'bg-emerald-500' : v >= 12 ? 'bg-green-400' : v >= 8 ? 'bg-amber-400' : 'bg-red-400';
+    return `<div class="flex items-center gap-2 text-[11px]">
+      <span class="w-7 text-gray-500 font-bold">${label}</span>
+      <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden"><div class="${color} h-2" style="width:${pct}%"></div></div>
+      <span class="w-5 text-right font-black text-gray-700">${_fmt(v)}</span>
+    </div>`;
+  }
+
+  function renderIndividualCard(i) {
+    const tags = [
+      i.is_perfect && '<span class="bg-emerald-500 text-white">💯 100%</span>',
+      i.is_shiny && '<span class="bg-yellow-100 text-yellow-700">⭐ Shiny</span>',
+      i.is_lucky && '<span class="bg-amber-100 text-amber-700">🍀 Sortudo</span>',
+      i.is_shadow && '<span class="bg-purple-100 text-purple-700">🟣 Sombroso</span>',
+      i.is_purified && '<span class="bg-sky-100 text-sky-700">✨ Purificado</span>',
+      i.is_favorite && '<span class="bg-pink-100 text-pink-700">♥ Favorito</span>',
+      i.for_trade && '<span class="bg-blue-100 text-blue-700">🔄 Troca</span>',
+    ].filter(Boolean).map(t => t.replace('<span class="', '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ')).join(' ');
+    const moves = [i.quick_move, i.charge_move, i.charge_move2].filter(Boolean).map(_esc).join(' · ');
+    const pvp = [['GL', i.rank_great], ['UL', i.rank_ultra], ['LC', i.rank_little]]
+      .filter(([, v]) => v !== null && v !== undefined)
+      .map(([l, v]) => `<span class="bg-gray-100 rounded px-1.5 py-0.5"><b>${l}</b> ${v}%</span>`).join(' ');
+    const ivPct = i.iv_pct !== null && i.iv_pct !== undefined ? Math.round(i.iv_pct) : null;
+    return `<div class="border ${i.is_perfect ? 'border-emerald-300 bg-emerald-50/40' : 'border-gray-100'} rounded-xl p-3 space-y-2">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <div class="text-lg font-black text-gray-900 leading-none">CP ${_fmt(i.cp)}</div>
+          <div class="text-[11px] text-gray-400 mt-0.5">
+            ${i.nickname ? _esc(i.nickname) + ' · ' : ''}Nível ${_fmt(i.level)} · HP ${_fmt(i.hp)}${i.gender ? ' · ' + _esc(i.gender) : ''}${i.form_label ? ' · ' + _esc(i.form_label) : ''}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-black ${ivPct === 100 ? 'text-emerald-600' : 'text-gray-700'}">${ivPct === null ? '?' : ivPct + '%'}</span>
+          <button onclick="deleteIndividual(${i.id})" title="Remover exemplar" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 text-gray-400 hover:text-red-500 text-xs">✕</button>
+        </div>
+      </div>
+      <div class="space-y-1">${_ivBar('ATK', i.atk_iv)}${_ivBar('DEF', i.def_iv)}${_ivBar('HP', i.sta_iv)}</div>
+      ${tags ? `<div class="flex flex-wrap gap-1">${tags}</div>` : ''}
+      ${moves ? `<div class="text-[11px] text-gray-600"><b>Golpes:</b> ${moves}</div>` : ''}
+      ${pvp ? `<div class="text-[11px] text-gray-600 flex flex-wrap gap-1 items-center"><b>PvP rank:</b> ${pvp}</div>` : ''}
+      ${(i.weight || i.height) ? `<div class="text-[11px] text-gray-400">${_fmt(i.weight, ' kg')} · ${_fmt(i.height, ' m')}</div>` : ''}
+      ${(i.catch_date || i.scan_date) ? `<div class="text-[10px] text-gray-400">${i.catch_date ? 'Capturado ' + _esc(i.catch_date) : ''}${i.catch_date && i.scan_date ? ' · ' : ''}${i.scan_date ? 'Escaneado ' + _esc(i.scan_date) : ''}</div>` : ''}
+    </div>`;
+  }
+
+  function renderIndividuals(col) {
+    const list = col.individuals || [];
+    const best = list.reduce((m, i) => Math.max(m, i.iv_pct ?? -1), -1);
+    const summary = list.length
+      ? `${list.length} exemplar${list.length > 1 ? 'es' : ''}${best >= 0 ? ` · melhor IV ${Math.round(best)}%` : ''}`
+      : 'nenhum detalhe cadastrado';
+    const inp = 'w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-400';
+    return `<details id="modal-individuals" class="pt-3" ${_pkExpanded ? 'open' : ''}>
+      <summary class="cursor-pointer select-none text-xs font-bold text-gray-500 uppercase tracking-wider">
+        Meus exemplares <span class="normal-case font-semibold text-gray-400">(${summary})</span>
+      </summary>
+      <div id="ind-list" class="mt-3 space-y-2">${list.map(renderIndividualCard).join('')}</div>
+      <form id="ind-form" onsubmit="addIndividual(event)" class="mt-3 bg-gray-50 rounded-xl p-3 space-y-2">
+        <div class="text-[11px] font-bold text-gray-500">+ Adicionar exemplar <span class="font-normal text-gray-400">(tudo opcional)</span></div>
+        <div class="grid grid-cols-4 gap-2">
+          <input name="cp" type="number" min="10" max="9999" placeholder="CP" class="${inp}">
+          <input name="atk_iv" type="number" min="0" max="15" placeholder="Atk" class="${inp}">
+          <input name="def_iv" type="number" min="0" max="15" placeholder="Def" class="${inp}">
+          <input name="sta_iv" type="number" min="0" max="15" placeholder="HP" class="${inp}">
+        </div>
+        <div class="flex flex-wrap gap-3 text-xs text-gray-600">
+          <label class="flex items-center gap-1"><input type="checkbox" name="is_shiny"> Shiny</label>
+          <label class="flex items-center gap-1"><input type="checkbox" name="is_lucky"> Sortudo</label>
+          <label class="flex items-center gap-1"><input type="checkbox" name="is_shadow"> Sombroso</label>
+          <button type="button" onclick="fillPerfect()" class="ml-auto text-emerald-600 font-bold">15/15/15</button>
+        </div>
+        <button type="submit" class="w-full bg-[#1B2A4A] text-white text-sm font-bold py-2 rounded-lg hover:opacity-90">Salvar exemplar</button>
+      </form>
+    </details>`;
+  }
+
+  function fillPerfect() {
+    const f = document.getElementById('ind-form');
+    ['atk_iv', 'def_iv', 'sta_iv'].forEach(n => f.elements[n].value = 15);
+  }
+
+  function _applyPerfectState(hasPerfect) {
+    const c = _col(); if (!c) return;
+    c.dataset.perfect = hasPerfect;
+    const btn = c.querySelector('.modal-perfect');
+    if (btn) { btn.textContent = hasPerfect?'💯 Tenho 100%!':'💯 100%?'; btn.className=`modal-perfect text-sm font-bold px-4 py-2 rounded-lg transition-colors ${hasPerfect?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}`; }
+    const card = _pkData && document.querySelector(`[data-poke-id="${_pkData.id}"]`);
+    card?.querySelector('.perfect-badge')?.classList.toggle('hidden', !hasPerfect);
+    if (card?.dataset.perfect !== undefined) card.dataset.perfect = hasPerfect;
+  }
+
+  async function addIndividual(e) {
+    e.preventDefault();
+    const c = _col(); const f = e.target;
+    const fd = new FormData();
+    fd.append('form_id', c.dataset.formId);
+    ['cp', 'atk_iv', 'def_iv', 'sta_iv'].forEach(n => { if (f.elements[n].value !== '') fd.append(n, f.elements[n].value); });
+    ['is_shiny', 'is_lucky', 'is_shadow'].forEach(n => fd.append(n, f.elements[n].checked ? 'true' : 'false'));
+    const r = await fetch('{{ url_for("collection.individual_add") }}', {method: 'POST', body: fd});
+    const d = await r.json();
+    if (!d.ok) return;
+    _pkExpanded = true;
+    openPokeModal(_pkData.id, true);  // recarrega com o novo exemplar e o estado atualizado
+  }
+
+  async function deleteIndividual(id) {
+    if (!confirm('Remover este exemplar?')) return;
+    const r = await fetch(`/collection/individual/${id}/delete`, {method: 'POST'});
+    const d = await r.json();
+    if (!d.ok) return;
+    _applyPerfectState(d.has_perfect);
+    openPokeModal(_pkData.id, _pkExpanded);
+  }
+
   function _col() { return document.getElementById('modal-col'); }
 
-  async function modalSave(owned, qty, trade, shiny) {
+  async function modalSave(owned, qty, trade, shiny, perfect) {
     const c = _col(); if (!c) return;
+    if (perfect === undefined) perfect = c.dataset.perfect === 'true';
     const fd = new FormData();
     fd.append('form_id', c.dataset.formId);
     fd.append('owned', owned?'true':'false');
@@ -382,12 +595,15 @@
     fd.append('for_trade', trade?'true':'false');
     fd.append('has_shiny', shiny?'true':'false');
     fd.append('shiny_qty', shiny?1:0);
+    fd.append('has_perfect', perfect?'true':'false');
     const r = await fetch(UPSERT_URL, {method:'POST', body:fd});
     const d = await r.json();
     if (!d.ok) return;
     const isOwned = d.owned && d.quantity > 0;
     c.dataset.owned = isOwned; c.dataset.qty = d.quantity;
-    c.dataset.trade = d.for_trade; c.dataset.shiny = d.has_shiny;
+    c.dataset.trade = d.for_trade; c.dataset.shiny = d.has_shiny; c.dataset.perfect = d.has_perfect;
+    const perfectBtn = c.querySelector('.modal-perfect');
+    if (perfectBtn) { perfectBtn.textContent = d.has_perfect?'💯 Tenho 100%!':'💯 100%?'; perfectBtn.className=`modal-perfect text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.has_perfect?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}`; }
     const capBtn = c.querySelector('.modal-cap');
     const ctl = document.getElementById('modal-ctl');
     const extra = document.getElementById('modal-extra');
@@ -406,6 +622,7 @@
         card.classList.toggle('border-yellow-400', !!d.has_shiny);
         card.classList.toggle('border-blue-300', !d.has_shiny && !!d.for_trade);
         card.classList.toggle('border-gray-100', !d.has_shiny && !d.for_trade);
+        card.querySelector('.perfect-badge')?.classList.toggle('hidden', !d.has_perfect);
       }
     }
   }
@@ -427,8 +644,14 @@
     const c = _col();
     modalSave(true, parseInt(c.dataset.qty)||1, c.dataset.trade==='true', c.dataset.shiny!=='true');
   }
+  function modalTogglePerfect() {
+    const c = _col();
+    modalSave(true, parseInt(c.dataset.qty)||1, c.dataset.trade==='true', c.dataset.shiny==='true', c.dataset.perfect!=='true');
+  }
 
   // Intercepta cliques em cards com data-poke-id
+  // clique simples = modal normal · duplo clique = carta expandida com todos os detalhes
+  let _clickTimer = null;
   document.addEventListener('click', function(e) {
     if (e.target.closest('button')) return;
     if (e.target.closest('a[target="_blank"]')) return;
@@ -436,7 +659,13 @@
     const card = e.target.closest('[data-poke-id]');
     if (!card) return;
     e.preventDefault();
-    openPokeModal(parseInt(card.dataset.pokeId));
+    const id = parseInt(card.dataset.pokeId);
+    if (_clickTimer) {
+      clearTimeout(_clickTimer); _clickTimer = null;
+      openPokeModal(id, true);
+      return;
+    }
+    _clickTimer = setTimeout(() => { _clickTimer = null; openPokeModal(id); }, 250);
   });
 
   document.addEventListener('keydown', e => { if (e.key==='Escape') closePokeModal(); });

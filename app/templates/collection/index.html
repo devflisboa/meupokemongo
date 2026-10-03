@@ -92,6 +92,7 @@
   {% set qty = entry.quantity if entry else 0 %}
   {% set for_trade = entry.for_trade if entry else false %}
   {% set has_shiny = entry.has_shiny if entry else false %}
+  {% set has_perfect = entry.has_perfect if entry else false %}
   {% set form_id = form.id if form else 0 %}
   {% set grad = type_grad.get(form.type1 if form else '', 'from-gray-300 to-gray-400') %}
 
@@ -102,7 +103,8 @@
     data-owned="{{ 'true' if owned else 'false' }}"
     data-qty="{{ qty }}"
     data-trade="{{ 'true' if for_trade else 'false' }}"
-    data-shiny="{{ 'true' if has_shiny else 'false' }}">
+    data-shiny="{{ 'true' if has_shiny else 'false' }}"
+    data-perfect="{{ 'true' if has_perfect else 'false' }}">
 
     <!-- Sprite area -->
     <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-2 pb-1 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:72px">
@@ -137,6 +139,9 @@
         </svg>
       </div>
       {% endif %}
+
+      <!-- Selo 100% IV — canto inferior direito -->
+      <span class="perfect-badge absolute bottom-1 right-1.5 z-10 pointer-events-none px-1 rounded bg-emerald-500 text-white text-[9px] font-black shadow-sm {{ '' if has_perfect else 'hidden' }}" title="100% IV">100</span>
     </div>
 
     <!-- Info -->
@@ -187,6 +192,11 @@
             class="shiny-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-yellow-100 text-yellow-700' if has_shiny else 'bg-gray-50 text-gray-400 hover:bg-yellow-50 hover:text-yellow-500' }}">
             {{ '⭐ Tenho Shiny!' if has_shiny else '⭐ Shiny?' }}
+          </button>
+          <button onclick="togglePerfect(this)"
+            class="perfect-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
+              {{ 'bg-emerald-100 text-emerald-700' if has_perfect else 'bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600' }}">
+            {{ '💯 Tenho 100%!' if has_perfect else '💯 100%?' }}
           </button>
         </div>
       </div>
@@ -262,7 +272,7 @@ function adjustQty(btn, delta) {
 function toggleTrade(btn) {
   const card = getCard(btn);
   const forTrade = card.dataset.trade !== 'true';
-  save(card, true, parseInt(card.dataset.qty) || 1, forTrade, card.dataset.shiny === 'true');
+  save(card, true, parseInt(card.dataset.qty) || 1, forTrade);
 }
 
 function toggleShiny(btn) {
@@ -271,9 +281,18 @@ function toggleShiny(btn) {
   save(card, true, parseInt(card.dataset.qty) || 1, card.dataset.trade === 'true', hasShiny);
 }
 
-function save(card, owned, qty, forTrade, hasShiny) {
+function togglePerfect(btn) {
+  const card = getCard(btn);
+  const hasPerfect = card.dataset.perfect !== 'true';
+  save(card, true, parseInt(card.dataset.qty) || 1, card.dataset.trade === 'true', undefined, hasPerfect);
+}
+
+// hasShiny / hasPerfect omitidos = mantém o estado atual do card
+function save(card, owned, qty, forTrade, hasShiny, hasPerfect) {
   const formId = card.dataset.formId;
   if (!formId || formId === '0') return;
+  if (hasShiny === undefined) hasShiny = card.dataset.shiny === 'true';
+  if (hasPerfect === undefined) hasPerfect = card.dataset.perfect === 'true';
 
   const fd = new FormData();
   fd.append('form_id', formId);
@@ -282,6 +301,7 @@ function save(card, owned, qty, forTrade, hasShiny) {
   fd.append('for_trade', forTrade ? 'true' : 'false');
   fd.append('has_shiny', hasShiny ? 'true' : 'false');
   fd.append('shiny_qty', hasShiny ? 1 : 0);
+  fd.append('has_perfect', hasPerfect ? 'true' : 'false');
 
   fetch('/collection/upsert', {method: 'POST', body: fd})
     .then(r => r.json())
@@ -292,12 +312,24 @@ function save(card, owned, qty, forTrade, hasShiny) {
       card.dataset.qty = data.quantity;
       card.dataset.trade = data.for_trade ? 'true' : 'false';
       card.dataset.shiny = data.has_shiny ? 'true' : 'false';
+      card.dataset.perfect = data.has_perfect ? 'true' : 'false';
 
-      updateCardUI(card, data.owned, data.quantity, data.for_trade, data.has_shiny);
+      updateCardUI(card, data.owned, data.quantity, data.for_trade, data.has_shiny, data.has_perfect);
     });
 }
 
-function updateCardUI(card, owned, qty, forTrade, hasShiny) {
+function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
+  const perfectBtn = card.querySelector('.perfect-btn');
+  const perfectBadge = card.querySelector('.perfect-badge');
+  if (perfectBadge) perfectBadge.classList.toggle('hidden', !hasPerfect);
+  if (perfectBtn) {
+    perfectBtn.textContent = hasPerfect ? '💯 Tenho 100%!' : '💯 100%?';
+    perfectBtn.className = perfectBtn.className.replace(/\s*(hover:)?(bg|text)-[\w-]+-\d+/g, '');
+    perfectBtn.classList.add(...(hasPerfect
+      ? ['bg-emerald-100', 'text-emerald-700']
+      : ['bg-gray-50', 'text-gray-400', 'hover:bg-emerald-50', 'hover:text-emerald-600']));
+  }
+
   const spriteArea = getSpriteArea(card);
   const capBtn = card.querySelector('.capture-btn');
   const ownedControls = card.querySelector('.owned-controls');

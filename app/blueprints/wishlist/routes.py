@@ -1,65 +1,143 @@
-from flask import render_template, redirect, url_for, request, abort
+from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
 from . import bp
 from ...extensions import db
 from ...models.wishlist import Wishlist
-from ...models.pokemon import Form, Species
+from ...models.collection import UserCollection
+from ...models.pokemon import Form, Species, EvolutionChain
+from ..collection.routes import REGIONS
+
+
+def get_missing_normal_forms(user_id: int) -> list[tuple[Form, Species]]:
+    """Wishlist automática: toda forma normal que o treinador ainda não possui."""
+    owned_subq = (
+        db.session.query(UserCollection.form_id)
+        .filter(
+            UserCollection.user_id == user_id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        )
+        .scalar_subquery()
+    )
+    return (
+        db.session.query(Form, Species)
+        .join(Species, Species.id == Form.species_id)
+        .filter(Form.form_name == "normal", Form.id.notin_(owned_subq))
+        .order_by(Species.id)
+        .all()
+    )
 
 
 @bp.route("/")
 @login_required
 def index():
-    items = (
-        db.session.query(Wishlist)
-        .filter_by(user_id=current_user.id)
-        .join(Form, Wishlist.form_id == Form.id)
-        .join(Species, Form.species_id == Species.id)
-        .order_by(
-            db.case({"high": 0, "medium": 1, "low": 2}, value=Wishlist.priority),
-            Species.id,
-        )
-        .all()
-    )
+    missing = get_missing_normal_forms(current_user.id)
+    missing_ids = [f.id for f, _ in missing]
 
-    all_species = db.session.query(Species).order_by(Species.id).all()
-    wished_form_ids = {w.form_id for w in items}
+    # Prioridade = linha na tabela wishlists (opcional, um toque na estrela)
+    priority_ids = {
+        row[0]
+        for row in db.session.query(Wishlist.form_id).filter_by(user_id=current_user.id).all()
+    }
+
+    # Quantos outros treinadores oferecem cada faltante para troca
+    offers: dict[int, int] = {}
+    if missing_ids:
+        offers = dict(
+            db.session.query(UserCollection.form_id, db.func.count(UserCollection.id))
+            .filter(
+                UserCollection.form_id.in_(missing_ids),
+                UserCollection.user_id != current_user.id,
+                UserCollection.owned.is_(True),
+                UserCollection.quantity > 0,
+                UserCollection.for_trade.is_(True),
+            )
+            .group_by(UserCollection.form_id)
+            .all()
+        )
+
+    evolve_from = get_evolve_sources(current_user.id, missing_ids)
+
+    # ⭐ manual primeiro; depois Alta (nada da família) antes de Evoluir;
+    # dentro de cada grupo, quem tem oferta de troca; por fim número da Pokédex
+    missing.sort(key=lambda fs: (
+        fs[0].id not in priority_ids,
+        fs[0].id in evolve_from,
+        fs[0].id not in offers,
+        fs[1].id,
+    ))
 
     return render_template(
         "wishlist/index.html",
-        items=items,
-        all_species=all_species,
-        wished_form_ids=wished_form_ids,
+        missing=missing,
+        priority_ids=priority_ids,
+        offers=offers,
+        evolve_from=evolve_from,
+        regions=REGIONS,
     )
 
 
-@bp.route("/add", methods=["POST"])
-@login_required
-def add():
-    form_id = request.form.get("form_id", type=int)
-    priority = request.form.get("priority", "medium")
-    if priority not in ("low", "medium", "high"):
-        priority = "medium"
+def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, str]:
+    """
+    Prioridade automática pela cadeia evolutiva.
+    Para cada faltante, procura uma pré-evolução (qualquer etapa anterior) que o treinador possui:
+    se achar, basta evoluir com doces → prioridade "Evoluir" (mais fácil).
+    Sem nada da linha anterior → fica de fora do dict → prioridade "Alta".
+    Retorna {form_id_faltante: nome da pré-evolução possuída}.
+    """
+    if not missing_ids:
+        return {}
 
-    form = db.session.get(Form, form_id)
-    if not form:
+    parents: dict[int, list[int]] = {}
+    for from_id, to_id in db.session.query(EvolutionChain.from_form_id, EvolutionChain.to_form_id).all():
+        parents.setdefault(to_id, []).append(from_id)
+
+    owned_ids = {
+        row[0]
+        for row in db.session.query(UserCollection.form_id).filter(
+            UserCollection.user_id == user_id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        ).all()
+    }
+
+    source: dict[int, int] = {}
+    for fid in missing_ids:
+        # sobe a cadeia (BFS) até achar a etapa possuída mais próxima
+        queue, seen = list(parents.get(fid, [])), set()
+        while queue:
+            p = queue.pop(0)
+            if p in seen:
+                continue
+            seen.add(p)
+            if p in owned_ids:
+                source[fid] = p
+                break
+            queue.extend(parents.get(p, []))
+
+    if not source:
+        return {}
+    names = {
+        f.id: (s.name_pt or s.name)
+        for f, s in db.session.query(Form, Species)
+        .join(Species, Species.id == Form.species_id)
+        .filter(Form.id.in_(set(source.values())))
+        .all()
+    }
+    return {fid: names.get(pid, "") for fid, pid in source.items()}
+
+
+@bp.route("/priority/<int:form_id>", methods=["POST"])
+@login_required
+def toggle_priority(form_id: int):
+    if not db.session.get(Form, form_id):
         abort(404)
-
-    existing = db.session.query(Wishlist).filter_by(
-        user_id=current_user.id, form_id=form_id
-    ).first()
-    if not existing:
-        db.session.add(Wishlist(user_id=current_user.id, form_id=form_id, priority=priority))
-        db.session.commit()
-
-    return redirect(url_for("wishlist.index"))
-
-
-@bp.route("/remove/<int:item_id>", methods=["POST"])
-@login_required
-def remove(item_id: int):
-    item = db.session.get(Wishlist, item_id)
-    if not item or item.user_id != current_user.id:
-        abort(403)
-    db.session.delete(item)
+    item = db.session.query(Wishlist).filter_by(user_id=current_user.id, form_id=form_id).first()
+    if item:
+        db.session.delete(item)
+        prioritized = False
+    else:
+        db.session.add(Wishlist(user_id=current_user.id, form_id=form_id, priority="high"))
+        prioritized = True
     db.session.commit()
-    return redirect(url_for("wishlist.index"))
+    return jsonify({"ok": True, "priority": prioritized})

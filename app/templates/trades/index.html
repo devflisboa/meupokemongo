@@ -2,8 +2,8 @@
 {% block title %}Trocas{% endblock %}
 
 {% block content %}
-{% set status_label = {"pending": "Aguardando", "contacted": "Contato feito", "completed": "Concluída", "cancelled": "Cancelada"} %}
-{% set status_color = {"pending": "bg-amber-100 text-amber-700", "contacted": "bg-blue-100 text-blue-700", "completed": "bg-green-100 text-green-700", "cancelled": "bg-gray-100 text-gray-500"} %}
+{% set status_label = {"active": "Disponível", "pending": "Aguardando", "contacted": "Contato feito", "completed": "Concluída", "cancelled": "Cancelada"} %}
+{% set status_color = {"active": "bg-green-100 text-green-700", "pending": "bg-amber-100 text-amber-700", "contacted": "bg-blue-100 text-blue-700", "completed": "bg-green-100 text-green-700", "cancelled": "bg-gray-100 text-gray-500"} %}
 {% set type_grad = {
   "fire": "from-orange-400 to-red-500", "water": "from-blue-400 to-cyan-500",
   "grass": "from-green-400 to-emerald-500", "electric": "from-yellow-300 to-amber-400",
@@ -70,7 +70,7 @@
         </div>
       </div>
 
-      {% if match.status == 'pending' %}
+      {% if match.status in ('active', 'pending') %}
       <a href="{{ url_for('trades.whatsapp_click', match_id=match.id) }}"
         class="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded-lg transition-colors mb-2">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.025.507 3.934 1.395 5.608L0 24l6.534-1.371A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.822 9.822 0 01-5.028-1.381l-.36-.214-3.733.784.797-3.644-.235-.375A9.822 9.822 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
@@ -124,7 +124,7 @@
   <div class="text-5xl mb-4">🔄</div>
   <h2 class="text-lg font-black text-gray-800 mb-2">Nenhuma oportunidade encontrada</h2>
   <p class="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
-    Adicione Pokémon à sua wishlist e clique em "Atualizar matches" para encontrar treinadores com o que você precisa.
+    Sua wishlist já contém tudo que falta na coleção. Clique em "Buscar matches" para encontrar treinadores com o que você precisa.
   </p>
   <div class="flex justify-center gap-3">
     <a href="{{ url_for('wishlist.index') }}"

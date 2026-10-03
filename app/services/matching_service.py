@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from ..extensions import db
 from ..models.collection import UserCollection
-from ..models.wishlist import Wishlist
+from ..models.pokemon import Form
 from ..models.friendship import Friendship
 from ..models.trade import TradeMatch
 from ..models.user import User
@@ -26,40 +26,53 @@ def _interaction_allowed(wisher: User, owner: User) -> bool:
 
 def run_matching_for_user(user_id: int) -> int:
     """
-    RF10: gera matches para o treinador a partir de seus desejos.
-    Retorna o número de novos matches criados.
+    RF10: gera matches para o treinador a partir da wishlist automática
+    (toda forma normal que ele ainda não possui). Retorna o número de novos matches criados.
     """
-    wishes = db.session.query(Wishlist).filter_by(user_id=user_id).all()
+    owned_subq = (
+        db.session.query(UserCollection.form_id)
+        .filter(
+            UserCollection.user_id == user_id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        )
+        .scalar_subquery()
+    )
     wisher = db.session.get(User, user_id)
     created = 0
 
-    for wish in wishes:
-        offers = db.session.query(UserCollection).filter(
-            UserCollection.form_id == wish.form_id,
+    offers = (
+        db.session.query(UserCollection)
+        .join(Form, Form.id == UserCollection.form_id)
+        .filter(
+            Form.form_name == "normal",
+            UserCollection.form_id.notin_(owned_subq),
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,
             UserCollection.for_trade.is_(True),
             UserCollection.user_id != user_id,
-        ).all()
+        )
+        .all()
+    )
 
-        for offer in offers:
-            owner = db.session.get(User, offer.user_id)
-            if not _interaction_allowed(wisher, owner):
-                continue
+    for offer in offers:
+        owner = db.session.get(User, offer.user_id)
+        if not _interaction_allowed(wisher, owner):
+            continue
 
-            match = TradeMatch(
-                wisher_id=user_id,
-                owner_id=owner.id,
-                form_id=wish.form_id,
-                status="active",
-            )
-            db.session.add(match)
-            try:
-                db.session.commit()
-                created += 1
-            except IntegrityError:
-                # RB08: já existe match ativo para essa combinação
-                db.session.rollback()
+        match = TradeMatch(
+            wisher_id=user_id,
+            owner_id=owner.id,
+            form_id=offer.form_id,
+            status="active",
+        )
+        db.session.add(match)
+        try:
+            db.session.commit()
+            created += 1
+        except IntegrityError:
+            # RB08: já existe match ativo para essa combinação
+            db.session.rollback()
 
     return created
 

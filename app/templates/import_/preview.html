@@ -70,6 +70,7 @@
             </th>
             <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Qtd</th>
             <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">Troca</th>
+            <th class="px-4 py-2.5 text-center text-xs font-bold text-gray-500 uppercase tracking-wide">100%</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -87,6 +88,13 @@
             <td class="px-4 py-2.5 text-center">
               {% if row.for_trade %}
               <span class="text-blue-500 text-xs font-bold">🔄 Sim</span>
+              {% else %}
+              <span class="text-gray-300 text-xs">—</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-center">
+              {% if row.has_perfect %}
+              <span class="text-emerald-600 text-xs font-black">💯 Sim</span>
               {% else %}
               <span class="text-gray-300 text-xs">—</span>
               {% endif %}

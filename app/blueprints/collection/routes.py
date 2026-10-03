@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from . import bp
 from ...extensions import db
 from ...models.collection import UserCollection
+from ...models.individual import UserPokemon
 from ...models.pokemon import Form, Species
 from ...services.analytics_service import log_event
 
@@ -190,6 +191,7 @@ def regiao():
             uc.owned = False
             uc.quantity = 0
             uc.for_trade = False
+            uc.has_perfect = False
 
     db.session.commit()
     log_event("REGIAO_CATALOGAR", {"modo": modo, "start": start, "end": end, "count_owned": len(ids_owned)})
@@ -224,6 +226,11 @@ def upsert():
     entry.for_trade = for_trade if (owned and quantity > 0) else False
     entry.has_shiny = has_shiny if owned else False
     entry.shiny_qty = shiny_qty if has_shiny else 0
+    # has_perfect só muda quando enviado — telas que não conhecem o campo não o zeram
+    if "has_perfect" in request.form:
+        entry.has_perfect = request.form.get("has_perfect") == "true"
+    if not (owned and quantity > 0):
+        entry.has_perfect = False
 
     db.session.commit()
     return jsonify({
@@ -233,4 +240,76 @@ def upsert():
         "for_trade": entry.for_trade,
         "has_shiny": entry.has_shiny,
         "shiny_qty": entry.shiny_qty,
+        "has_perfect": entry.has_perfect,
     })
+
+
+def _iv(name: str) -> int | None:
+    v = request.form.get(name, type=int)
+    return v if v is not None and 0 <= v <= 15 else None
+
+
+@bp.route("/individual", methods=["POST"])
+@login_required
+def individual_add():
+    """Cadastro manual rápido de um exemplar (alternativa ao PokeGenie Pro). Tudo opcional."""
+    form_id = request.form.get("form_id", type=int)
+    if not db.session.get(Form, form_id):
+        abort(404)
+
+    atk, dfn, sta = _iv("atk_iv"), _iv("def_iv"), _iv("sta_iv")
+    ind = UserPokemon(
+        user_id=current_user.id,
+        form_id=form_id,
+        source="manual",
+        cp=request.form.get("cp", type=int),
+        atk_iv=atk,
+        def_iv=dfn,
+        sta_iv=sta,
+        iv_pct=round((atk + dfn + sta) / 45 * 100, 1) if None not in (atk, dfn, sta) else None,
+        is_shiny=request.form.get("is_shiny") == "true",
+        is_lucky=request.form.get("is_lucky") == "true",
+        is_shadow=request.form.get("is_shadow") == "true",
+    )
+    db.session.add(ind)
+
+    # Mantém o resumo da coleção coerente: exemplar cadastrado = capturado
+    entry = db.session.query(UserCollection).filter_by(user_id=current_user.id, form_id=form_id).first()
+    if not entry:
+        entry = UserCollection(user_id=current_user.id, form_id=form_id, quantity=0)
+        db.session.add(entry)
+    entry.owned = True
+    db.session.flush()  # inclui o novo exemplar na contagem
+    entry.quantity = max(entry.quantity or 0, _count_individuals(form_id))
+    if ind.is_perfect:
+        entry.has_perfect = True
+    if ind.is_shiny:
+        entry.has_shiny = True
+
+    db.session.commit()
+    return jsonify({"ok": True, "individual": ind.to_dict(), "has_perfect": entry.has_perfect,
+                    "quantity": entry.quantity})
+
+
+@bp.route("/individual/<int:ind_id>/delete", methods=["POST"])
+@login_required
+def individual_delete(ind_id: int):
+    ind = db.session.get(UserPokemon, ind_id)
+    if not ind or ind.user_id != current_user.id:
+        abort(403)
+    form_id, was_perfect = ind.form_id, ind.is_perfect
+    db.session.delete(ind)
+    db.session.flush()
+
+    entry = db.session.query(UserCollection).filter_by(user_id=current_user.id, form_id=form_id).first()
+    if entry and was_perfect:
+        entry.has_perfect = any(
+            i.is_perfect
+            for i in db.session.query(UserPokemon).filter_by(user_id=current_user.id, form_id=form_id)
+        )
+    db.session.commit()
+    return jsonify({"ok": True, "has_perfect": entry.has_perfect if entry else False})
+
+
+def _count_individuals(form_id: int) -> int:
+    return db.session.query(UserPokemon).filter_by(user_id=current_user.id, form_id=form_id).count()
