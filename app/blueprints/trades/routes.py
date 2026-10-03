@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, abort
+from flask import render_template, redirect, url_for, abort, flash
 from flask_login import login_required, current_user
 from . import bp
 from ...extensions import db
@@ -32,25 +32,24 @@ def whatsapp_click(match_id: int):
     if not match or match.wisher_id != current_user.id:
         abort(403)
 
-    # Registrar antes de redirecionar (RB10)
-    click = WhatsappClick(match_id=match_id, clicker_id=current_user.id)
-    db.session.add(click)
-    match.status = "contacted"
-    db.session.commit()
-
-    log_event("WHATSAPP_CLICK", {"match_id": match_id})
-
     owner = match.owner
     pokemon_name = match.form.species.name_pt or match.form.species.name
     message = (
         f"Olá, {owner.username}! Vi no MeuPokémonGO que você tem {pokemon_name} disponível para troca. "
-        f"Podemos negociar? Meu código de treinador: {current_user.trainer_code or 'não informado'}"
+        f"Podemos negociar? Meu código de amigo: {current_user.trainer_code or 'não informado'}"
     )
-    import urllib.parse
-    wa_url = f"https://wa.me/?text={urllib.parse.quote(message)}"
+    # Só com consentimento do dono (D5) — sem isso, o contato é pelo código de amigo
+    wa_url = owner.whatsapp_url(message)
+    if not wa_url:
+        flash(f"{owner.username} não liberou WhatsApp. Use o código de amigo para adicioná-lo no jogo.", "warning")
+        return redirect(url_for("trades.index"))
 
-    from flask import redirect as flask_redirect
-    return flask_redirect(wa_url)
+    # Registrar antes de redirecionar (RB10)
+    db.session.add(WhatsappClick(match_id=match_id, clicker_id=current_user.id))
+    match.status = "contacted"
+    db.session.commit()
+    log_event("WHATSAPP_CLICK", {"match_id": match_id})
+    return redirect(wa_url)
 
 
 @bp.route("/fechar/<int:match_id>", methods=["POST"])

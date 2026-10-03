@@ -1,0 +1,92 @@
+{#
+  Campos do perfil de troca (#23) — usado no onboarding e no perfil.
+  Espera: `f` = dict com valores (request.form após erro) ou None (usa current_user).
+#}
+{% set u = current_user %}
+{% set v_code  = f.trainer_code if f else (u.trainer_code or '') %}
+{% set v_state = f.state if f else (u.state or '') %}
+{% set v_city  = f.city if f else (u.city or '') %}
+{% set v_show  = (f.show_in_trades == 'on') if f else u.show_in_trades %}
+{% set v_remote = (f.can_trade_remote == 'on') if f else u.can_trade_remote %}
+{% set v_allow = (f.allow_whatsapp == 'on') if f else u.allow_whatsapp %}
+{% set v_wpp   = f.whatsapp if f else (whatsapp_display or '') %}
+{% set inp = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" %}
+{% set ufs = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'] %}
+
+<input type="hidden" name="trade_profile" value="1">
+
+<div>
+  <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Código de amigo</label>
+  <input type="text" name="trainer_code" value="{{ v_code }}" inputmode="numeric" maxlength="14"
+    placeholder="1234 5678 9012" autocomplete="off" class="{{ inp }} font-mono tracking-wider" />
+  <p class="text-[10px] text-gray-400 mt-1">No jogo: toque no seu avatar → Amigos → Adicionar amigo → "Meu código de Treinador".</p>
+</div>
+
+<div>
+  <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Onde você joga</label>
+  <div class="grid grid-cols-[5.5rem_1fr] gap-2">
+    <select name="state" id="tp-state" class="{{ inp }}" aria-label="Estado">
+      <option value="">UF</option>
+      {% for uf in ufs %}<option value="{{ uf }}" {{ 'selected' if v_state == uf }}>{{ uf }}</option>{% endfor %}
+    </select>
+    <input type="text" name="city" id="tp-city" value="{{ v_city }}" list="tp-cities" autocomplete="off"
+      placeholder="{{ 'Cidade' if v_state else 'Escolha a UF primeiro' }}" class="{{ inp }}" aria-label="Cidade" />
+    <datalist id="tp-cities"></datalist>
+  </div>
+  <p class="text-[10px] text-gray-400 mt-1">Troca no Pokémon GO é presencial — a cidade coloca você perto de quem pode trocar.</p>
+</div>
+
+<div class="space-y-2">
+  <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300">
+    <input type="checkbox" name="show_in_trades" {{ 'checked' if v_show }} class="mt-0.5 w-4 h-4 accent-[#1B2A4A]" />
+    <span>
+      <span class="block text-sm font-bold text-gray-800">Aparecer para outros treinadores nas trocas</span>
+      <span class="block text-xs text-gray-400">Mostra seu código de amigo, cidade e o que você tem para troca. Desligado = ninguém vê você.</span>
+    </span>
+  </label>
+
+  <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-gray-300">
+    <input type="checkbox" name="can_trade_remote" {{ 'checked' if v_remote }} class="mt-0.5 w-4 h-4 accent-[#1B2A4A]" />
+    <span>
+      <span class="block text-sm font-bold text-gray-800">Topo trocar à distância</span>
+      <span class="block text-xs text-gray-400">Você aparece também para treinadores de outras cidades.</span>
+    </span>
+  </label>
+
+  <div class="p-3 rounded-xl border border-gray-200">
+    <label class="flex items-start gap-3 cursor-pointer">
+      <input type="checkbox" name="allow_whatsapp" id="tp-allow-wpp" {{ 'checked' if v_allow }} class="mt-0.5 w-4 h-4 accent-green-600" />
+      <span>
+        <span class="block text-sm font-bold text-gray-800">Permitir que treinadores me chamem no WhatsApp</span>
+        <span class="block text-xs text-gray-400">Opcional. Seu número só aparece como botão "Chamar no WhatsApp" para quem quer trocar com você.</span>
+      </span>
+    </label>
+    <div id="tp-wpp-box" class="mt-2 pl-7 {{ '' if v_allow else 'hidden' }}">
+      <input type="tel" name="whatsapp" value="{{ v_wpp }}" inputmode="tel" placeholder="(85) 99999-1234"
+        autocomplete="tel-national" class="{{ inp }}" />
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const state = document.getElementById('tp-state');
+  const city = document.getElementById('tp-city');
+  const list = document.getElementById('tp-cities');
+  const allow = document.getElementById('tp-allow-wpp');
+  const box = document.getElementById('tp-wpp-box');
+  let data = null;
+
+  async function fill() {
+    const uf = state.value;
+    city.placeholder = uf ? 'Digite e escolha a cidade' : 'Escolha a UF primeiro';
+    list.innerHTML = '';
+    if (!uf) return;
+    if (!data) data = await fetch("{{ url_for('static', filename='data/municipios_br.json') }}").then(r => r.json());
+    list.innerHTML = (data[uf] || []).map(c => `<option value="${c.replace(/"/g, '&quot;')}">`).join('');
+  }
+  state.addEventListener('change', () => { city.value = ''; fill(); city.focus(); });
+  if (state.value) fill();
+  allow.addEventListener('change', () => box.classList.toggle('hidden', !allow.checked));
+})();
+</script>

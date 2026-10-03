@@ -61,15 +61,11 @@ def create_app(env: str | None = None) -> Flask:
     def inject_notifications():
         from flask_login import current_user
         if current_user.is_authenticated:
-            from .models.friendship import Friendship
             from .models.trade import TradeMatch
-            pending_friends = db.session.query(Friendship).filter_by(
-                addressee_id=current_user.id, status="pending"
-            ).count()
             new_matches = db.session.query(TradeMatch).filter_by(
                 wisher_id=current_user.id, status="active"
             ).count()
-            return {"notif_count": pending_friends + new_matches}
+            return {"notif_count": new_matches}
         return {"notif_count": 0}
 
     return app

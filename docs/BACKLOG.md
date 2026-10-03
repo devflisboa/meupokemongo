@@ -42,8 +42,8 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 
 | Ordem | # | Item | Esforço | Status |
 |-------|---|------|---------|--------|
-| 1 | [#23](#23--perfil-de-troca--visibilidade-aberta) | Perfil de troca + visibilidade aberta | ~1 dia | 🔜 Próximo |
-| 2 | [#24](#24--matching-por-cidade--troca-recíproca) | Matching por cidade + troca recíproca | ~1 dia | Pendente |
+| 1 | [#23](#23--perfil-de-troca--visibilidade-aberta) | Perfil de troca + visibilidade aberta | ~1 dia | ✅ Entregue |
+| 2 | [#24](#24--matching-por-cidade--troca-recíproca) | Matching por cidade + troca recíproca | ~1 dia | 🔜 Próximo |
 | 3 | [#18](#18--trade-binder-público) | Trade Binder público `/trade/<usuario>` | ~3 h | Pendente |
 | 4 | [#25](#25--login-com-google) | Login com Google | ~½ dia | Pendente |
 | 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | Parcial |
@@ -59,6 +59,15 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 ## Agora — fechar o ciclo de troca
 
 ### #23 — Perfil de troca + visibilidade aberta
+
+> ✅ **Entregue em 02/10/2026.** Como ficou:
+> - "Aparecer nas trocas" reaproveita a coluna `visibility` (public = sim, private = não) — sem segunda fonte de verdade;
+>   `friends` migrado para `public` na migração `f5a6b7c8d9e0`
+> - Cadastro sem o campo de código; código + UF/cidade + contato vão para `/auth/onboarding` (aviso no topo até completar)
+> - Código de amigo validado (12 dígitos) e salvo como `1234 5678 9012`; cidade validada contra
+>   `app/static/data/municipios_br.json` (IBGE, 5.571 municípios, tolera caixa/acento)
+> - Contato unificado no macro `templates/_contact.html` (WhatsApp só com consentimento + copiar código)
+> - Correção extra: `/estoque/<usuario>` nunca checava visibilidade — perfil privado agora dá 404 para terceiros
 
 **Por quê:** hoje o botão **"Propor troca" abre o WhatsApp sem número de destino** — a troca morre ali.
 Sem dados de contato e localização não existe ciclo de troca.
@@ -227,3 +236,4 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 02/10/2026 | Rate limit sem bloquear uso normal + ProxyFix; `deploy.ps1` com build, migração e health check | `68ffc01`, `542dbac` |
 | 02/10/2026 | Doces para evoluir (pogoapi), "Vitórias rápidas" no painel, matching automático, cabeçalho mobile | `918bf93` |
 | 02/10/2026 | Ambiente E2E isolado (`scripts/e2e_server.py` + Pokédex real em fixture) | `918bf93` |
+| 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | ver `git log` |

@@ -1,0 +1,29 @@
+{#
+  Contato para troca (#23 / D5):
+  - WhatsApp com número só se o dono consentiu (owner.whatsapp_url)
+  - Código de amigo sempre que existir (é o contato dentro do jogo)
+  Uso: {% from "_contact.html" import contact_buttons %}{{ contact_buttons(owner, msg, compact=True) }}
+#}
+{% macro contact_buttons(owner, message, compact=False) %}
+{% set wpp = owner.whatsapp_url(message) %}
+{% set size = 'text-[10px] px-2 py-1.5' if compact else 'text-xs px-3 py-2' %}
+<div class="flex flex-wrap gap-1.5 {{ 'justify-center' if compact }}">
+  {% if wpp %}
+  <a href="{{ wpp }}" target="_blank" rel="noopener" data-no-modal
+    class="{{ size }} inline-flex items-center gap-1 font-bold bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+    💬 {{ 'WhatsApp' if compact else 'Chamar no WhatsApp' }}
+  </a>
+  {% endif %}
+  {% if owner.trainer_code %}
+  <button type="button" data-no-modal
+    onclick="navigator.clipboard.writeText('{{ owner.trainer_code }}').then(() => { const t = this.querySelector('.lbl'); const o = t.textContent; t.textContent = 'Copiado!'; setTimeout(() => t.textContent = o, 1500); })"
+    class="{{ size }} inline-flex items-center gap-1 font-bold bg-[#1B2A4A] hover:opacity-90 text-white rounded-lg"
+    title="Código de amigo: {{ owner.trainer_code }}">
+    📋 <span class="lbl">{{ 'Código' if compact else 'Copiar código ' ~ owner.trainer_code }}</span>
+  </button>
+  {% endif %}
+  {% if not wpp and not owner.trainer_code %}
+  <span class="{{ size }} text-gray-400">Sem contato cadastrado</span>
+  {% endif %}
+</div>
+{% endmacro %}

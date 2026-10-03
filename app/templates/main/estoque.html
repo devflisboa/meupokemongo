@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_contact.html" import contact_buttons %}
 {% block title %}Coleção de {{ profile_user.username }} — {{ owned_forms|length }} Pokémon{% endblock %}
 
 {% block head %}
@@ -312,13 +313,14 @@
         </div>
       </div>
     </a>
-    {% if profile_user.trainer_code %}
+    {% if not (current_user.is_authenticated and current_user.id == profile_user.id) %}
     <div class="px-2 pb-2">
-      <a href="https://wa.me/?text={{ ('Oi ' ~ profile_user.username ~ '! Vi seu estoque no MeuPokémonGO e quero trocar pelo ' ~ pname ~ ' (#' ~ '%03d' % form.species_id ~ '). Meu código: ____. Ver estoque: ' ~ share_url) | urlencode }}"
-        target="_blank" rel="noopener"
-        class="block text-[10px] font-bold bg-green-500 hover:bg-green-600 text-white py-1.5 rounded-lg transition-colors text-center">
-        Quero esse! 💬
-      </a>
+      {% set my_code = current_user.trainer_code if current_user.is_authenticated and current_user.trainer_code else '' %}
+      {{ contact_buttons(profile_user,
+           'Oi ' ~ profile_user.username ~ '! Vi seu estoque no MeuPokémonGO e quero trocar pelo ' ~ pname
+           ~ ' (#' ~ '%03d' % form.species_id ~ ').' ~ (' Meu código de amigo: ' ~ my_code if my_code else '')
+           ~ ' Ver estoque: ' ~ share_url,
+           compact=True) }}
     </div>
     {% endif %}
   </div>

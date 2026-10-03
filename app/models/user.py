@@ -15,8 +15,16 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     avatar = db.Column(db.LargeBinary, nullable=True)
     avatar_mime = db.Column(db.String(30), nullable=True)
-    # public = coleção visível a todos; friends = só amigos; private = só o dono
+    # "Aparecer para outros treinadores nas trocas": public = sim, private = não.
+    # "friends" não é mais oferecido (D1/D2 do backlog) — mantido no enum só por reversibilidade.
     visibility = db.Column(db.Enum("public", "friends", "private"), default="public", nullable=False)
+
+    # Perfil de troca (#23) — troca no GO exige proximidade, por isso cidade importa
+    state = db.Column(db.String(2), nullable=True)            # UF (IBGE)
+    city = db.Column(db.String(80), nullable=True)            # município (lista IBGE)
+    can_trade_remote = db.Column(db.Boolean, default=False, nullable=False)  # "Topo trocar à distância"
+    whatsapp = db.Column(db.String(20), nullable=True)        # só dígitos, com DDI 55
+    allow_whatsapp = db.Column(db.Boolean, default=False, nullable=False)    # consentimento explícito (LGPD)
     created_at = db.Column(db.DateTime, default=now_br, nullable=False)
     updated_at = db.Column(db.DateTime, default=now_br, onupdate=now_br)
 
@@ -29,6 +37,28 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def show_in_trades(self) -> bool:
+        return self.visibility != "private"
+
+    @property
+    def location_label(self) -> str:
+        if self.city and self.state:
+            return f"{self.city}/{self.state}"
+        return self.state or ""
+
+    @property
+    def needs_onboarding(self) -> bool:
+        """Perfil de troca incompleto: sem código de amigo ou sem cidade."""
+        return not (self.trainer_code and self.city)
+
+    def whatsapp_url(self, text: str = "") -> str | None:
+        """Link wa.me só com consentimento e número válido."""
+        if not (self.allow_whatsapp and self.whatsapp):
+            return None
+        from urllib.parse import quote
+        return f"https://wa.me/{self.whatsapp}" + (f"?text={quote(text)}" if text else "")
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"

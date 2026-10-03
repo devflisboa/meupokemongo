@@ -131,6 +131,12 @@ def estoque(username: str):
     """Página pública de coleção completa — sem login obrigatório."""
     profile_user = db.session.query(User).filter_by(username=username).first_or_404()
 
+    # Quem desligou "aparecer nas trocas" só é visível para si mesmo (e admin)
+    is_self = current_user.is_authenticated and current_user.id == profile_user.id
+    is_admin = current_user.is_authenticated and current_user.is_admin
+    if not profile_user.show_in_trades and not (is_self or is_admin):
+        abort(404)
+
     # IDs de formas que o usuário possui (owned) e para troca
     collection_map: dict[int, UserCollection] = {
         uc.form_id: uc

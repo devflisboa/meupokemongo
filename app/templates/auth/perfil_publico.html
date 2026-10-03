@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_contact.html" import contact_buttons %}
 {% block title %}{{ profile_user.username }} — Treinador{% endblock %}
 
 {% block content %}
@@ -28,20 +29,19 @@
           {% if profile_user.trainer_code %}
           &bull; Código: <span class="font-mono font-bold text-gray-600">{{ profile_user.trainer_code }}</span>
           {% endif %}
+          {% if profile_user.location_label %}
+          &bull; 📍 {{ profile_user.location_label }}
+          {% endif %}
+          {% if profile_user.can_trade_remote %}
+          &bull; 🌐 troca à distância
+          {% endif %}
         </p>
-        <div class="flex items-center gap-1 mt-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
-          <span class="text-[10px] text-gray-400">Coleção pública</span>
-        </div>
       </div>
     </div>
 
-    {# Botão convidar amigo (só se logado e ainda não são amigos) #}
     {% if current_user.is_authenticated %}
-    <a href="{{ url_for('friends.index') }}"
-      class="flex-shrink-0 bg-[#1B2A4A] hover:opacity-90 text-white text-sm font-bold px-4 py-2 rounded-lg transition-opacity">
-      + Adicionar amigo
-    </a>
+    {{ contact_buttons(profile_user, 'Oi ' ~ profile_user.username ~ '! Te achei no MeuPokémonGO, bora trocar?'
+         ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
     {% else %}
     <a href="{{ url_for('auth.login') }}"
       class="flex-shrink-0 border border-gray-200 text-gray-600 text-sm font-bold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
@@ -138,12 +138,14 @@
               {{ (form.species.name_pt or form.species.name) | poke_name }}
             </div>
           </div>
-          {% if current_user.is_authenticated and profile_user.trainer_code %}
-          <a href="https://wa.me/?text={{ ('Oi ' ~ profile_user.username ~ '! Vi no MeuPokémonGO que você tem ' ~ (form.species.name_pt or form.species.name) ~ ' para troca. Podemos negociar? Meu código: ' ~ (current_user.trainer_code or 'não informado')) | urlencode }}"
-            target="_blank" rel="noopener"
-            class="flex-shrink-0 bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg transition-colors">
-            Trocar
-          </a>
+          {% if current_user.is_authenticated %}
+          <div class="flex-shrink-0">
+            {{ contact_buttons(profile_user,
+                 'Oi ' ~ profile_user.username ~ '! Vi no MeuPokémonGO que você tem '
+                 ~ ((form.species.name_pt or form.species.name) | poke_name) ~ ' para troca. Podemos negociar?'
+                 ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else ''),
+                 compact=True) }}
+          </div>
           {% endif %}
         </div>
         {% endfor %}

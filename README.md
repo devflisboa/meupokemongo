@@ -423,11 +423,11 @@ e histórico de entregas em [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 | Ordem | # | Próximo | Esforço |
 |-------|---|---------|---------|
-| 1 | #23 | **Perfil de troca + visibilidade aberta** — código de amigo, cidade (IBGE), contato com consentimento; todos se enxergam | ~1 dia |
-| 2 | #24 | **Matching por cidade + troca recíproca** | ~1 dia |
-| 3 | #18 | **Trade Binder público** `/trade/<usuario>` | ~3 h |
-| 4 | #25 | **Login com Google** | ~½ dia |
-| 5 | #20 | Faltantes sob demanda (desempenho) | ~3 h |
-| 6 | #15 | Progresso Shiny e 100% | ~3 h |
-| 7 | #14 | Formas regionais + exclusivos de região | ~1–2 dias |
-| 8 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |
+| ✅ | #23 | **Perfil de troca + visibilidade aberta** — código de amigo, cidade (IBGE), contato com consentimento; todos se enxergam | entregue |
+| 1 | #24 | **Matching por cidade + troca recíproca** | ~1 dia |
+| 2 | #18 | **Trade Binder público** `/trade/<usuario>` | ~3 h |
+| 3 | #25 | **Login com Google** | ~½ dia |
+| 4 | #20 | Faltantes sob demanda (desempenho) | ~3 h |
+| 5 | #15 | Progresso Shiny e 100% | ~3 h |
+| 6 | #14 | Formas regionais + exclusivos de região | ~1–2 dias |
+| 7 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |

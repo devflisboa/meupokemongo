@@ -4,10 +4,53 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import bp
 from ...extensions import db, limiter
 from ...models.user import User
-from ...models.friendship import Friendship
 from ...models.collection import UserCollection
 from ...models.pokemon import Form
 from ...services.collection_service import get_collection_stats
+from ...services.profile_service import (
+    resolve_city, normalize_whatsapp, format_whatsapp, delete_account,
+)
+
+
+def _apply_trade_profile(user, form) -> str | None:
+    """
+    Aplica os campos do perfil de troca (#23) vindos de um formulário.
+    Retorna mensagem de erro ou None. Campos ausentes do form não são alterados.
+    """
+    if "trainer_code" in form:
+        raw = form.get("trainer_code", "").strip()
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        if raw and (len(digits) != 12 or any(ch.isalpha() for ch in raw)):
+            return "O código de amigo tem 12 números (ex.: 1234 5678 9012)."
+        # formato padrão do jogo: 1234 5678 9012
+        user.trainer_code = f"{digits[:4]} {digits[4:8]} {digits[8:]}" if digits else None
+
+    if "state" in form or "city" in form:
+        state, city = form.get("state", "").strip(), form.get("city", "").strip()
+        if state or city:
+            uf, name = resolve_city(state, city)
+            if not uf:
+                return "Cidade não encontrada para o estado escolhido. Escolha uma opção da lista."
+            user.state, user.city = uf, name
+        else:
+            user.state = user.city = None
+
+    if "trade_profile" in form:  # checkboxes: ausentes = desmarcados
+        user.visibility = "public" if form.get("show_in_trades") == "on" else "private"
+        user.can_trade_remote = form.get("can_trade_remote") == "on"
+        allow = form.get("allow_whatsapp") == "on"
+        raw = form.get("whatsapp", "").strip()
+        if raw:
+            number = normalize_whatsapp(raw)
+            if not number:
+                return "WhatsApp inválido. Use DDD + número, ex.: (85) 99999-1234."
+            user.whatsapp = number
+        elif not allow:
+            user.whatsapp = None
+        if allow and not user.whatsapp:
+            return "Informe o número para liberar o contato por WhatsApp."
+        user.allow_whatsapp = allow
+    return None
 
 
 @bp.route("/login", methods=["GET", "POST"])
@@ -35,21 +78,36 @@ def registro():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
-        trainer_code = request.form.get("trainer_code", "").strip() or None
         if db.session.query(User).filter_by(username=username).first():
             flash("Nome de usuário já em uso.", "warning")
             return render_template("auth/registro.html")
         if db.session.query(User).filter_by(email=email).first():
             flash("E-mail já cadastrado.", "warning")
             return render_template("auth/registro.html")
-        user = User(username=username, email=email, trainer_code=trainer_code)
+        user = User(username=username, email=email)  # código de amigo vem no onboarding
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
         login_user(user)
-        flash("Conta criada com sucesso! Bem-vindo, treinador!", "success")
-        return redirect(url_for("main.index"))
+        flash("Conta criada! Falta só um passo para aparecer nas trocas.", "success")
+        return redirect(url_for("auth.onboarding"))
     return render_template("auth/registro.html")
+
+
+@bp.route("/onboarding", methods=["GET", "POST"])
+@login_required
+def onboarding():
+    """Perfil de troca em 1 tela curta: código de amigo → cidade → contato."""
+    if request.method == "POST":
+        error = _apply_trade_profile(current_user, request.form)
+        if error:
+            db.session.rollback()
+            flash(error, "warning")
+            return render_template("auth/onboarding.html", form=request.form)
+        db.session.commit()
+        flash("Pronto! Agora outros treinadores encontram você nas trocas.", "success")
+        return redirect(url_for("wishlist.index"))
+    return render_template("auth/onboarding.html", form=None)
 
 
 @bp.route("/perfil", methods=["GET", "POST"])
@@ -60,21 +118,30 @@ def perfil():
 
         if action == "dados":
             email = request.form.get("email", "").strip()
-            trainer_code = request.form.get("trainer_code", "").strip() or None
-            visibility = request.form.get("visibility", "public")
-            if visibility not in ("public", "friends", "private"):
-                visibility = "public"
             if email != current_user.email:
                 if db.session.query(User).filter(
                     User.email == email, User.id != current_user.id
                 ).first():
                     flash("E-mail já está em uso por outro treinador.", "warning")
                     return redirect(url_for("auth.perfil"))
+            error = _apply_trade_profile(current_user, request.form)
+            if error:
+                db.session.rollback()
+                flash(error, "warning")
+                return redirect(url_for("auth.perfil"))
             current_user.email = email
-            current_user.trainer_code = trainer_code
-            current_user.visibility = visibility
             db.session.commit()
             flash("Perfil atualizado com sucesso!", "success")
+
+        elif action == "excluir":
+            if request.form.get("confirm_username", "").strip() != current_user.username:
+                flash("Para apagar a conta, digite seu nome de usuário exatamente.", "warning")
+                return redirect(url_for("auth.perfil"))
+            user = db.session.get(User, current_user.id)
+            logout_user()
+            delete_account(user)
+            flash("Sua conta e todos os seus dados foram apagados.", "success")
+            return redirect(url_for("main.index"))
 
         elif action == "senha":
             current_pwd = request.form.get("current_password", "")
@@ -123,7 +190,8 @@ def perfil():
         return redirect(url_for("auth.perfil"))
 
     stats = get_collection_stats(current_user.id)
-    return render_template("auth/perfil.html", stats=stats)
+    return render_template("auth/perfil.html", stats=stats,
+                           whatsapp_display=format_whatsapp(current_user.whatsapp))
 
 
 @bp.route("/treinador/<username>")
@@ -134,28 +202,9 @@ def perfil_publico(username: str):
     if current_user.is_authenticated and current_user.id == profile_user.id:
         return redirect(url_for("auth.perfil"))
 
-    # Verifica visibilidade
-    can_view = False
-    if profile_user.visibility == "public":
-        can_view = True
-    elif profile_user.visibility == "friends" and current_user.is_authenticated:
-        friendship = db.session.query(Friendship).filter(
-            db.or_(
-                db.and_(
-                    Friendship.requester_id == current_user.id,
-                    Friendship.addressee_id == profile_user.id,
-                ),
-                db.and_(
-                    Friendship.requester_id == profile_user.id,
-                    Friendship.addressee_id == current_user.id,
-                ),
-            ),
-            Friendship.status == "accepted",
-        ).first()
-        can_view = friendship is not None
-
-    if not can_view:
-        abort(403)
+    # Todos se enxergam (D1); só quem desligou "aparecer nas trocas" fica oculto
+    if not profile_user.show_in_trades:
+        abort(404)
 
     stats = get_collection_stats(profile_user.id)
 

@@ -2,26 +2,13 @@ from sqlalchemy.exc import IntegrityError
 from ..extensions import db
 from ..models.collection import UserCollection
 from ..models.pokemon import Form
-from ..models.friendship import Friendship
 from ..models.trade import TradeMatch
 from ..models.user import User
 
 
 def _interaction_allowed(wisher: User, owner: User) -> bool:
-    """Verifica se wisher pode ver a coleção do owner (visibilidade + amizade)."""
-    if owner.visibility == "public":
-        return True
-    if owner.visibility == "private":
-        return False
-    # friends
-    friendship = db.session.query(Friendship).filter(
-        db.or_(
-            db.and_(Friendship.requester_id == wisher.id, Friendship.addressee_id == owner.id),
-            db.and_(Friendship.requester_id == owner.id, Friendship.addressee_id == wisher.id),
-        ),
-        Friendship.status == "accepted",
-    ).first()
-    return friendship is not None
+    """Todos se enxergam (D1): basta o dono ter "aparecer nas trocas" ligado."""
+    return owner.show_in_trades
 
 
 def run_matching_for_user(user_id: int) -> int:

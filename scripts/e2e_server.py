@@ -61,11 +61,16 @@ def seed(app):
         db.session.bulk_insert_mappings(Form, data["forms"])
         db.session.bulk_insert_mappings(EvolutionChain, data["evolutions"])
 
-        felipe = User(username=E2E_USER, email="felipe@e2e.test", trainer_code="1111 2222 3333", visibility="public")
-        misty = User(username=E2E_FRIEND, email="misty@e2e.test", trainer_code="4444 5555 6666", visibility="public")
-        felipe.set_password(E2E_PASSWORD)
-        misty.set_password(E2E_PASSWORD)
-        db.session.add_all([felipe, misty])
+        felipe = User(username=E2E_USER, email="felipe@e2e.test", trainer_code="1111 2222 3333",
+                      visibility="public", state="CE", city="Fortaleza")
+        # Misty liberou WhatsApp (botão "Propor troca"); "novato" ainda não fez o onboarding
+        misty = User(username=E2E_FRIEND, email="misty@e2e.test", trainer_code="4444 5555 6666",
+                     visibility="public", state="CE", city="Fortaleza", can_trade_remote=True,
+                     whatsapp="5585999990000", allow_whatsapp=True)
+        novato = User(username="novato", email="novato@e2e.test")
+        for u in (felipe, misty, novato):
+            u.set_password(E2E_PASSWORD)
+        db.session.add_all([felipe, misty, novato])
         db.session.flush()
 
         form_of = {f["species_id"]: f["id"] for f in data["forms"] if f["form_name"] == "normal"}

@@ -116,7 +116,7 @@
         <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           {% if current_user.is_authenticated %}
           <!-- Notificações (só logado — deslogado não há o que notificar) -->
-          <a href="{{ url_for('friends.index') }}" class="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+          <a href="{{ url_for('trades.index') }}" title="Oportunidades de troca" class="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -200,6 +200,17 @@
 
   <!-- CONTEÚDO PRINCIPAL -->
   <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-5 pb-20 sm:pb-5">
+    {% if current_user.is_authenticated and current_user.needs_onboarding
+          and request.endpoint not in ('auth.onboarding', 'auth.perfil') %}
+    <a href="{{ url_for('auth.onboarding') }}"
+      class="flex items-center gap-3 mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 hover:bg-amber-100 transition-colors">
+      <span class="text-xl">🤝</span>
+      <span class="flex-1 text-sm text-amber-900">
+        <b>Complete seu perfil de troca</b> — código de amigo e cidade para outros treinadores acharem você.
+      </span>
+      <span class="text-amber-700 font-bold text-sm">→</span>
+    </a>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 

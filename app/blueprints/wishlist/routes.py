@@ -4,6 +4,7 @@ from . import bp
 from ...extensions import db
 from ...models.wishlist import Wishlist
 from ...models.collection import UserCollection
+from ...models.user import User
 from ...models.pokemon import Form, Species, EvolutionChain
 from ..collection.routes import REGIONS
 
@@ -45,7 +46,9 @@ def index():
     if missing_ids:
         offers = dict(
             db.session.query(UserCollection.form_id, db.func.count(UserCollection.id))
+            .join(User, User.id == UserCollection.user_id)
             .filter(
+                User.visibility != "private",  # só quem aparece nas trocas (D1)
                 UserCollection.form_id.in_(missing_ids),
                 UserCollection.user_id != current_user.id,
                 UserCollection.owned.is_(True),
