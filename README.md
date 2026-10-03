@@ -412,3 +412,13 @@ docker exec meupokemongo_db_1 mysql -u root -ppokemon123prod meupokemongo
 ## Licença
 
 Projeto pessoal / portfólio — dados de Pokémon GO pertencem à Niantic / The Pokémon Company.
+
+
+## Roadmap
+
+- [ ] **Login via Google** (OAuth) — entrar sem senha; cadastro cai direto no onboarding curto
+- [ ] Perfil de troca: código de amigo, país/estado/cidade, troca à distância, consentimento de contato
+- [ ] Todos os treinadores se enxergam (sem exigir amizade no app); privacidade via "aparecer nas trocas"
+- [ ] Matching por proximidade e trocas recíprocas ("você tem o que eu quero e eu tenho o que você quer")
+- [ ] Formas regionais (Alola, Galar, Hisui, Paldea) no sync, coleção e wishlist
+- [ ] E2E: Cypress 16 (Electron 41) cai com "Illegal instruction" na máquina de dev — avaliar Playwright
