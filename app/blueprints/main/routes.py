@@ -1,5 +1,5 @@
 from datetime import date
-from flask import render_template, abort, request, jsonify
+from flask import render_template, abort, request, jsonify, current_app
 from flask_login import current_user
 from . import bp
 from ...extensions import csrf
@@ -126,6 +126,79 @@ def api_log():
     return jsonify({"ok": True})
 
 
+@bp.route("/trade/<username>")
+def trade_binder(username: str):
+    """
+    Trade Binder público (#18): link para divulgar — o que tenho para troca e o que procuro.
+    Sem login. Logado, destaca o que o visitante tem e o dono procura (troca de mão dupla).
+    """
+    from ...models.wishlist import Wishlist
+    from ...services.matching_service import proximity_tier, TIER_LABEL
+
+    owner = db.session.query(User).filter_by(username=username).first_or_404()
+    is_self = current_user.is_authenticated and current_user.id == owner.id
+    if not owner.show_in_trades and not (is_self or (current_user.is_authenticated and current_user.is_admin)):
+        abort(404)
+
+    owned = {
+        uc.form_id: uc
+        for uc in db.session.query(UserCollection).filter(
+            UserCollection.user_id == owner.id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        )
+    }
+    trade_forms = (
+        db.session.query(Form)
+        .filter(Form.id.in_([fid for fid, uc in owned.items() if uc.for_trade] or [-1]))
+        .order_by(Form.species_id)
+        .all()
+    )
+
+    # O que o dono procura: ⭐ prioridades dele que ainda faltam
+    priority_forms = (
+        db.session.query(Form)
+        .join(Wishlist, Wishlist.form_id == Form.id)
+        .filter(Wishlist.user_id == owner.id, Form.id.notin_(list(owned) or [-1]))
+        .order_by(Form.species_id)
+        .all()
+    )
+
+    # Visitante logado: o que ELE tem para troca e falta ao dono → convite de mão dupla
+    i_can_offer, tier_label = [], None
+    if current_user.is_authenticated and not is_self:
+        i_can_offer = (
+            db.session.query(Form)
+            .join(UserCollection, UserCollection.form_id == Form.id)
+            .filter(
+                UserCollection.user_id == current_user.id,
+                UserCollection.owned.is_(True),
+                UserCollection.quantity > 0,
+                UserCollection.for_trade.is_(True),
+                Form.id.notin_(list(owned) or [-1]),
+            )
+            .order_by(Form.species_id)
+            .all()
+        )
+        tier = proximity_tier(current_user, owner)
+        tier_label = TIER_LABEL.get(tier) if tier is not None else "Fora do seu alcance de troca"
+
+    total_normal = db.session.query(Form).filter_by(form_name="normal").count()
+    log_event("PAGE_VIEW", {"page": "trade_binder", "owner": owner.username})
+    return render_template(
+        "trades/binder.html",
+        owner=owner,
+        is_self=is_self,
+        trade_forms=trade_forms,
+        collection_map=owned,
+        priority_forms=priority_forms,
+        missing_count=total_normal - len(owned),
+        i_can_offer=i_can_offer,
+        tier_label=tier_label,
+        share_url=request.url.split("?")[0],
+    )
+
+
 @bp.route("/estoque/<username>")
 def estoque(username: str):
     """Página pública de coleção completa — sem login obrigatório."""
@@ -160,6 +233,20 @@ def estoque(username: str):
     missing_forms = [f for f in all_forms if f.id not in collection_map]
     trade_forms = [f for f in all_forms if f.id in trade_form_ids]
 
+    # #20: faltantes vão como JSON compacto e o navegador desenha 30 por vez
+    # (antes: ~770 cards ocultos no HTML, pesado no celular)
+    poke_name = current_app.jinja_env.filters["poke_name"]
+    missing_data = [
+        {
+            "id": f.species_id,
+            "n": poke_name(f.species.name_pt or f.species.name),
+            "t": f.type1 or "",
+            "s": f.sprite_url or "",
+            "b": "m" if f.species.is_mythical else ("l" if f.species.is_legendary else ""),
+        }
+        for f in missing_forms
+    ]
+
     stats = get_collection_stats(profile_user.id)
     share_url = request.url.split("?")[0]
 
@@ -173,6 +260,7 @@ def estoque(username: str):
         all_forms=all_forms,
         owned_forms=owned_forms,
         missing_forms=missing_forms,
+        missing_data=missing_data,
         trade_forms=trade_forms,
         collection_map=collection_map,
         stats=stats,

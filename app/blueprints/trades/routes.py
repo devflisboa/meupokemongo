@@ -3,7 +3,9 @@ from flask_login import login_required, current_user
 from . import bp
 from ...extensions import db
 from ...models.trade import TradeMatch, WhatsappClick
-from ...services.matching_service import run_matching_for_user, get_active_matches_for_user
+from ...services.matching_service import (
+    run_matching_for_user, get_active_matches_for_user, get_reciprocal_trades,
+)
 from ...services.analytics_service import log_event
 
 
@@ -13,7 +15,8 @@ def index():
     # Matching automático ao abrir a tela — o usuário não precisa clicar em "Buscar matches"
     run_matching_for_user(current_user.id)
     matches = get_active_matches_for_user(current_user.id)
-    return render_template("trades/index.html", matches=matches)
+    reciprocal = get_reciprocal_trades(current_user.id)
+    return render_template("trades/index.html", matches=matches, reciprocal=reciprocal)
 
 
 @bp.route("/sync")

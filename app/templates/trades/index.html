@@ -17,18 +17,66 @@
   "steel": "from-slate-400 to-gray-500", "normal": "from-gray-300 to-gray-400"
 } %}
 
-<div class="flex items-center justify-between mb-6">
-  <div>
-    <h1 class="text-xl font-black text-gray-900">Oportunidades de Troca</h1>
-    <p class="text-xs text-gray-400 mt-0.5">Pokémon que você deseja e outros treinadores têm para trocar</p>
-  </div>
-  <a href="{{ url_for('trades.sync') }}"
-    class="bg-[#1B2A4A] hover:opacity-90 text-white text-sm px-4 py-2 rounded-lg font-bold transition-opacity">
-    Atualizar matches
-  </a>
+<div class="mb-6">
+  <h1 class="text-xl font-black text-gray-900">Oportunidades de Troca</h1>
+  <p class="text-xs text-gray-400 mt-0.5">
+    Atualizado sozinho · treinadores da sua cidade primeiro, depois quem troca à distância
+    {% if not current_user.city %}
+    · <a href="{{ url_for('auth.onboarding') }}" class="text-blue-600 font-semibold hover:underline">informe sua cidade</a> para ver quem está perto
+    {% endif %}
+  </p>
 </div>
 
+{# ── Trocas de mão dupla (#24): os dois lados ganham ── #}
+{% if reciprocal %}
+<section class="mb-8">
+  <h2 class="font-black text-gray-900 mb-1">🤝 Trocas de mão dupla</h2>
+  <p class="text-xs text-gray-400 mb-3">Eles têm o que te falta e você tem o que falta para eles.</p>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    {% for r in reciprocal %}
+    {% set other = r.user %}
+    <div class="bg-white rounded-2xl shadow-sm border border-green-200 p-4 reciprocal-card" data-user="{{ other.username }}">
+      <div class="flex items-start justify-between gap-2 mb-3">
+        <div class="min-w-0">
+          <a href="{{ url_for('main.trade_binder', username=other.username) }}"
+            class="font-black text-gray-900 hover:underline">{{ other.username }}</a>
+          <div class="text-[11px] text-gray-400 truncate">
+            {{ r.tier_label }}{% if other.location_label %} · {{ other.location_label }}{% endif %}
+          </div>
+        </div>
+        <span class="flex-shrink-0 bg-green-100 text-green-700 text-xs font-black px-2 py-1 rounded-full">
+          {{ [r.they_have|length, r.i_have|length]|min }} troca{{ 's' if [r.they_have|length, r.i_have|length]|min > 1 }}
+        </span>
+      </div>
+      {% for label, forms, color in [('Você recebe', r.they_have, 'text-green-700'), ('Você oferece', r.i_have, 'text-blue-700')] %}
+      <div class="mb-2">
+        <div class="text-[11px] font-bold {{ color }} mb-1">{{ label }} ({{ forms|length }})</div>
+        <div class="flex flex-wrap gap-1">
+          {% for f in forms[:8] %}
+          <div class="w-11 text-center" data-poke-id="{{ f.species_id }}" title="{{ (f.species.name_pt or f.species.name) | poke_name }}">
+            <img src="{{ f.sprite_url }}" alt="" class="w-10 h-10 mx-auto object-contain bg-gray-50 rounded-lg" loading="lazy"
+              onerror="this.style.visibility='hidden'" />
+            <div class="text-[8px] text-gray-500 truncate">{{ (f.species.name_pt or f.species.name) | poke_name }}</div>
+          </div>
+          {% endfor %}
+          {% if forms|length > 8 %}
+          <div class="w-11 h-10 flex items-center justify-center text-xs font-bold text-gray-400 bg-gray-50 rounded-lg">+{{ forms|length - 8 }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {{ contact_buttons(other,
+           'Oi ' ~ other.username ~ '! Vi no MeuPokémonGO que dá para fazermos uma troca de mão dupla: você tem '
+           ~ r.they_names ~ ' e eu tenho ' ~ r.i_names ~ ' para você.'
+           ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% if matches %}
+<h2 class="font-black text-gray-900 mb-3">Quem tem o que te falta</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   {% for match in matches %}
   {% set sp = match.form.species %}
@@ -54,8 +102,8 @@
         <div class="text-white/70 text-xs capitalize">{{ match.form.form_name | replace('-', ' ') }}</div>
         {% endif %}
       </div>
-      <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full font-semibold {{ status_color.get(match.status, 'bg-gray-100 text-gray-500') }}">
-        {{ status_label.get(match.status, match.status) }}
+      <span class="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/90 text-gray-700">
+        {{ match.tier_label or status_label.get(match.status, match.status) }}
       </span>
     </div>
 

@@ -136,8 +136,12 @@
 
       {# ── Compartilhar estoque ── #}
       <div class="bg-green-50 border border-green-200 rounded-2xl p-5">
-        <h2 class="font-bold text-sm text-green-800 mb-1">Compartilhar meu estoque</h2>
-        <p class="text-xs text-green-700 mb-3">Envie seu link de trocas para amigos — sem precisar fazer login.</p>
+        <h2 class="font-bold text-sm text-green-800 mb-1">Divulgar minhas trocas</h2>
+        <p class="text-xs text-green-700 mb-3">Links públicos — quem receber não precisa de login.</p>
+        <a href="{{ url_for('main.trade_binder', username=current_user.username) }}" target="_blank"
+          class="flex items-center justify-center gap-2 w-full bg-[#1B2A4A] hover:opacity-90 text-white text-sm font-bold py-2 rounded-lg transition-opacity mb-2">
+          🔄 Meu Trade Binder (tenho × procuro)
+        </a>
         <a href="{{ url_for('main.estoque', username=current_user.username) }}" target="_blank"
           class="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white text-sm font-bold py-2 rounded-lg transition-colors">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

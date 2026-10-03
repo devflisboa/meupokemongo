@@ -9,6 +9,17 @@ from ...models.pokemon import Form, Species, EvolutionChain
 from ..collection.routes import REGIONS
 
 
+def _reachable_owner_filter(me: User):
+    """SQL equivalente a matching_service.proximity_tier(me, owner) is not None."""
+    if me.can_trade_remote or not me.city:
+        return db.true()
+    return db.or_(
+        db.and_(User.city == me.city, User.state == me.state),
+        User.can_trade_remote.is_(True),
+        User.city.is_(None),
+    )
+
+
 def get_missing_normal_forms(user_id: int) -> list[tuple[Form, Species]]:
     """Wishlist automática: toda forma normal que o treinador ainda não possui."""
     owned_subq = (
@@ -49,6 +60,7 @@ def index():
             .join(User, User.id == UserCollection.user_id)
             .filter(
                 User.visibility != "private",  # só quem aparece nas trocas (D1)
+                _reachable_owner_filter(current_user),  # mesma regra de proximidade do matching (#24)
                 UserCollection.form_id.in_(missing_ids),
                 UserCollection.user_id != current_user.id,
                 UserCollection.owned.is_(True),

@@ -41,6 +41,7 @@ from app.models.user import User  # noqa: E402
 from app.models.pokemon import Species, Form, EvolutionChain  # noqa: E402
 from app.models.collection import UserCollection  # noqa: E402
 from app.models.individual import UserPokemon  # noqa: E402
+from app.models.wishlist import Wishlist  # noqa: E402
 
 # Kanto: o que o "felipe" possui. Bulbasaur/Charmander/Squirtle possuídos e
 # Ivysaur/Charmeleon faltando → aparecem como "Evoluir" na Wishlist.
@@ -68,9 +69,12 @@ def seed(app):
                      visibility="public", state="CE", city="Fortaleza", can_trade_remote=True,
                      whatsapp="5585999990000", allow_whatsapp=True)
         novato = User(username="novato", email="novato@e2e.test")
-        for u in (felipe, misty, novato):
+        # Brock: outra cidade, mas troca à distância → aparece na faixa "🌐"
+        brock = User(username="brock", email="brock@e2e.test", trainer_code="7777 8888 9999",
+                     visibility="public", state="PE", city="Recife", can_trade_remote=True)
+        for u in (felipe, misty, novato, brock):
             u.set_password(E2E_PASSWORD)
-        db.session.add_all([felipe, misty, novato])
+        db.session.add_all([felipe, misty, novato, brock])
         db.session.flush()
 
         form_of = {f["species_id"]: f["id"] for f in data["forms"] if f["form_name"] == "normal"}
@@ -91,6 +95,10 @@ def seed(app):
         for sid, qty in FRIEND_TRADES.items():
             db.session.add(UserCollection(user_id=misty.id, form_id=form_of[sid], owned=True,
                                           quantity=qty, for_trade=True))
+        for sid in (6, 94):  # Charizard e Gengar
+            db.session.add(UserCollection(user_id=brock.id, form_id=form_of[sid], owned=True,
+                                          quantity=1, for_trade=True))
+        db.session.add(Wishlist(user_id=felipe.id, form_id=form_of[150], priority="high"))  # ⭐ no binder
         db.session.commit()
         print(f"[e2e] banco {DB_FILE} semeado: {len(data['species'])} espécies, "
               f"{len(OWNED)} possuídos por {E2E_USER}")

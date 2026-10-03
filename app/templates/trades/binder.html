@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% from "_contact.html" import contact_buttons %}
+{% block title %}Trocas de {{ owner.username }} — {{ trade_forms|length }} disponíveis{% endblock %}
+
+{% block head %}
+{% set og_image = trade_forms[0].sprite_url if trade_forms and trade_forms[0].sprite_url
+     else 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png' %}
+<meta property="og:title" content="Trocas de {{ owner.username }} — {{ trade_forms|length }} Pokémon disponíveis | MeuPokémonGO">
+<meta property="og:description" content="{{ owner.username }}{% if owner.location_label %} ({{ owner.location_label }}){% endif %} tem {{ trade_forms|length }} Pokémon para troca no Pokémon GO e procura {{ missing_count }}.">
+<meta property="og:url" content="{{ share_url }}">
+<meta property="og:image" content="{{ og_image }}">
+<meta property="og:type" content="website">
+{% endblock %}
+
+{% macro poke_tile(f, badge=None) %}
+{% set pname = (f.species.name_pt or f.species.name) | poke_name %}
+{% set uc = collection_map.get(f.id) %}
+<div class="poke-card relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow"
+  data-poke-id="{{ f.species_id }}">
+  <div class="bg-gray-50 p-1"><img src="{{ f.sprite_url }}" alt="{{ pname }}" class="w-14 h-14 mx-auto object-contain" loading="lazy"
+    onerror="this.style.visibility='hidden'" /></div>
+  <div class="px-1 py-1">
+    <div class="text-[9px] font-mono text-gray-400">#{{ '%03d' % f.species_id }}</div>
+    <div class="text-[11px] font-bold text-gray-800 truncate">{{ pname }}</div>
+    <div class="flex justify-center gap-0.5 mt-0.5 min-h-[14px]">
+      {% if uc and uc.quantity > 1 %}<span class="text-[9px] text-green-700 font-black">×{{ uc.quantity }}</span>{% endif %}
+      {% if uc and uc.has_shiny %}<span class="text-[9px]" title="Shiny">⭐</span>{% endif %}
+      {% if uc and uc.has_perfect %}<span class="text-[9px] px-1 rounded bg-emerald-500 text-white font-black" title="100% IV">100</span>{% endif %}
+      {% if badge %}<span class="text-[9px] font-bold text-amber-600">{{ badge }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  {# ── Cabeçalho do treinador ── #}
+  <div class="bg-[#1B2A4A] text-white rounded-2xl p-5 mb-5">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full overflow-hidden bg-[#243660] border-2 border-white/30 flex-shrink-0 flex items-center justify-center text-xl font-black">
+        {% if owner.avatar %}
+        <img src="{{ url_for('auth.avatar', user_id=owner.id) }}" class="w-full h-full object-cover" alt="" />
+        {% else %}{{ owner.username[0].upper() }}{% endif %}
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="text-[10px] uppercase tracking-wider text-white/50 font-bold">Trade Binder</div>
+        <h1 class="text-xl font-black truncate">{{ owner.username }}</h1>
+        <div class="text-xs text-white/70">
+          {% if owner.location_label %}📍 {{ owner.location_label }}{% endif %}
+          {% if owner.can_trade_remote %} · 🌐 troca à distância{% endif %}
+          {% if owner.trainer_code %} · <span class="font-mono">{{ owner.trainer_code }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2 mt-4 text-center">
+      <div class="bg-white/10 rounded-xl py-2"><div class="text-2xl font-black">{{ trade_forms|length }}</div><div class="text-[11px] text-white/70">para troca</div></div>
+      <div class="bg-white/10 rounded-xl py-2"><div class="text-2xl font-black">{{ missing_count }}</div><div class="text-[11px] text-white/70">procurando</div></div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      {% if is_self %}
+        {% if not owner.show_in_trades %}
+        <span class="text-xs bg-amber-400 text-amber-950 font-bold px-3 py-2 rounded-lg">Você está oculto nas trocas — só você vê esta página</span>
+        {% endif %}
+        <a href="https://wa.me/?text={{ ('Meus Pokémon para troca no Pokémon GO: ' ~ share_url) | urlencode }}" target="_blank" rel="noopener"
+          class="text-xs font-bold bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg">💬 Divulgar no WhatsApp</a>
+      {% elif current_user.is_authenticated %}
+        {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi seu Trade Binder no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
+             ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
+      {% else %}
+        <a href="{{ url_for('auth.registro') }}" class="text-xs font-bold bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">Criar conta para trocar</a>
+      {% endif %}
+      <button type="button" id="btn-copy-binder"
+        onclick="navigator.clipboard.writeText('{{ share_url }}').then(() => { this.textContent = '✓ Link copiado'; setTimeout(() => this.textContent = '🔗 Copiar link', 1500); })"
+        class="text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-2 rounded-lg">🔗 Copiar link</button>
+    </div>
+  </div>
+
+  {# ── Visitante logado: troca de mão dupla possível ── #}
+  {% if i_can_offer %}
+  <section class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-5">
+    <h2 class="font-black text-green-900">🤝 Você tem {{ i_can_offer|length }} que {{ owner.username }} procura</h2>
+    <p class="text-xs text-green-800 mb-3">{{ tier_label }} — seus Pokémon marcados para troca que faltam na coleção dele.</p>
+    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+      {% for f in i_can_offer[:16] %}{{ poke_tile(f) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── Tenho para troca ── #}
+  <section class="mb-6">
+    <h2 class="font-black text-gray-900 mb-3">🔄 Tenho para troca</h2>
+    {% if trade_forms %}
+    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2" id="binder-trade">
+      {% for f in trade_forms %}{{ poke_tile(f) }}{% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-gray-100 p-8 text-center text-sm text-gray-400">
+      {% if is_self %}
+      Nenhum Pokémon marcado para troca. Marque o 🔄 nos cards da sua <a href="{{ url_for('main.estoque', username=owner.username) }}" class="text-blue-600 font-semibold">coleção</a>.
+      {% else %}
+      {{ owner.username }} ainda não marcou Pokémon para troca.
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Procuro ── #}
+  <section class="mb-6">
+    <h2 class="font-black text-gray-900 mb-1">⭐ Procuro</h2>
+    <p class="text-xs text-gray-400 mb-3">
+      Faltam {{ missing_count }} na coleção de {{ owner.username }}.
+      <a href="{{ url_for('main.estoque', username=owner.username) }}#faltantes" class="text-blue-600 font-semibold hover:underline">Ver todos os faltantes →</a>
+    </p>
+    {% if priority_forms %}
+    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+      {% for f in priority_forms %}{{ poke_tile(f, badge='prioridade') }}{% endfor %}
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -43,12 +43,12 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | Ordem | # | Item | Esforço | Status |
 |-------|---|------|---------|--------|
 | 1 | [#23](#23--perfil-de-troca--visibilidade-aberta) | Perfil de troca + visibilidade aberta | ~1 dia | ✅ Entregue |
-| 2 | [#24](#24--matching-por-cidade--troca-recíproca) | Matching por cidade + troca recíproca | ~1 dia | 🔜 Próximo |
-| 3 | [#18](#18--trade-binder-público) | Trade Binder público `/trade/<usuario>` | ~3 h | Pendente |
-| 4 | [#25](#25--login-com-google) | Login com Google | ~½ dia | Pendente |
-| 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | Parcial |
-| 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | Pendente |
-| 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | Pendente |
+| 2 | [#24](#24--matching-por-cidade--troca-recíproca) | Matching por cidade + troca recíproca | ~1 dia | ✅ Entregue |
+| 3 | [#18](#18--trade-binder-público) | Trade Binder público `/trade/<usuario>` | ~3 h | ✅ Entregue |
+| 4 | [#25](#25--login-com-google) | Login com Google | ~½ dia | ⏳ Aguardando credenciais OAuth |
+| 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | ✅ Entregue |
+| 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | ✅ Entregue |
+| 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | 🔜 Próximo (sem dependência) |
 | 8 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
 | — | #17 | Scan em lote (OCR) | 1–2 sem | Parado |
@@ -87,6 +87,11 @@ Sem dados de contato e localização não existe ciclo de troca.
 
 ### #24 — Matching por cidade + troca recíproca
 
+> ✅ **Entregue em 02/10/2026.** Regra em `matching_service.proximity_tier`: 📍 mesma cidade → 🌐 um dos dois troca à distância →
+> ❔ cidade não informada (por último, para a lista não ficar vazia no início); cidades diferentes sem distância ficam de fora.
+> "Trocas de mão dupla" no topo de /trades (`get_reciprocal_trades`), ordenadas por proximidade e nº de trocas possíveis.
+> A contagem "p/ troca" da Wishlist usa a mesma regra em SQL (`_reachable_owner_filter`).
+
 **Por quê:** é o valor central. Troca no GO exige proximidade, então quem está perto vale mais.
 
 **Escopo:**
@@ -97,6 +102,9 @@ Sem dados de contato e localização não existe ciclo de troca.
 - Só entram treinadores com `show_in_trades = true`
 
 ### #18 — Trade Binder público
+
+> ✅ **Entregue em 02/10/2026** em `/trade/<usuario>` (sem login, com OG tags): tenho para troca (×qtd, ⭐, 100), ⭐ prioridades em "Procuro",
+> e para o visitante logado "Você tem N que fulano procura". Dono vê "Divulgar no WhatsApp"; link no perfil.
 
 **Inspirado em:** Rare Candy (viralizou no TikTok em 2026)
 
@@ -122,12 +130,17 @@ Cerca de 70% já existe: aba **"Para troca"** do estoque público `/estoque/<usu
 
 ### #20 — Faltantes sob demanda
 
+> ✅ **Entregue em 02/10/2026.** Faltantes vão como JSON compacto (`MISSING`) e o JS desenha 30 por vez; a busca filtra o JSON.
+> `/estoque/<usuario>#faltantes` abre direto a aba.
+
 **Status: parcial.** O estoque público já tem abas Tenho / Faltantes / Troca com scroll infinito (30 por vez),
 mas os ~770 cards de faltantes vêm **todos no HTML** (ocultos) — peso no celular.
 
 **Escopo:** endpoint JSON paginado e renderizar os cards de faltantes só quando a aba abre / ao rolar.
 
 ### #15 — Progresso Shiny e 100% (versão enxuta)
+
+> ✅ **Entregue em 02/10/2026.** Cards ⭐ Shiny / 💯 100% / ✨ Shundo na coleção (clicáveis = filtro) + abas ⭐ e 💯.
 
 Os dados já existem (`has_shiny`, `has_perfect`, `user_pokemon`). Em vez de "subcoleções" com tabela nova:
 - Contadores no painel e na coleção: **Shiny 12/1025 · 100% 3/1025 · Shundo 1**
@@ -236,4 +249,5 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 02/10/2026 | Rate limit sem bloquear uso normal + ProxyFix; `deploy.ps1` com build, migração e health check | `68ffc01`, `542dbac` |
 | 02/10/2026 | Doces para evoluir (pogoapi), "Vitórias rápidas" no painel, matching automático, cabeçalho mobile | `918bf93` |
 | 02/10/2026 | Ambiente E2E isolado (`scripts/e2e_server.py` + Pokédex real em fixture) | `918bf93` |
-| 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | ver `git log` |
+| 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | `60e85a1` |
+| 02/10/2026 | **#24** proximidade + trocas de mão dupla · **#18** Trade Binder · **#15** progresso Shiny/100% · **#20** faltantes sob demanda | ver `git log` |

@@ -54,10 +54,30 @@ def index():
         for row in db.session.query(Form.species_id).filter(Form.id.in_(owned_form_ids)).all()
     } if owned_form_ids else set()
 
+    # Progresso Shiny / 100% (#15) — sobre as entradas possuídas
+    flags = db.session.query(Form.species_id, UserCollection.has_shiny, UserCollection.has_perfect).join(
+        UserCollection, UserCollection.form_id == Form.id
+    ).filter(
+        UserCollection.user_id == current_user.id,
+        UserCollection.owned.is_(True),
+        UserCollection.quantity > 0,
+    ).all()
+    shiny_species = {sid for sid, sh, _ in flags if sh}
+    perfect_species = {sid for sid, _, pf in flags if pf}
+    progress = {
+        "shiny": len(shiny_species),
+        "perfect": len(perfect_species),
+        "shundo": len(shiny_species & perfect_species),
+    }
+
     if show == "owned":
         query = query.filter(Species.id.in_(owned_species_ids))
     elif show == "missing":
         query = query.filter(Species.id.notin_(owned_species_ids))
+    elif show == "shiny":
+        query = query.filter(Species.id.in_(shiny_species or {-1}))
+    elif show == "perfect":
+        query = query.filter(Species.id.in_(perfect_species or {-1}))
 
     pagination = query.order_by(Species.id).paginate(page=page, per_page=24, error_out=False)
 
@@ -98,6 +118,7 @@ def index():
         show=show,
         total_owned=total_owned,
         total_species=total_species,
+        progress=progress,
     )
 
 

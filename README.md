@@ -423,11 +423,11 @@ e histórico de entregas em [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 | Ordem | # | Próximo | Esforço |
 |-------|---|---------|---------|
-| ✅ | #23 | **Perfil de troca + visibilidade aberta** — código de amigo, cidade (IBGE), contato com consentimento; todos se enxergam | entregue |
-| 1 | #24 | **Matching por cidade + troca recíproca** | ~1 dia |
-| 2 | #18 | **Trade Binder público** `/trade/<usuario>` | ~3 h |
-| 3 | #25 | **Login com Google** | ~½ dia |
-| 4 | #20 | Faltantes sob demanda (desempenho) | ~3 h |
-| 5 | #15 | Progresso Shiny e 100% | ~3 h |
-| 6 | #14 | Formas regionais + exclusivos de região | ~1–2 dias |
-| 7 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |
+| ✅ | #23 | Perfil de troca + visibilidade aberta | entregue |
+| ✅ | #24 | Matching por cidade + trocas de mão dupla | entregue |
+| ✅ | #18 | Trade Binder público `/trade/<usuario>` | entregue |
+| ✅ | #15 | Progresso Shiny / 100% / Shundo | entregue |
+| ✅ | #20 | Faltantes sob demanda | entregue |
+| ⏳ | #25 | **Login com Google** — aguardando credenciais OAuth | ~½ dia |
+| 1 | #14 | **Formas regionais + exclusivos de região** | ~1–2 dias |
+| 2 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |

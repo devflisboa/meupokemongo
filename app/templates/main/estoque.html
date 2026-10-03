@@ -219,40 +219,14 @@
 ══════════════════════════════════════════ #}
 <div id="tab-content-faltantes" class="hidden">
 {% if missing_forms %}
+{# #20: cards desenhados sob demanda pelo JS a partir de MISSING (JSON compacto) #}
 <div id="missing-grid"
-  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
-  {% for form in missing_forms %}
-  {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
-  {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
-  <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}"
-    class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
-      hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all
-      {{ 'hidden' if loop.index0 >= 30 }}"
-    data-poke-id="{{ form.species_id }}"
-    data-idx="{{ loop.index0 }}"
-    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}">
-    {# Badge lendário / mítico — canto superior esquerdo #}
-    {% if form.species.is_mythical %}
-    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
-    {% elif form.species.is_legendary %}
-    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
-    {% endif %}
-    <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
-      {% if form.sprite_url %}
-      <img src="{{ form.sprite_url }}" alt="{{ pname }}"
-        class="w-9 h-9 object-contain" loading="lazy"
-        onerror="this.style.display='none'" />
-      {% else %}
-      <span class="text-white/50 text-xs" aria-hidden="true">?</span>
-      {% endif %}
-    </div>
-    <div class="p-1 text-center">
-      <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
-    </div>
-  </a>
-  {% endfor %}
-</div>
+  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5"></div>
+<script>
+  const MISSING = {{ missing_data | tojson }};
+  const TYPE_GRAD = {{ type_grad | tojson }};
+  const POKEDEX_URL = {{ url_for('pokedex.detail', species_id=0) | tojson }}.replace(/0$/, '');
+</script>
 {# Sentinel para IntersectionObserver #}
 <div id="missing-sentinel" class="h-8 mt-2 flex items-center justify-center">
   <span id="loading-indicator" class="hidden text-xs text-gray-400">Carregando mais...</span>
@@ -381,53 +355,77 @@ function showTab(name) {
   });
 }
 
+// ── Faltantes sob demanda (#20): desenha 30 por vez a partir de MISSING ──
+const Missing = (function () {
+  const grid = document.getElementById('missing-grid');
+  const sentinel = document.getElementById('missing-sentinel');
+  if (!grid || typeof MISSING === 'undefined') return { filter() {} };
+  const PAGE = 30;
+  let list = MISSING, shown = 0;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num = id => String(id).padStart(3, '0');
+
+  function card(p) {
+    const badge = p.b === 'm'
+      ? '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>'
+      : p.b === 'l'
+      ? '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>'
+      : '';
+    const img = p.s
+      ? `<img src="${esc(p.s)}" alt="${esc(p.n)}" class="w-9 h-9 object-contain" loading="lazy" onerror="this.style.display='none'" />`
+      : '<span class="text-white/50 text-xs" aria-hidden="true">?</span>';
+    return `<a href="${POKEDEX_URL}${p.id}"
+      class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
+        hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+      data-poke-id="${p.id}" data-name="${esc(p.n.toLowerCase())} ${num(p.id)}">
+      ${badge}
+      <div class="bg-gradient-to-br ${TYPE_GRAD[p.t] || 'from-gray-300 to-gray-400'} p-1 flex items-center justify-center min-h-[44px]">${img}</div>
+      <div class="p-1 text-center">
+        <div class="text-[8px] font-mono text-gray-400">#${num(p.id)}</div>
+        <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">${esc(p.n)}</div>
+      </div>
+    </a>`;
+  }
+
+  function more() {
+    if (shown >= list.length) return;
+    grid.insertAdjacentHTML('beforeend', list.slice(shown, shown + PAGE).map(card).join(''));
+    shown = Math.min(shown + PAGE, list.length);
+  }
+
+  function reset(newList) {
+    list = newList; shown = 0; grid.innerHTML = ''; more();
+  }
+
+  if (sentinel) {
+    new IntersectionObserver(e => { if (e[0].isIntersecting) more(); }, { rootMargin: '300px' }).observe(sentinel);
+  }
+  reset(MISSING);
+
+  return {
+    filter(q) {
+      reset(q ? MISSING.filter(p => `${p.n.toLowerCase()} ${num(p.id)}`.includes(q)) : MISSING);
+    },
+  };
+})();
+
 // ── Busca em tempo real ──
 function filterCards(q) {
   q = q.toLowerCase().trim();
   // identify active tab
   const tabs = ['tenho','faltantes','troca'];
   const active = tabs.find(t => !document.getElementById('tab-content-' + t).classList.contains('hidden'));
-  const grid = active === 'faltantes' ? document.getElementById('missing-grid')
-             : document.getElementById('tab-content-' + active);
+  if (active === 'faltantes') { Missing.filter(q); return; }
+  const grid = document.getElementById('tab-content-' + active);
   if (!grid) return;
   grid.querySelectorAll('.poke-card').forEach(card => {
     const name = card.dataset.name || '';
-    const match = !q || name.includes(q);
-    card.style.display = match ? '' : 'none';
-    // For missing cards, also restore opacity/classes if searching
-    if (active === 'faltantes' && match) {
-      card.classList.remove('hidden');
-    }
+    card.style.display = !q || name.includes(q) ? '' : 'none';
   });
 }
 
-// ── Infinite scroll para faltantes ──
-(function() {
-  const sentinel = document.getElementById('missing-sentinel');
-  const loader   = document.getElementById('loading-indicator');
-  if (!sentinel) return;
-  let shown = 30;
-
-  const obs = new IntersectionObserver(entries => {
-    if (!entries[0].isIntersecting) return;
-    const cards = document.querySelectorAll('.missing-card');
-    if (shown >= cards.length) { obs.disconnect(); return; }
-    loader.classList.remove('hidden');
-    const next = Math.min(shown + 30, cards.length);
-    for (let i = shown; i < next; i++) {
-      cards[i].classList.remove('hidden');
-    }
-    shown = next;
-    if (shown >= cards.length) {
-      loader.classList.add('hidden');
-      obs.disconnect();
-    } else {
-      loader.classList.add('hidden');
-    }
-  }, { rootMargin: '200px' });
-
-  obs.observe(sentinel);
-})();
+// Link direto para uma aba: /estoque/<user>#faltantes (usado pelo Trade Binder)
+if (['#tenho', '#faltantes', '#troca'].includes(location.hash)) showTab(location.hash.slice(1));
 
 // ── Helpers de borda e estado ──
 function updateCardBorder(card) {

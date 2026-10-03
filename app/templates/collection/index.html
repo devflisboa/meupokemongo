@@ -45,11 +45,29 @@
   </div>
 </div>
 
+<!-- Progresso Shiny / 100% (#15) — toque para filtrar -->
+<div class="grid grid-cols-3 gap-2 mb-5" id="special-progress">
+  {% for key, icon, label, color in [
+    ('shiny', '⭐', 'Shiny', 'bg-yellow-50 border-yellow-200 text-yellow-800'),
+    ('perfect', '💯', '100% IV', 'bg-emerald-50 border-emerald-200 text-emerald-800'),
+    ('shundo', '✨', 'Shundo', 'bg-purple-50 border-purple-200 text-purple-800'),
+  ] %}
+  {% set clickable = key != 'shundo' %}
+  <{{ 'a' if clickable else 'div' }} {% if clickable %}href="?show={{ 'all' if show == key else key }}&q={{ q }}&generation={{ generation or '' }}"{% endif %}
+    data-progress="{{ key }}"
+    class="border rounded-xl px-3 py-2 {{ color }} {{ 'ring-2 ring-offset-1 ring-current' if show == key }} {{ 'hover:opacity-80' if clickable }}"
+    {% if key == 'shundo' %}title="Shiny e 100% IV na mesma espécie"{% endif %}>
+    <div class="text-lg font-black leading-none">{{ icon }} {{ progress[key] }}<span class="text-xs font-semibold opacity-60">/{{ total_species }}</span></div>
+    <div class="text-[11px] font-semibold mt-0.5">{{ label }}</div>
+  </{{ 'a' if clickable else 'div' }}>
+  {% endfor %}
+</div>
+
 <!-- Filtros -->
 <form method="get" class="flex flex-wrap items-center gap-2 mb-5">
   <!-- Tabs -->
   <div class="flex bg-white rounded-xl border border-gray-200 p-1">
-    {% for val, label in [('all', 'Todos'), ('owned', 'Capturados'), ('missing', 'Faltantes')] %}
+    {% for val, label in [('all', 'Todos'), ('owned', 'Capturados'), ('missing', 'Faltantes'), ('shiny', '⭐'), ('perfect', '💯')] %}
     <a href="?show={{ val }}&q={{ q }}&generation={{ generation or '' }}"
       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors {{ 'bg-[#1B2A4A] text-white' if show == val else 'text-gray-500 hover:text-gray-800' }}">
       {{ label }}
