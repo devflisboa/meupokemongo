@@ -61,6 +61,25 @@ class User(UserMixin, db.Model):
                 f"{self.favorite_species_id}.gif")
 
     @property
+    def favorite_type(self) -> str | None:
+        """Tipo principal do Pokémon favorito — dá a cor do card do treinador."""
+        if not self.favorite_species_id:
+            return None
+        from .pokemon import Form
+        row = db.session.query(Form.type1).filter_by(
+            species_id=self.favorite_species_id, form_name="normal").first()
+        return row[0] if row else None
+
+    @property
+    def theme(self) -> dict:
+        """Cores do card personalizado: gradiente do tipo do favorito (ou o azul padrão)."""
+        from ..data.i18n import TYPE_GRAD, LIGHT_TYPES
+        t = self.favorite_type
+        if not t or t not in TYPE_GRAD:
+            return {"grad": "from-[#1B2A4A] to-[#243660]", "dark_text": False, "type": None}
+        return {"grad": TYPE_GRAD[t], "dark_text": t in LIGHT_TYPES, "type": t}
+
+    @property
     def favorite_art_url(self) -> str | None:
         if not self.favorite_species_id:
             return None

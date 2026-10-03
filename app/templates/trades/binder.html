@@ -62,14 +62,17 @@
   {% endif %}
 
   {# ── Cabeçalho do treinador ── #}
-  <div class="relative bg-[#1B2A4A] text-white rounded-2xl p-5 mb-5">
+  {% set th = owner.theme %}
+  {# cor personalizada: tipo do Pokémon favorito (tipos claros ganham sombra para o texto branco) #}
+  <div class="relative isolate bg-gradient-to-br {{ th.grad }} text-white rounded-2xl p-5 mb-5" id="binder-header" data-theme="{{ th.type or 'padrao' }}">
+    {% if th.dark_text %}<div class="absolute inset-0 -z-10 rounded-2xl bg-black/25 pointer-events-none"></div>{% endif %}
     {% if owner.favorite_species_id %}
     {% set fav_name = (owner.favorite_species.name_pt or owner.favorite_species.name) | poke_name %}
     {# Adesivo do Pokémon favorito: GIF animado; se não existir, arte oficial #}
     <div class="fav-sticker absolute -top-4 right-3 z-10" title="Pokémon favorito: {{ fav_name }}" data-poke-id="{{ owner.favorite_species_id }}">
       <div class="bg-white rounded-2xl p-1.5 shadow-lg ring-4 ring-white/60 cursor-pointer">
         <img src="{{ owner.favorite_gif_url }}" data-art="{{ owner.favorite_art_url }}" data-static="{{ owner.favorite_art_url }}" alt="{{ fav_name }}"
-          class="w-16 h-16 object-contain" style="image-rendering: pixelated"
+          class="sprite-anim w-16 h-16 object-contain"
           onerror="if (this.src !== this.dataset.art) { this.src = this.dataset.art; this.style.imageRendering = 'auto'; }" />
       </div>
       <div class="text-center -mt-1"><span class="inline-block bg-amber-400 text-amber-950 text-[9px] font-black px-1.5 rounded-full shadow">♥ {{ fav_name }}</span></div>
@@ -103,7 +106,7 @@
         <a href="https://wa.me/?text={{ ('Meus Pokémon para troca no Pokémon GO: ' ~ share_url) | urlencode }}" target="_blank" rel="noopener"
           class="text-xs font-bold bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg">💬 Divulgar no WhatsApp</a>
       {% elif current_user.is_authenticated %}
-        {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi seu Vitrine de Trocas no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
+        {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi sua Vitrine de Trocas no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
              ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
       {% else %}
         <a href="{{ url_for('auth.registro') }}" class="text-xs font-bold bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">Criar conta para trocar</a>

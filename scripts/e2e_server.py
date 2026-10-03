@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 DB_DIR = Path(os.environ.get("E2E_DB_DIR", r"D:\.ClaudeCode\.temp"))
+# cache das miniaturas HD (services/thumbs.py) também fora do disco C:
+os.environ.setdefault("THUMB_CACHE_DIR", str(DB_DIR / "thumbs"))
 DB_FILE = DB_DIR / "meupokemongo_e2e.db"
 PORT = int(os.environ.get("E2E_PORT", "5001"))
 
@@ -68,7 +70,7 @@ def seed(app):
         # Misty liberou WhatsApp (botão "Propor troca"); "novato" ainda não fez o onboarding
         misty = User(username=E2E_FRIEND, email="misty@e2e.test", trainer_code="4444 5555 6666",
                      visibility="public", state="CE", city="Fortaleza", can_trade_remote=True,
-                     whatsapp="5585999990000", allow_whatsapp=True)
+                     whatsapp="5585999990000", allow_whatsapp=True, favorite_species_id=131)  # Lapras (água)
         novato = User(username="novato", email="novato@e2e.test")
         # Brock: outra cidade, mas troca à distância → aparece na faixa "🌐"
         brock = User(username="brock", email="brock@e2e.test", trainer_code="7777 8888 9999",

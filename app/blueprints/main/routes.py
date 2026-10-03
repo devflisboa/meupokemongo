@@ -3,7 +3,7 @@ from flask import render_template, abort, request, jsonify, current_app
 from ...data.sprites import sprite_small
 from flask_login import current_user
 from . import bp
-from ...extensions import csrf
+from ...extensions import csrf, limiter
 from ...services.collection_service import get_collection_stats, get_missing_pokemon, get_pending_evolutions
 from ...services.matching_service import get_active_matches_for_user
 from ...services.analytics_service import log_event
@@ -126,6 +126,20 @@ def api_log():
     if event:
         log_event(event, data.get("data", {}))
     return jsonify({"ok": True})
+
+
+@bp.route("/img/t/<int:pid>.webp")
+@limiter.exempt  # uma grade são dezenas de imagens — não pode consumir o limite de requisições
+def thumb(pid: int):
+    """Miniatura HD (WebP 160 px) da arte oficial — ver services/thumbs.py."""
+    from flask import Response, redirect
+    from ...services.thumbs import get_thumb, ART_URL
+    data = get_thumb(pid)
+    if data is None:
+        return redirect(ART_URL.format(pid=pid))  # sem miniatura: cai na arte original
+    resp = Response(data, mimetype="image/webp")
+    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp
 
 
 @bp.route("/treinadores")

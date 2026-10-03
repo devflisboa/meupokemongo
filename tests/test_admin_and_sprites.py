@@ -15,11 +15,11 @@ BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon
 
 
 def test_sprite_helpers():
-    assert sprite_small(ART) == f"{BASE}/25.png"
+    assert sprite_small(ART) == "/img/t/25.webp"
     assert sprite_anim(ART) == f"{BASE}/other/showdown/25.gif"
     assert sprite_anim(ART, shiny=True) == f"{BASE}/other/showdown/shiny/25.gif"
     form_art = ART.replace("/25.png", "/10100.png")  # forma alternativa (id 10xxx)
-    assert sprite_small(form_art) == f"{BASE}/10100.png"
+    assert sprite_small(form_art) == "/img/t/10100.webp"
     assert sprite_small(None) == "" and sprite_small("https://x/sem-id.jpg") == "https://x/sem-id.jpg"
 
 
@@ -89,7 +89,41 @@ def test_non_admin_has_no_view_as(client, people):
 def test_grids_use_small_sprites_and_modal_api_has_gifs(client, people):
     _login(client, people["ash"])
     coll = client.get("/collection/").get_data(as_text=True)
-    assert f'src="{BASE}/25.png"' in coll and f'data-art="{ART}"' in coll
+    assert 'src="/img/t/25.webp"' in coll and f'data-art="{ART}"' in coll
     data = client.get("/pokedex/api/25").get_json()["form"]
     assert data["sprite_anim"].endswith("/showdown/25.gif")
     assert data["sprite_anim_shiny"].endswith("/showdown/shiny/25.gif")
+
+
+def test_thumb_route_generates_cached_webp(client, tmp_path, monkeypatch):
+    import io as _io
+    from PIL import Image
+    from app.services import thumbs
+    monkeypatch.setattr(thumbs, "CACHE_DIR", str(tmp_path))
+    calls = []
+    art = _io.BytesIO(); Image.new("RGBA", (475, 475), (255, 0, 0, 255)).save(art, "PNG")
+
+    def fake_fetch(pid):
+        calls.append(pid); return art.getvalue()
+    monkeypatch.setattr(thumbs, "_fetch_art", fake_fetch)
+
+    r = client.get("/img/t/25.webp")
+    assert r.status_code == 200 and r.mimetype == "image/webp"
+    assert "immutable" in r.headers["Cache-Control"]
+    img = Image.open(_io.BytesIO(r.data))
+    assert max(img.size) == 160 and len(r.data) < 15000
+    client.get("/img/t/25.webp")
+    assert calls == [25]                              # 2ª vez vem do cache em disco
+
+    monkeypatch.setattr(thumbs, "_fetch_art", lambda pid: None)
+    r = client.get("/img/t/99.webp")                  # sem arte → redireciona para a original
+    assert r.status_code == 302 and "official-artwork/99.png" in r.headers["Location"]
+    assert client.get("/img/t/999999.webp").status_code == 302
+
+
+def test_thumb_route_not_rate_limited(client, tmp_path, monkeypatch):
+    from app.services import thumbs
+    monkeypatch.setattr(thumbs, "CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(thumbs, "_fetch_art", lambda pid: None)
+    codes = {client.get(f"/img/t/{i}.webp").status_code for i in range(1, 400)}
+    assert 429 not in codes

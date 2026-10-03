@@ -89,3 +89,33 @@ def test_ptbr_texts(client, town):
     assert "Vitrine de Trocas" in client.get("/trade/ash").get_data(as_text=True)
     home = client.get("/").get_data(as_text=True)
     assert "Início" in home and ">Dashboard<" not in home
+
+
+# ── Personalização pela cor do tipo do favorito ─────────────────────────────
+def test_theme_from_favorite_type(town):
+    misty = _db.session.query(User).filter_by(username="misty").one()   # favorito: Charmander (fogo)
+    assert misty.favorite_type == "fire"
+    assert misty.theme == {"grad": "from-orange-400 to-red-500", "dark_text": False, "type": "fire"}
+    ash = _db.session.query(User).filter_by(username="ash").one()        # sem favorito → azul padrão
+    assert ash.theme["type"] is None and "1B2A4A" in ash.theme["grad"]
+
+
+def test_treinadores_cards_colored_by_favorite(client, town):
+    _login(client, town["ash"])
+    html = client.get("/treinadores").get_data(as_text=True)
+    assert 'data-theme="fire"' in html and "from-orange-400 to-red-500" in html
+    assert 'data-theme="padrao"' in html
+    binder = client.get("/trade/misty").get_data(as_text=True)
+    assert 'id="binder-header"' in binder and 'data-theme="fire"' in binder
+
+
+def test_favorite_nudge_only_without_favorite(client, town):
+    ash = _db.session.query(User).filter_by(username="ash").one()
+    ash.trainer_code = "1111 2222 3333"   # perfil de troca completo → aviso do favorito
+    _db.session.commit()
+    _login(client, town["ash"])
+    assert 'id="fav-nudge"' in client.get("/treinadores").get_data(as_text=True)
+    ash.favorite_species_id = 1
+    _db.session.commit()
+    _login(client, town["ash"])
+    assert 'id="fav-nudge"' not in client.get("/treinadores").get_data(as_text=True)

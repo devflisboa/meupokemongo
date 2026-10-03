@@ -24,43 +24,46 @@
   <div id="tr-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
     {% for c in cards %}
     {% set u = c.user %}
+    {% set th = u.theme %}
+    {% set txt = 'text-gray-900' if th.dark_text else 'text-white' %}
+    {% set sub = 'text-gray-700' if th.dark_text else 'text-white/80' %}
     <a href="{{ url_for('main.trade_binder', username=u.username) }}"
-      class="tr-card relative bg-white rounded-2xl border {{ 'border-green-300' if c.reciprocal else ('border-blue-300' if c.is_me else 'border-gray-100') }}
-        shadow-sm hover:shadow-md transition-shadow p-4 block"
+      class="tr-card relative bg-white rounded-2xl overflow-hidden border-2 {{ 'border-green-400' if c.reciprocal else ('border-blue-300' if c.is_me else 'border-transparent') }}
+        shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all block"
       data-text="{{ u.username.lower() }} {{ (u.location_label or '').lower() }}"
-      data-reach="{{ 'true' if c.reachable or c.is_me else 'false' }}">
-      <div class="flex items-center gap-3">
-        <div class="relative w-12 h-12 flex-shrink-0">
-          <div class="w-12 h-12 rounded-full overflow-hidden bg-[#1B2A4A] flex items-center justify-center text-white font-black">
-            {% if u.avatar %}<img src="{{ url_for('auth.avatar', user_id=u.id) }}" class="w-full h-full object-cover" alt="" loading="lazy" />
-            {% else %}{{ u.username[0].upper() }}{% endif %}
-          </div>
-          {% if u.favorite_species_id %}
-          {# mini adesivo do favorito: estático na lista (leve); animado só no Vitrine de Trocas #}
-          <img src="{{ u.favorite_art_url | sprite_small }}" data-art="{{ u.favorite_art_url }}" alt=""
-            class="sprite-sm absolute -bottom-1.5 -right-2.5 w-7 h-7 bg-white rounded-full ring-2 ring-white shadow" style="scale: 1"
-            loading="lazy" onerror="spriteFallback(this)" title="Pokémon favorito" />
-          {% endif %}
+      data-reach="{{ 'true' if c.reachable or c.is_me else 'false' }}"
+      data-theme="{{ th.type or 'padrao' }}">
+      {# Cabeçalho personalizado: cor do tipo do Pokémon favorito #}
+      <div class="relative bg-gradient-to-br {{ th.grad }} px-4 pt-4 pb-3 flex items-center gap-3 min-h-[84px]">
+        <div class="w-12 h-12 flex-shrink-0 rounded-full overflow-hidden bg-black/20 ring-2 ring-white/70 flex items-center justify-center {{ txt }} font-black">
+          {% if u.avatar %}<img src="{{ url_for('auth.avatar', user_id=u.id) }}" class="w-full h-full object-cover" alt="" loading="lazy" />
+          {% else %}{{ u.username[0].upper() }}{% endif %}
         </div>
-        <div class="min-w-0 flex-1">
-          <div class="font-black text-gray-900 truncate">
-            {{ u.username }}{% if c.is_me %} <span class="text-[10px] font-bold text-blue-600">(você)</span>{% endif %}
+        <div class="min-w-0 flex-1 {{ 'pr-16' if u.favorite_species_id }}">
+          <div class="font-black {{ txt }} truncate drop-shadow-sm">
+            {{ u.username }}{% if c.is_me %} <span class="text-[10px] font-bold opacity-80">(você)</span>{% endif %}
           </div>
-          <div class="text-[11px] text-gray-400 truncate">
+          <div class="text-[11px] {{ sub }} truncate">
             {% if u.location_label %}📍 {{ u.location_label }}{% else %}Cidade não informada{% endif %}
-            {% if u.can_trade_remote %} · 🌐 troca à distância{% endif %}
+            {% if u.can_trade_remote %} · 🌐 à distância{% endif %}
           </div>
         </div>
+        {% if u.favorite_species_id %}
+        {# favorito em destaque: miniatura HD estática na lista (leve); animado só na Vitrine de Trocas #}
+        <img src="{{ u.favorite_art_url | sprite_small }}" data-art="{{ u.favorite_art_url }}" alt=""
+          class="sprite-sm absolute right-2 -bottom-1 w-20 h-20 object-contain drop-shadow-lg"
+          loading="lazy" onerror="spriteFallback(this)" title="Pokémon favorito ({{ th.type | tipo }})" />
+        {% endif %}
       </div>
 
-      <div class="grid grid-cols-3 gap-1.5 mt-3 text-center">
+      <div class="grid grid-cols-3 gap-1.5 mt-3 px-4 text-center">
         <div class="bg-gray-50 rounded-lg py-1.5"><div class="text-sm font-black text-gray-800">{{ c.owned }}</div><div class="text-[9px] text-gray-400">capturados</div></div>
         <div class="bg-blue-50 rounded-lg py-1.5"><div class="text-sm font-black text-blue-700">{{ c.for_trade }}</div><div class="text-[9px] text-blue-500">para troca</div></div>
         <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-sm font-black text-amber-700">{{ c.missing }}</div><div class="text-[9px] text-amber-600">procurando</div></div>
       </div>
 
       {% if not c.is_me and current_user.is_authenticated %}
-      <div class="mt-2 flex flex-wrap gap-1">
+      <div class="mt-2 px-4 flex flex-wrap gap-1">
         {% if c.reciprocal %}
         <span class="text-[10px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded-full">🤝 {{ c.reciprocal }} troca{{ 's' if c.reciprocal > 1 }} de mão dupla</span>
         {% endif %}
@@ -71,6 +74,7 @@
         {% endif %}
       </div>
       {% endif %}
+      <div class="h-4"></div>
     </a>
     {% endfor %}
   </div>

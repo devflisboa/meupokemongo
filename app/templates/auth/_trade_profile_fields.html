@@ -38,7 +38,7 @@
 
 {% set fav = u.favorite_species %}
 {% set v_fav = f.favorite if f else (('#%03d ' % fav.id) ~ ((fav.name_pt or fav.name) | poke_name) if fav else '') %}
-<div>
+<div id="favorito" class="scroll-mt-24">
   <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">
     Pokémon favorito <span class="font-normal normal-case tracking-normal text-gray-400">(opcional)</span>
   </label>
@@ -52,7 +52,7 @@
       placeholder="Digite o nome ou número" class="{{ inp }}" />
     <datalist id="tp-pokes"></datalist>
   </div>
-  <p class="text-[10px] text-gray-400 mt-1">Aparece como adesivo animado no seu Vitrine de Trocas.</p>
+  <p class="text-[10px] text-gray-400 mt-1">Aparece como adesivo animado na sua Vitrine de Trocas.</p>
 </div>
 
 <div class="space-y-2">
