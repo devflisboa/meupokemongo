@@ -45,18 +45,18 @@
   </div>
 </div>
 
-<!-- Progresso Shiny / 100% (#15) — toque para filtrar -->
+<!-- Progresso Brilhante / 100% (#15) — toque para filtrar -->
 <div class="grid grid-cols-3 gap-2 mb-5" id="special-progress">
   {% for key, icon, label, color in [
-    ('shiny', '⭐', 'Shiny', 'bg-yellow-50 border-yellow-200 text-yellow-800'),
+    ('shiny', '⭐', 'Brilhante', 'bg-yellow-50 border-yellow-200 text-yellow-800'),
     ('perfect', '💯', '100% IV', 'bg-emerald-50 border-emerald-200 text-emerald-800'),
-    ('shundo', '✨', 'Shundo', 'bg-purple-50 border-purple-200 text-purple-800'),
+    ('shundo', '✨', 'Brilhante 100%', 'bg-purple-50 border-purple-200 text-purple-800'),
   ] %}
   {% set clickable = key != 'shundo' %}
   <{{ 'a' if clickable else 'div' }} {% if clickable %}href="?show={{ 'all' if show == key else key }}&q={{ q }}&generation={{ generation or '' }}"{% endif %}
     data-progress="{{ key }}"
     class="border rounded-xl px-3 py-2 {{ color }} {{ 'ring-2 ring-offset-1 ring-current' if show == key }} {{ 'hover:opacity-80' if clickable }}"
-    {% if key == 'shundo' %}title="Shiny e 100% IV na mesma espécie"{% endif %}>
+    {% if key == 'shundo' %}title="Brilhante e 100% IV na mesma espécie"{% endif %}>
     <div class="text-lg font-black leading-none">{{ icon }} {{ progress[key] }}<span class="text-xs font-semibold opacity-60">/{{ total_species }}</span></div>
     <div class="text-[11px] font-semibold mt-0.5">{{ label }}</div>
   </{{ 'a' if clickable else 'div' }}>
@@ -93,7 +93,7 @@
     class="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-600 focus:outline-none">
     <option value="">Todas as regiões</option>
     {% for g, region in [(1,'Kanto'),(2,'Johto'),(3,'Hoenn'),(4,'Sinnoh'),(5,'Unova'),(6,'Kalos'),(7,'Alola'),(8,'Galar'),(9,'Paldea')] %}
-    <option value="{{ g }}" {{ 'selected' if generation == g }}>Gen {{ g }} — {{ region }}</option>
+    <option value="{{ g }}" {{ 'selected' if generation == g }}>Geração {{ g }} — {{ region }}</option>
     {% endfor %}
   </select>
 </form>
@@ -172,11 +172,11 @@
       {% if form %}
       <div class="flex flex-wrap gap-0.5 mt-1">
         <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type1, 'bg-gray-100 text-gray-500') }}">
-          {{ form.type1 | capitalize if form.type1 else '?' }}
+          {{ (form.type1 | tipo) or '?' }}
         </span>
         {% if form.type2 %}
         <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">
-          {{ form.type2 | capitalize }}
+          {{ form.type2 | tipo }}
         </span>
         {% endif %}
       </div>
@@ -207,7 +207,7 @@
           <button onclick="toggleShiny(this)"
             class="shiny-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-yellow-100 text-yellow-700' if has_shiny else 'bg-gray-50 text-gray-400 hover:bg-yellow-50 hover:text-yellow-500' }}">
-            {{ '⭐ Tenho Shiny!' if has_shiny else '⭐ Shiny?' }}
+            {{ '⭐ Tenho Brilhante!' if has_shiny else '⭐ Brilhante?' }}
           </button>
           <button onclick="togglePerfect(this)"
             class="perfect-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
@@ -397,11 +397,11 @@ function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
 
   if (shinyBtn) {
     if (hasShiny) {
-      shinyBtn.textContent = '⭐ Tenho Shiny!';
+      shinyBtn.textContent = '⭐ Tenho Brilhante!';
       shinyBtn.className = shinyBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
       shinyBtn.classList.add('bg-yellow-100', 'text-yellow-700');
     } else {
-      shinyBtn.textContent = '⭐ Shiny?';
+      shinyBtn.textContent = '⭐ Brilhante?';
       shinyBtn.className = shinyBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
       shinyBtn.classList.add('bg-gray-50', 'text-gray-400', 'hover:bg-yellow-50', 'hover:text-yellow-500');
     }

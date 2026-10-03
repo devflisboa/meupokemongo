@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Início{% endblock %}
 
 {% block content %}
 
@@ -35,23 +35,23 @@
     </div>
   </a>
 
-  <a href="{{ url_for('trades.index') }}"
-    class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all block">
+  {# Comunidade: cada metade é um link — Trocas e Treinadores #}
+  <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-2xl p-5 flex items-center gap-4 shadow">
     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🏆</div>
     <div class="flex-1 min-w-0">
-      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Recursos</div>
-      <div class="flex items-end gap-6 mt-1">
-        <div>
+      <div class="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-0.5">Comunidade</div>
+      <div class="grid grid-cols-2 gap-2 mt-1">
+        <a href="{{ url_for('trades.index') }}" class="rounded-xl px-2 py-1 hover:bg-white/15 active:scale-95 transition-all">
           <div class="text-xs opacity-75">Trocas 🔄</div>
           <div class="text-3xl font-black leading-none">{{ matches|length }}</div>
-        </div>
-        <div>
+        </a>
+        <a href="{{ url_for('main.treinadores') }}" id="card-treinadores" class="rounded-xl px-2 py-1 hover:bg-white/15 active:scale-95 transition-all">
           <div class="text-xs opacity-75">Treinadores 👥</div>
           <div class="text-3xl font-black leading-none">{{ total_trainers }}</div>
-        </div>
+        </a>
       </div>
     </div>
-  </a>
+  </div>
 
 </div>
 {% endif %}
@@ -220,7 +220,7 @@
       </div>
       <a href="{{ url_for('wishlist.index', kind='evoluir') }}"
         class="block text-center text-xs font-bold text-blue-600 hover:bg-blue-50 py-2.5 border-t border-gray-100">
-        Ver todas{% if quick_wins_total %} ({{ quick_wins_total }}){% endif %} na Wishlist →
+        Ver todas{% if quick_wins_total %} ({{ quick_wins_total }}){% endif %} na Lista de Desejos →
       </a>
       {% else %}
       <div class="px-4 py-8 text-center text-sm text-gray-400">

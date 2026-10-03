@@ -215,10 +215,10 @@
         <div class="text-xs font-black text-gray-800 leading-tight">{{ pname }}</div>
         <div class="flex items-center justify-center gap-1 mt-1 flex-wrap">
           {% if form.type1 %}
-          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ tbadge }}">{{ form.type1 }}</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ tbadge }}">{{ form.type1 | tipo }}</span>
           {% endif %}
           {% if form.type2 %}
-          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">{{ form.type2 }}</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">{{ form.type2 | tipo }}</span>
           {% endif %}
           {% if qty > 1 %}
           <span class="text-[9px] text-green-600 font-black">×{{ qty }}</span>
@@ -347,8 +347,8 @@ function ownedCard(p) {
     ? `<button onclick="toggleShiny(${p.f}, this)"
         class="shiny-btn absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-[10px] transition-colors
           ${p.sh ? 'bg-yellow-400 text-white shadow' : 'bg-white/70 text-gray-300 hover:bg-yellow-100'}"
-        title="${p.sh ? 'Shiny! ⭐' : 'Tenho shiny'}" aria-label="${p.sh ? 'Remover shiny' : 'Marcar como shiny'}">⭐</button>`
-    : (p.sh ? '<span class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-yellow-400 text-white shadow text-[10px]" title="Shiny!">⭐</span>' : '');
+        title="${p.sh ? 'Brilhante! ⭐' : 'Tenho brilhante'}" aria-label="${p.sh ? 'Remover brilhante' : 'Marcar como brilhante'}">⭐</button>`
+    : (p.sh ? '<span class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-yellow-400 text-white shadow text-[10px]" title="Brilhante!">⭐</span>' : '');
   const trade = IS_OWNER
     ? `<button onclick="toggleTrade(${p.f}, ${p.q}, this)"
         class="trade-btn absolute bottom-1.5 right-1 w-7 h-7 flex items-center justify-center rounded-full text-[11px] transition-colors
@@ -399,7 +399,7 @@ function filterCards(q) {
   });
 }
 
-// Link direto para uma aba: /estoque/<user>#faltantes (usado pelo Trade Binder)
+// Link direto para uma aba: /estoque/<user>#faltantes (usado pelo Vitrine de Trocas)
 if (['#tenho', '#faltantes', '#troca'].includes(location.hash)) showTab(location.hash.slice(1));
 
 // ── Helpers de borda e estado ──

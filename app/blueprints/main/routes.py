@@ -49,7 +49,7 @@ GAME_EVENTS = [
     },
     {
         "title": "Dia de Chocar Sandile",
-        "category": "Hatch Day",
+        "category": "Dia de Eclosão",
         "date": "17 de out",
         "description": "Sandile em Ovos de 2 km com mais chance de Brilhante! ½ distância de incubação e Candy extra.",
         "badge": "bg-amber-100 text-amber-700",
@@ -67,7 +67,7 @@ GAME_EVENTS = [
     },
     {
         "title": "Área Selvagem GO 2026",
-        "category": "GO Wild Area",
+        "category": "Área Selvagem GO",
         "date": "6–8 nov (presencial) · 14–15 nov (global)",
         "description": "Dialga e Palkia Dinamax estreiam! Evento presencial em Sendai e Cidade do México.",
         "badge": "bg-teal-100 text-teal-700",
@@ -97,7 +97,8 @@ def index():
         missing_ids = [f.id for f, _ in get_missing_normal_forms(current_user.id)]
         quick_wins_total = len(get_evolve_sources(current_user.id, missing_ids))
 
-    total_trainers = db.session.query(User).count()
+    # mesmo critério da página /treinadores: só quem aparece nas trocas
+    total_trainers = db.session.query(User).filter(User.visibility != "private").count()
 
     today = date.today()
     events_page_url = (
@@ -125,6 +126,57 @@ def api_log():
     if event:
         log_event(event, data.get("data", {}))
     return jsonify({"ok": True})
+
+
+@bp.route("/treinadores")
+def treinadores():
+    """
+    Todos os treinadores que aparecem nas trocas (D1), com o perfil de cada um.
+    Logado: ordena por proximidade (📍 cidade → 🌐 distância → ❔) e trocas de mão dupla.
+    """
+    from ...services.matching_service import proximity_tier, get_reciprocal_trades, TIER_LABEL
+
+    users = db.session.query(User).filter(User.visibility != "private").order_by(User.username).all()
+    normal = db.session.query(Form.id).filter(Form.form_name == "normal").scalar_subquery()
+
+    owned_count = dict(
+        db.session.query(UserCollection.user_id, db.func.count(UserCollection.id))
+        .filter(UserCollection.owned.is_(True), UserCollection.quantity > 0, UserCollection.form_id.in_(normal))
+        .group_by(UserCollection.user_id).all()
+    )
+    trade_count = dict(
+        db.session.query(UserCollection.user_id, db.func.count(UserCollection.id))
+        .filter(UserCollection.owned.is_(True), UserCollection.quantity > 0, UserCollection.for_trade.is_(True))
+        .group_by(UserCollection.user_id).all()
+    )
+    total_species = db.session.query(Form).filter(Form.form_name == "normal").count()
+
+    me = current_user if current_user.is_authenticated else None
+    reciprocal = {r["user"].id: min(len(r["they_have"]), len(r["i_have"]))
+                  for r in get_reciprocal_trades(me.id, limit=1000)} if me else {}
+
+    cards = []
+    for u in users:
+        tier = proximity_tier(me, u) if me and u.id != me.id else None
+        cards.append({
+            "user": u,
+            "is_me": bool(me and u.id == me.id),
+            "owned": owned_count.get(u.id, 0),
+            "for_trade": trade_count.get(u.id, 0),
+            "missing": total_species - owned_count.get(u.id, 0),
+            "tier": tier,
+            "tier_label": TIER_LABEL.get(tier, "") if tier is not None else "",
+            "reachable": tier is not None,
+            "reciprocal": reciprocal.get(u.id, 0),
+        })
+    # você primeiro; depois quem dá para trocar (mão dupla, proximidade), depois mais ofertas
+    cards.sort(key=lambda c: (not c["is_me"], not c["reachable"] if me else False,
+                              -c["reciprocal"], c["tier"] if c["tier"] is not None else 9,
+                              -c["for_trade"], c["user"].username.lower()))
+
+    log_event("PAGE_VIEW", {"page": "treinadores"})
+    return render_template("main/treinadores.html", cards=cards,
+                           my_city=me.location_label if me else "")
 
 
 @bp.route("/trade/<username>")

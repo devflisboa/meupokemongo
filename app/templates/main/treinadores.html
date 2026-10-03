@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Treinadores{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="mb-4">
+    <h1 class="text-xl font-black text-gray-900">👥 Treinadores</h1>
+    <p class="text-xs text-gray-400 mt-0.5">
+      {{ cards|length }} treinador{{ 'es' if cards|length != 1 }} aparecendo nas trocas.
+      {% if current_user.is_authenticated %}Quem está perto e tem troca de mão dupla com você vem primeiro.{% endif %}
+    </p>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <input id="tr-search" type="search" placeholder="Nome ou cidade…"
+      class="flex-1 min-w-40 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+    {% if current_user.is_authenticated %}
+    <label class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 cursor-pointer">
+      <input id="tr-reach" type="checkbox" class="accent-blue-600"> Só quem dá para trocar comigo
+    </label>
+    {% endif %}
+  </div>
+
+  <div id="tr-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    {% for c in cards %}
+    {% set u = c.user %}
+    <a href="{{ url_for('main.trade_binder', username=u.username) }}"
+      class="tr-card relative bg-white rounded-2xl border {{ 'border-green-300' if c.reciprocal else ('border-blue-300' if c.is_me else 'border-gray-100') }}
+        shadow-sm hover:shadow-md transition-shadow p-4 block"
+      data-text="{{ u.username.lower() }} {{ (u.location_label or '').lower() }}"
+      data-reach="{{ 'true' if c.reachable or c.is_me else 'false' }}">
+      <div class="flex items-center gap-3">
+        <div class="relative w-12 h-12 flex-shrink-0">
+          <div class="w-12 h-12 rounded-full overflow-hidden bg-[#1B2A4A] flex items-center justify-center text-white font-black">
+            {% if u.avatar %}<img src="{{ url_for('auth.avatar', user_id=u.id) }}" class="w-full h-full object-cover" alt="" loading="lazy" />
+            {% else %}{{ u.username[0].upper() }}{% endif %}
+          </div>
+          {% if u.favorite_species_id %}
+          {# mini adesivo do favorito: estático na lista (leve); animado só no Vitrine de Trocas #}
+          <img src="{{ u.favorite_art_url | sprite_small }}" data-art="{{ u.favorite_art_url }}" alt=""
+            class="sprite-sm absolute -bottom-1.5 -right-2.5 w-7 h-7 bg-white rounded-full ring-2 ring-white shadow" style="scale: 1"
+            loading="lazy" onerror="spriteFallback(this)" title="Pokémon favorito" />
+          {% endif %}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="font-black text-gray-900 truncate">
+            {{ u.username }}{% if c.is_me %} <span class="text-[10px] font-bold text-blue-600">(você)</span>{% endif %}
+          </div>
+          <div class="text-[11px] text-gray-400 truncate">
+            {% if u.location_label %}📍 {{ u.location_label }}{% else %}Cidade não informada{% endif %}
+            {% if u.can_trade_remote %} · 🌐 troca à distância{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5 mt-3 text-center">
+        <div class="bg-gray-50 rounded-lg py-1.5"><div class="text-sm font-black text-gray-800">{{ c.owned }}</div><div class="text-[9px] text-gray-400">capturados</div></div>
+        <div class="bg-blue-50 rounded-lg py-1.5"><div class="text-sm font-black text-blue-700">{{ c.for_trade }}</div><div class="text-[9px] text-blue-500">para troca</div></div>
+        <div class="bg-amber-50 rounded-lg py-1.5"><div class="text-sm font-black text-amber-700">{{ c.missing }}</div><div class="text-[9px] text-amber-600">procurando</div></div>
+      </div>
+
+      {% if not c.is_me and current_user.is_authenticated %}
+      <div class="mt-2 flex flex-wrap gap-1">
+        {% if c.reciprocal %}
+        <span class="text-[10px] font-black bg-green-100 text-green-700 px-2 py-0.5 rounded-full">🤝 {{ c.reciprocal }} troca{{ 's' if c.reciprocal > 1 }} de mão dupla</span>
+        {% endif %}
+        {% if c.tier_label %}
+        <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ c.tier_label }}</span>
+        {% elif not c.reachable %}
+        <span class="text-[10px] font-bold bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">Outra cidade — sem troca à distância</span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  <p id="tr-empty" class="hidden text-center text-sm text-gray-400 py-10">Nenhum treinador com esse filtro.</p>
+</div>
+
+<script>
+(function () {
+  const cards = [...document.querySelectorAll('.tr-card')];
+  const search = document.getElementById('tr-search');
+  const reach = document.getElementById('tr-reach');
+  function apply() {
+    const q = search.value.trim().toLowerCase();
+    let n = 0;
+    cards.forEach(c => {
+      const show = (!q || c.dataset.text.includes(q)) && (!reach || !reach.checked || c.dataset.reach === 'true');
+      c.classList.toggle('hidden', !show); if (show) n++;
+    });
+    document.getElementById('tr-empty').classList.toggle('hidden', n > 0);
+  }
+  search.addEventListener('input', apply);
+  reach?.addEventListener('change', apply);
+})();
+</script>
+{% endblock %}

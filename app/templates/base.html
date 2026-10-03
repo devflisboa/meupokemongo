@@ -98,13 +98,19 @@
              class="px-4 py-1.5 rounded-full transition-colors
                {% if request.endpoint == 'main.index' %}bg-white text-[#1B2A4A] font-bold
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
-            Dashboard
+            Início
           </a>
           <a href="{{ url_for('pokedex.index') }}"
              class="px-4 py-1.5 rounded-full transition-colors
                {% if request.blueprint == 'pokedex' %}bg-white text-[#1B2A4A] font-bold
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             Pokédex
+          </a>
+          <a href="{{ url_for('main.treinadores') }}"
+             class="px-4 py-1.5 rounded-full transition-colors
+               {% if request.endpoint in ('main.treinadores', 'main.trade_binder') %}bg-white text-[#1B2A4A] font-bold
+               {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
+            Treinadores
           </a>
           {% if current_user.is_authenticated %}
           <a href="{{ url_for('collection.index') }}"
@@ -329,7 +335,7 @@
     const col = p.collection;
 
     const badges = [t1, t2].filter(Boolean).map(t =>
-      `<span class="text-xs px-3 py-1 rounded-full font-bold capitalize ${TB[t]||'bg-gray-400 text-white'}">${t}</span>`
+      `<span class="text-xs px-3 py-1 rounded-full font-bold ${TB[t]||'bg-gray-400 text-white'}">${TYPE_PT[t] || t}</span>`
     ).join('');
     const legend = p.is_mythical
       ? '<span class="bg-purple-100 text-purple-700 text-xs px-2.5 py-1 rounded-full font-bold">✦ Mítico</span>'
@@ -337,7 +343,7 @@
       ? '<span class="bg-yellow-100 text-yellow-700 text-xs px-2.5 py-1 rounded-full font-bold">★ Lendário</span>'
       : '';
     const shinyNote = p.form?.is_shiny_available
-      ? '<span class="text-xs text-gray-400">✨ Shiny disponível</span>' : '';
+      ? '<span class="text-xs text-gray-400">✨ Brilhante disponível</span>' : '';
 
     let collHtml = '';
     if (col) {
@@ -364,7 +370,7 @@
           </button>
           <button onclick="modalToggleShiny()"
             class="modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}">
-            ${col.has_shiny?'⭐ Tenho Shiny!':'⭐ Shiny?'}
+            ${col.has_shiny?'⭐ Tenho Brilhante!':'⭐ Brilhante?'}
           </button>
           <button onclick="modalTogglePerfect()"
             class="modal-perfect text-sm font-bold px-4 py-2 rounded-lg transition-colors ${col.has_perfect?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}">
@@ -401,14 +407,14 @@
     return `
       <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-1"></div>
       <div class="flex justify-between items-center px-4 pt-1 pb-1">
-        <span class="text-xs text-gray-400 font-mono">#${num} · Gen ${p.generation}</span>
+        <span class="text-xs text-gray-400 font-mono">#${num} · Geração ${p.generation}</span>
         <button onclick="closePokeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none">×</button>
       </div>
       <div class="bg-gradient-to-b ${grad} mx-4 rounded-2xl h-48 flex items-center justify-center relative">
         ${p.form?.sprite_url ? `<img id="modal-sprite" src="${modalSpriteSrc(p, col?.has_shiny)}" data-art="${_esc(p.form.sprite_url)}"
             class="${REDUCE_MOTION ? '' : 'sprite-anim '}w-36 h-36 object-contain drop-shadow-xl" alt="${name}" onerror="spriteFallback(this)"/>`
           : '<span class="text-6xl">❓</span>'}
-        ${col?.has_shiny && !REDUCE_MOTION ? '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Shiny</span>' : ''}
+        ${col?.has_shiny && !REDUCE_MOTION ? '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Brilhante</span>' : ''}
         ${p.is_mythical?'<span class="absolute top-2 left-2 bg-purple-500/90 text-white text-[9px] font-black px-2 py-0.5 rounded-full">✦ Mítico</span>':p.is_legendary?'<span class="absolute top-2 left-2 bg-yellow-400/90 text-yellow-900 text-[9px] font-black px-2 py-0.5 rounded-full">★ Lendário</span>':''}
       </div>
       <div class="px-4 pt-3 pb-8">
@@ -441,13 +447,11 @@
     const box = img.parentElement;
     box.querySelector('.modal-shiny-tag')?.remove();
     if (shiny && !REDUCE_MOTION) box.insertAdjacentHTML('beforeend',
-      '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Shiny</span>');
+      '<span class="modal-shiny-tag absolute bottom-2 right-2 bg-yellow-400 text-yellow-950 text-[10px] font-black px-2 py-0.5 rounded-full">✨ Brilhante</span>');
   }
 
   // ── Efetividade de tipos (multiplicadores do Pokémon GO) ──
-  const TYPE_PT = {normal:'Normal', fire:'Fogo', water:'Água', electric:'Elétrico', grass:'Planta', ice:'Gelo',
-    fighting:'Lutador', poison:'Venenoso', ground:'Terra', flying:'Voador', psychic:'Psíquico', bug:'Inseto',
-    rock:'Pedra', ghost:'Fantasma', dragon:'Dragão', dark:'Sombrio', steel:'Aço', fairy:'Fada'};
+  const TYPE_PT = {{ TYPE_PT | tojson }};  // fonte única: app/data/i18n.py
   const ALL_TYPES = Object.keys(TYPE_PT);
   // atacante → [super efetivo], [pouco efetivo], [sem efeito nos jogos principais]
   const CHART = {
@@ -597,7 +601,7 @@
   function renderIndividualCard(i) {
     const tags = [
       i.is_perfect && '<span class="bg-emerald-500 text-white">💯 100%</span>',
-      i.is_shiny && '<span class="bg-yellow-100 text-yellow-700">⭐ Shiny</span>',
+      i.is_shiny && '<span class="bg-yellow-100 text-yellow-700">⭐ Brilhante</span>',
       i.is_lucky && '<span class="bg-amber-100 text-amber-700">🍀 Sortudo</span>',
       i.is_shadow && '<span class="bg-purple-100 text-purple-700">🟣 Sombroso</span>',
       i.is_purified && '<span class="bg-sky-100 text-sky-700">✨ Purificado</span>',
@@ -605,16 +609,16 @@
       i.for_trade && '<span class="bg-blue-100 text-blue-700">🔄 Troca</span>',
     ].filter(Boolean).map(t => t.replace('<span class="', '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ')).join(' ');
     const moves = [i.quick_move, i.charge_move, i.charge_move2].filter(Boolean).map(_esc).join(' · ');
-    const pvp = [['GL', i.rank_great], ['UL', i.rank_ultra], ['LC', i.rank_little]]
+    const pvp = [['Grande', i.rank_great], ['Ultra', i.rank_ultra], ['Copinha', i.rank_little]]
       .filter(([, v]) => v !== null && v !== undefined)
       .map(([l, v]) => `<span class="bg-gray-100 rounded px-1.5 py-0.5"><b>${l}</b> ${v}%</span>`).join(' ');
     const ivPct = i.iv_pct !== null && i.iv_pct !== undefined ? Math.round(i.iv_pct) : null;
     return `<div class="border ${i.is_perfect ? 'border-emerald-300 bg-emerald-50/40' : 'border-gray-100'} rounded-xl p-3 space-y-2">
       <div class="flex items-start justify-between gap-2">
         <div>
-          <div class="text-lg font-black text-gray-900 leading-none">CP ${_fmt(i.cp)}</div>
+          <div class="text-lg font-black text-gray-900 leading-none">PC ${_fmt(i.cp)}</div>
           <div class="text-[11px] text-gray-400 mt-0.5">
-            ${i.nickname ? _esc(i.nickname) + ' · ' : ''}Nível ${_fmt(i.level)} · HP ${_fmt(i.hp)}${i.gender ? ' · ' + _esc(i.gender) : ''}${i.form_label ? ' · ' + _esc(i.form_label) : ''}
+            ${i.nickname ? _esc(i.nickname) + ' · ' : ''}Nível ${_fmt(i.level)} · PS ${_fmt(i.hp)}${i.gender ? ' · ' + _esc(i.gender) : ''}${i.form_label ? ' · ' + _esc(i.form_label) : ''}
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -622,10 +626,10 @@
           <button onclick="deleteIndividual(${i.id})" title="Remover exemplar" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 text-gray-400 hover:text-red-500 text-xs">✕</button>
         </div>
       </div>
-      <div class="space-y-1">${_ivBar('ATK', i.atk_iv)}${_ivBar('DEF', i.def_iv)}${_ivBar('HP', i.sta_iv)}</div>
+      <div class="space-y-1">${_ivBar('ATQ', i.atk_iv)}${_ivBar('DEF', i.def_iv)}${_ivBar('PS', i.sta_iv)}</div>
       ${tags ? `<div class="flex flex-wrap gap-1">${tags}</div>` : ''}
       ${moves ? `<div class="text-[11px] text-gray-600"><b>Golpes:</b> ${moves}</div>` : ''}
-      ${pvp ? `<div class="text-[11px] text-gray-600 flex flex-wrap gap-1 items-center"><b>PvP rank:</b> ${pvp}</div>` : ''}
+      ${pvp ? `<div class="text-[11px] text-gray-600 flex flex-wrap gap-1 items-center"><b>Rank PvP:</b> ${pvp}</div>` : ''}
       ${(i.weight || i.height) ? `<div class="text-[11px] text-gray-400">${_fmt(i.weight, ' kg')} · ${_fmt(i.height, ' m')}</div>` : ''}
       ${(i.catch_date || i.scan_date) ? `<div class="text-[10px] text-gray-400">${i.catch_date ? 'Capturado ' + _esc(i.catch_date) : ''}${i.catch_date && i.scan_date ? ' · ' : ''}${i.scan_date ? 'Escaneado ' + _esc(i.scan_date) : ''}</div>` : ''}
     </div>`;
@@ -646,13 +650,13 @@
       <form id="ind-form" onsubmit="addIndividual(event)" class="mt-3 bg-gray-50 rounded-xl p-3 space-y-2">
         <div class="text-[11px] font-bold text-gray-500">+ Adicionar exemplar <span class="font-normal text-gray-400">(tudo opcional)</span></div>
         <div class="grid grid-cols-4 gap-2">
-          <input name="cp" type="number" min="10" max="9999" placeholder="CP" class="${inp}">
-          <input name="atk_iv" type="number" min="0" max="15" placeholder="Atk" class="${inp}">
+          <input name="cp" type="number" min="10" max="9999" placeholder="PC" class="${inp}">
+          <input name="atk_iv" type="number" min="0" max="15" placeholder="Atq" class="${inp}">
           <input name="def_iv" type="number" min="0" max="15" placeholder="Def" class="${inp}">
-          <input name="sta_iv" type="number" min="0" max="15" placeholder="HP" class="${inp}">
+          <input name="sta_iv" type="number" min="0" max="15" placeholder="PS" class="${inp}">
         </div>
         <div class="flex flex-wrap gap-3 text-xs text-gray-600">
-          <label class="flex items-center gap-1"><input type="checkbox" name="is_shiny"> Shiny</label>
+          <label class="flex items-center gap-1"><input type="checkbox" name="is_shiny"> Brilhante</label>
           <label class="flex items-center gap-1"><input type="checkbox" name="is_lucky"> Sortudo</label>
           <label class="flex items-center gap-1"><input type="checkbox" name="is_shadow"> Sombroso</label>
           <button type="button" onclick="fillPerfect()" class="ml-auto text-emerald-600 font-bold">15/15/15</button>
@@ -734,7 +738,7 @@
     if (extra) extra.classList.toggle('hidden', !isOwned);
     if (qtyEl) qtyEl.textContent = d.quantity;
     if (tradeBtn) { tradeBtn.textContent = d.for_trade?'🔄 Para troca':'Troca?'; tradeBtn.className=`modal-trade text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.for_trade?'bg-blue-100 text-blue-700':'bg-gray-100 text-gray-500'}`; }
-    if (shinyBtn) { shinyBtn.textContent = d.has_shiny?'⭐ Tenho Shiny!':'⭐ Shiny?'; shinyBtn.className=`modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}`; }
+    if (shinyBtn) { shinyBtn.textContent = d.has_shiny?'⭐ Tenho Brilhante!':'⭐ Brilhante?'; shinyBtn.className=`modal-shiny text-sm font-bold px-4 py-2 rounded-lg transition-colors ${d.has_shiny?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-500'}`; }
     if (_pkData) {
       const card = document.querySelector(`[data-poke-id="${_pkData.id}"]`);
       if (card) {

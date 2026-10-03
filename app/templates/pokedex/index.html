@@ -43,13 +43,6 @@
   'normal':   'bg-gray-400 text-white',
 } %}
 
-{% set type_label = {
-  'bug': 'Inseto', 'dark': 'Sombrio', 'dragon': 'Dragão', 'electric': 'Elétrico',
-  'fairy': 'Fada', 'fighting': 'Lutador', 'fire': 'Fogo', 'flying': 'Voador',
-  'ghost': 'Fantasma', 'grass': 'Planta', 'ground': 'Terra', 'ice': 'Gelo',
-  'normal': 'Normal', 'poison': 'Veneno', 'psychic': 'Psíquico', 'rock': 'Pedra',
-  'steel': 'Aço', 'water': 'Água',
-} %}
 
 {% block content %}
 
@@ -83,7 +76,7 @@
     class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
     <option value="">Todas as regiões</option>
     {% for g, region in [(1,'Kanto'),(2,'Johto'),(3,'Hoenn'),(4,'Sinnoh'),(5,'Unova'),(6,'Kalos'),(7,'Alola'),(8,'Galar'),(9,'Paldea')] %}
-    <option value="{{ g }}" {% if generation == g %}selected{% endif %}>Gen {{ g }} — {{ region }}</option>
+    <option value="{{ g }}" {% if generation == g %}selected{% endif %}>Geração {{ g }} — {{ region }}</option>
     {% endfor %}
   </select>
 
@@ -91,7 +84,7 @@
     class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
     <option value="">Tipo</option>
     {% for t in types %}
-    <option value="{{ t }}" {% if type_filter == t %}selected{% endif %}>{{ type_label.get(t, t|capitalize) }}</option>
+    <option value="{{ t }}" {% if type_filter == t %}selected{% endif %}>{{ t | tipo }}</option>
     {% endfor %}
   </select>
 
@@ -118,7 +111,7 @@
   {# chips dos filtros ativos #}
   {% if type_filter %}
   <span class="text-xs px-2 py-1 rounded-full font-semibold capitalize {{ type_badge.get(type_filter, 'bg-gray-200 text-gray-600') }}">
-    {{ type_label.get(type_filter, type_filter) }}
+    {{ type_filter | tipo }}
   </span>
   {% endif %}
   {% if captured == "yes" %}
@@ -165,7 +158,7 @@
 
       {# Badge: shiny disponível #}
       {% if form and form.is_shiny_available %}
-      <span class="absolute bottom-1 right-1.5 text-[11px] leading-none" title="Shiny disponível">✨</span>
+      <span class="absolute bottom-1 right-1.5 text-[11px] leading-none" title="Brilhante disponível">✨</span>
       {% endif %}
     </div>
 
@@ -177,10 +170,10 @@
       {% if form %}
       <div class="flex gap-1 flex-wrap">
         {% if form.type1 %}
-        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-400 text-white') }}">{{ form.type1 }}</span>
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-400 text-white') }}">{{ form.type1 | tipo }}</span>
         {% endif %}
         {% if form.type2 %}
-        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-400 text-white') }}">{{ form.type2 }}</span>
+        <span class="text-[9px] px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-400 text-white') }}">{{ form.type2 | tipo }}</span>
         {% endif %}
       </div>
       {% endif %}

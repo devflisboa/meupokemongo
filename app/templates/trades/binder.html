@@ -36,7 +36,7 @@
     <div class="text-[11px] font-bold text-gray-800 truncate">{{ pname }}</div>
     <div class="flex justify-center gap-0.5 mt-0.5 min-h-[14px]">
       {% if uc and uc.quantity > 1 %}<span class="text-[9px] text-green-700 font-black">×{{ uc.quantity }}</span>{% endif %}
-      {% if uc and uc.has_shiny %}<span class="text-[9px]" title="Shiny">⭐</span>{% endif %}
+      {% if uc and uc.has_shiny %}<span class="text-[9px]" title="Brilhante">⭐</span>{% endif %}
       {% if uc and uc.has_perfect %}<span class="text-[9px] px-1 rounded bg-emerald-500 text-white font-black" title="100% IV">100</span>{% endif %}
       {% if badge %}<span class="text-[9px] font-bold text-amber-600">{{ badge }}</span>{% endif %}
     </div>
@@ -82,7 +82,7 @@
         {% else %}{{ owner.username[0].upper() }}{% endif %}
       </div>
       <div class="min-w-0 flex-1">
-        <div class="text-[10px] uppercase tracking-wider text-white/50 font-bold">Trade Binder</div>
+        <div class="text-[10px] uppercase tracking-wider text-white/50 font-bold">Vitrine de Trocas</div>
         <h1 class="text-xl font-black truncate">{{ owner.username }}</h1>
         <div class="text-xs text-white/70">
           {% if owner.location_label %}📍 {{ owner.location_label }}{% endif %}
@@ -103,7 +103,7 @@
         <a href="https://wa.me/?text={{ ('Meus Pokémon para troca no Pokémon GO: ' ~ share_url) | urlencode }}" target="_blank" rel="noopener"
           class="text-xs font-bold bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg">💬 Divulgar no WhatsApp</a>
       {% elif current_user.is_authenticated %}
-        {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi seu Trade Binder no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
+        {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi seu Vitrine de Trocas no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
              ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
       {% else %}
         <a href="{{ url_for('auth.registro') }}" class="text-xs font-bold bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">Criar conta para trocar</a>
@@ -143,7 +143,7 @@
     {% endif %}
   </section>
 
-  {# ── Procuro: todos os faltantes, na ordem da inteligência da Wishlist ── #}
+  {# ── Procuro: todos os faltantes, na ordem da inteligência da Lista de Desejos ── #}
   <section class="mb-6">
     <h2 class="font-black text-gray-900 mb-1">⭐ Procuro <span class="text-gray-400 font-bold text-sm">({{ missing_count }})</span></h2>
     <p class="text-xs text-gray-400 mb-3">Em ordem de prioridade: ⭐ escolhidos → 🌍 exclusivos de região → 🔥 alta → 🧬 basta evoluir.</p>

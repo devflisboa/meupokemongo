@@ -93,10 +93,10 @@
     {% if default_form %}
     <div class="flex gap-2 mb-5 flex-wrap">
       {% if default_form.type1 %}
-      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type1, 'bg-gray-300 text-gray-700') }}">{{ default_form.type1 }}</span>
+      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type1, 'bg-gray-300 text-gray-700') }}">{{ default_form.type1 | tipo }}</span>
       {% endif %}
       {% if default_form.type2 %}
-      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type2, 'bg-gray-300 text-gray-700') }}">{{ default_form.type2 }}</span>
+      <span class="px-4 py-1.5 rounded-full text-sm font-bold capitalize {{ type_badge.get(default_form.type2, 'bg-gray-300 text-gray-700') }}">{{ default_form.type2 | tipo }}</span>
       {% endif %}
     </div>
     {% endif %}
@@ -208,14 +208,14 @@
         <div class="font-bold capitalize mb-1">{{ form.form_name }}</div>
         <div class="flex gap-1 justify-center flex-wrap">
           {% if form.type1 %}
-          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-300 text-gray-700') }}">{{ form.type1 }}</span>
+          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type1, 'bg-gray-300 text-gray-700') }}">{{ form.type1 | tipo }}</span>
           {% endif %}
           {% if form.type2 %}
-          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-300 text-gray-700') }}">{{ form.type2 }}</span>
+          <span class="px-1.5 py-0.5 rounded-full font-semibold capitalize {{ type_badge.get(form.type2, 'bg-gray-300 text-gray-700') }}">{{ form.type2 | tipo }}</span>
           {% endif %}
         </div>
         {% if form.is_shiny_available %}
-        <div class="text-yellow-600 mt-1.5">✨ Shiny disponível</div>
+        <div class="text-yellow-600 mt-1.5">✨ Brilhante disponível</div>
         {% endif %}
       </div>
     </div>
