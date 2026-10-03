@@ -141,67 +141,13 @@
 ══════════════════════════════════════════ #}
 <div id="tab-content-tenho">
 {% if owned_forms %}
-<div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
-  {% for form in owned_forms %}
-  {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
-  {% set pname = (form.species.name_pt or form.species.name) | poke_name %}
-  {% set qty = collection_map[form.id].quantity if form.id in collection_map else 0 %}
-  {% set is_trade = collection_map[form.id].for_trade if form.id in collection_map else false %}
-  {% set is_shiny = collection_map[form.id].has_shiny if form.id in collection_map else false %}
-  <div class="poke-card relative bg-white rounded-xl shadow-sm border overflow-hidden
-    {% if is_shiny %}border-yellow-400{% elif is_trade %}border-blue-300{% else %}border-gray-100{% endif %}
-    hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
-    data-poke-id="{{ form.species_id }}"
-    data-name="{{ pname.lower() }} {{ '%03d' % form.species_id }}"
-    data-qty="{{ qty }}">
-    <a href="{{ url_for('pokedex.detail', species_id=form.species_id) }}" class="block">
-      <div class="bg-gradient-to-br {{ grad }} p-1 flex items-center justify-center min-h-[44px]">
-        {% if form.sprite_url %}
-        <img src="{{ form.sprite_url }}" alt="{{ pname }}"
-          class="w-9 h-9 object-contain drop-shadow" loading="lazy"
-          onerror="this.style.display='none'" />
-        {% else %}
-        <span class="text-white/50 text-xs" aria-hidden="true">?</span>
-        {% endif %}
-      </div>
-      <div class="px-1 pt-1 pb-6 text-center">
-        <div class="text-[8px] font-mono text-gray-400">#{{ '%03d' % form.species_id }}</div>
-        <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">{{ pname }}</div>
-        {% if qty > 1 %}
-        <span class="text-[7px] text-green-600 font-black border border-green-300 rounded px-0.5">×{{ qty }}</span>
-        {% endif %}
-        {% if collection_map[form.id].has_perfect %}
-        <span class="text-[7px] bg-emerald-500 text-white font-black rounded px-0.5" title="100% IV">100</span>
-        {% endif %}
-      </div>
-    </a>
-    {# Badge lendário / mítico — canto superior esquerdo #}
-    {% if form.species.is_mythical %}
-    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>
-    {% elif form.species.is_legendary %}
-    <span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>
-    {% endif %}
-    {# Botão shiny — canto superior direito, só para o dono #}
-    {% if current_user.is_authenticated and current_user.id == profile_user.id %}
-    <button onclick="toggleShiny({{ form.id }}, this)"
-      class="shiny-btn absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-[10px] transition-colors
-        {{ 'bg-yellow-400 text-white shadow' if is_shiny else 'bg-white/70 text-gray-300 hover:bg-yellow-100' }}"
-      title="{{ 'Shiny! ⭐' if is_shiny else 'Tenho shiny' }}"
-      aria-label="{{ 'Remover shiny' if is_shiny else 'Marcar como shiny' }}">⭐</button>
-    {% elif is_shiny %}
-    <span class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-yellow-400 text-white shadow text-[10px]" title="Shiny!">⭐</span>
-    {% endif %}
-    {# Botão troca — canto inferior direito #}
-    {% if current_user.is_authenticated and current_user.id == profile_user.id %}
-    <button onclick="toggleTrade({{ form.id }}, {{ qty }}, this)"
-      class="trade-btn absolute bottom-1.5 right-1 w-7 h-7 flex items-center justify-center rounded-full text-[11px] transition-colors
-        {{ 'bg-blue-500 text-white' if is_trade else 'bg-gray-100 text-gray-400 hover:bg-blue-100' }}"
-      title="{{ 'Para troca' if is_trade else 'Marcar para troca' }}"
-      aria-label="{{ 'Remover da troca' if is_trade else 'Marcar para troca' }}">🔄</button>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
+{# #20b: cards desenhados sob demanda pelo JS a partir de OWNED (JSON compacto) #}
+<div id="owned-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5"></div>
+<div id="owned-sentinel" class="h-8"></div>
+<script>
+  const OWNED = {{ owned_data | tojson }};
+  const IS_OWNER = {{ (current_user.is_authenticated and current_user.id == profile_user.id) | tojson }};
+</script>
 {% else %}
 <div class="bg-white rounded-2xl p-12 text-center border border-gray-100">
   <div class="text-4xl mb-3" aria-hidden="true">📭</div>
@@ -224,8 +170,6 @@
   class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5"></div>
 <script>
   const MISSING = {{ missing_data | tojson }};
-  const TYPE_GRAD = {{ type_grad | tojson }};
-  const POKEDEX_URL = {{ url_for('pokedex.detail', species_id=0) | tojson }}.replace(/0$/, '');
 </script>
 {# Sentinel para IntersectionObserver #}
 <div id="missing-sentinel" class="h-8 mt-2 flex items-center justify-center">
@@ -355,59 +299,91 @@ function showTab(name) {
   });
 }
 
-// ── Faltantes sob demanda (#20): desenha 30 por vez a partir de MISSING ──
-const Missing = (function () {
-  const grid = document.getElementById('missing-grid');
-  const sentinel = document.getElementById('missing-sentinel');
-  if (!grid || typeof MISSING === 'undefined') return { filter() {} };
+// ── Grades sob demanda (#20 / #20b): desenham 30 cards por vez a partir de JSON compacto ──
+const TYPE_GRAD = {{ type_grad | tojson }};
+const POKEDEX_URL = {{ url_for('pokedex.detail', species_id=0) | tojson }}.replace(/0$/, '');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = id => String(id).padStart(3, '0');
+const LEGEND_BADGE = {
+  m: '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>',
+  l: '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>',
+};
+const spriteBox = (p, extra = '') => `<div class="bg-gradient-to-br ${TYPE_GRAD[p.t] || 'from-gray-300 to-gray-400'} p-1 flex items-center justify-center min-h-[44px]">${
+  p.s ? `<img src="${esc(p.s)}" alt="${esc(p.n)}" class="w-9 h-9 object-contain ${extra}" loading="lazy" onerror="this.style.display='none'" />`
+      : '<span class="text-white/50 text-xs" aria-hidden="true">?</span>'}</div>`;
+
+function lazyGrid(gridId, sentinelId, data, cardFn) {
+  const grid = document.getElementById(gridId);
+  const sentinel = document.getElementById(sentinelId);
+  if (!grid || !data) return { filter() {} };
   const PAGE = 30;
-  let list = MISSING, shown = 0;
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const num = id => String(id).padStart(3, '0');
-
-  function card(p) {
-    const badge = p.b === 'm'
-      ? '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-purple-500/90 text-white text-[9px] font-black shadow-sm" title="Mítico">✦</span>'
-      : p.b === 'l'
-      ? '<span class="absolute top-1 left-1 z-10 pointer-events-none w-5 h-5 flex items-center justify-center rounded-full bg-yellow-400/90 text-yellow-900 text-[9px] font-black shadow-sm" title="Lendário">★</span>'
-      : '';
-    const img = p.s
-      ? `<img src="${esc(p.s)}" alt="${esc(p.n)}" class="w-9 h-9 object-contain" loading="lazy" onerror="this.style.display='none'" />`
-      : '<span class="text-white/50 text-xs" aria-hidden="true">?</span>';
-    return `<a href="${POKEDEX_URL}${p.id}"
-      class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
-        hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
-      data-poke-id="${p.id}" data-name="${esc(p.n.toLowerCase())} ${num(p.id)}">
-      ${badge}
-      <div class="bg-gradient-to-br ${TYPE_GRAD[p.t] || 'from-gray-300 to-gray-400'} p-1 flex items-center justify-center min-h-[44px]">${img}</div>
-      <div class="p-1 text-center">
-        <div class="text-[8px] font-mono text-gray-400">#${num(p.id)}</div>
-        <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">${esc(p.n)}</div>
-      </div>
-    </a>`;
-  }
-
+  let list = data, shown = 0;
   function more() {
     if (shown >= list.length) return;
-    grid.insertAdjacentHTML('beforeend', list.slice(shown, shown + PAGE).map(card).join(''));
+    grid.insertAdjacentHTML('beforeend', list.slice(shown, shown + PAGE).map(cardFn).join(''));
     shown = Math.min(shown + PAGE, list.length);
   }
+  function reset(newList) { list = newList; shown = 0; grid.innerHTML = ''; more(); }
+  if (sentinel) new IntersectionObserver(e => { if (e[0].isIntersecting) more(); }, { rootMargin: '300px' }).observe(sentinel);
+  reset(data);
+  return { filter(q) { reset(q ? data.filter(p => `${p.n.toLowerCase()} ${num(p.id)}`.includes(q)) : data); } };
+}
 
-  function reset(newList) {
-    list = newList; shown = 0; grid.innerHTML = ''; more();
-  }
+function missingCard(p) {
+  return `<a href="${POKEDEX_URL}${p.id}"
+    class="poke-card missing-card relative bg-white rounded-xl border border-gray-100 overflow-hidden opacity-40 grayscale
+      hover:opacity-70 hover:grayscale-0 hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+    data-poke-id="${p.id}" data-name="${esc(p.n.toLowerCase())} ${num(p.id)}">
+    ${LEGEND_BADGE[p.b] || ''}
+    ${spriteBox(p)}
+    <div class="p-1 text-center">
+      <div class="text-[8px] font-mono text-gray-400">#${num(p.id)}</div>
+      <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">${esc(p.n)}</div>
+    </div>
+  </a>`;
+}
 
-  if (sentinel) {
-    new IntersectionObserver(e => { if (e[0].isIntersecting) more(); }, { rootMargin: '300px' }).observe(sentinel);
-  }
-  reset(MISSING);
+function ownedCard(p) {
+  const border = p.sh ? 'border-yellow-400' : (p.tr ? 'border-blue-300' : 'border-gray-100');
+  const shiny = IS_OWNER
+    ? `<button onclick="toggleShiny(${p.f}, this)"
+        class="shiny-btn absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full text-[10px] transition-colors
+          ${p.sh ? 'bg-yellow-400 text-white shadow' : 'bg-white/70 text-gray-300 hover:bg-yellow-100'}"
+        title="${p.sh ? 'Shiny! ⭐' : 'Tenho shiny'}" aria-label="${p.sh ? 'Remover shiny' : 'Marcar como shiny'}">⭐</button>`
+    : (p.sh ? '<span class="absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-yellow-400 text-white shadow text-[10px]" title="Shiny!">⭐</span>' : '');
+  const trade = IS_OWNER
+    ? `<button onclick="toggleTrade(${p.f}, ${p.q}, this)"
+        class="trade-btn absolute bottom-1.5 right-1 w-7 h-7 flex items-center justify-center rounded-full text-[11px] transition-colors
+          ${p.tr ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400 hover:bg-blue-100'}"
+        title="${p.tr ? 'Para troca' : 'Marcar para troca'}" aria-label="${p.tr ? 'Remover da troca' : 'Marcar para troca'}">🔄</button>`
+    : '';
+  return `<div class="poke-card owned-card relative bg-white rounded-xl shadow-sm border overflow-hidden ${border}
+      hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+    data-poke-id="${p.id}" data-form-id="${p.f}" data-name="${esc(p.n.toLowerCase())} ${num(p.id)}" data-qty="${p.q}">
+    <a href="${POKEDEX_URL}${p.id}" class="block">
+      ${spriteBox(p, 'drop-shadow')}
+      <div class="px-1 pt-1 pb-6 text-center">
+        <div class="text-[8px] font-mono text-gray-400">#${num(p.id)}</div>
+        <div class="text-[8px] font-bold text-gray-700 leading-tight truncate">${esc(p.n)}</div>
+        ${p.q > 1 ? `<span class="text-[7px] text-green-600 font-black border border-green-300 rounded px-0.5">×${p.q}</span>` : ''}
+        ${p.pf ? '<span class="text-[7px] bg-emerald-500 text-white font-black rounded px-0.5" title="100% IV">100</span>' : ''}
+      </div>
+    </a>
+    ${LEGEND_BADGE[p.b] || ''}
+    ${shiny}
+    ${trade}
+  </div>`;
+}
 
-  return {
-    filter(q) {
-      reset(q ? MISSING.filter(p => `${p.n.toLowerCase()} ${num(p.id)}`.includes(q)) : MISSING);
-    },
-  };
-})();
+const Missing = lazyGrid('missing-grid', 'missing-sentinel', typeof MISSING !== 'undefined' ? MISSING : null, missingCard);
+const Owned = lazyGrid('owned-grid', 'owned-sentinel', typeof OWNED !== 'undefined' ? OWNED : null, ownedCard);
+
+// Mantém o JSON em dia com os toggles — senão a busca redesenharia o estado antigo
+function syncOwned(formId, changes) {
+  if (typeof OWNED === 'undefined') return;
+  const item = OWNED.find(p => p.f === formId);
+  if (item) Object.assign(item, changes);
+}
 
 // ── Busca em tempo real ──
 function filterCards(q) {
@@ -416,6 +392,7 @@ function filterCards(q) {
   const tabs = ['tenho','faltantes','troca'];
   const active = tabs.find(t => !document.getElementById('tab-content-' + t).classList.contains('hidden'));
   if (active === 'faltantes') { Missing.filter(q); return; }
+  if (active === 'tenho') { Owned.filter(q); return; }
   const grid = document.getElementById('tab-content-' + active);
   if (!grid) return;
   grid.querySelectorAll('.poke-card').forEach(card => {
@@ -459,6 +436,7 @@ async function toggleShiny(formId, btn) {
       btn.classList.toggle('bg-white/70', !data.has_shiny);
       btn.classList.toggle('text-gray-300', !data.has_shiny);
       updateCardBorder(card);
+      syncOwned(formId, { sh: data.has_shiny });
     }
   } catch(e) { console.error(e); }
 }
@@ -484,6 +462,7 @@ async function toggleTrade(formId, qty, btn) {
       btn.classList.toggle('bg-gray-100', !data.for_trade);
       btn.classList.toggle('text-gray-400', !data.for_trade);
       updateCardBorder(card);
+      syncOwned(formId, { tr: data.for_trade });
     }
   } catch(e) { console.error(e); }
 }

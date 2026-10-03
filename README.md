@@ -315,7 +315,10 @@ docker exec meupokemongo-web-1 flask sync-pokemon --limit 1025
 # 4. Custos de doces do GO (pogoapi) — o sync acima já roda isto no final
 docker exec meupokemongo-web-1 flask sync-candy
 
-# 5. Acessar
+# 5. Formas regionais (Alola, Galar, Hisui, Paldea) — também roda no fim do sync-pokemon
+docker exec meupokemongo-web-1 flask sync-forms
+
+# 6. Acessar
 # http://localhost:5000
 ```
 
@@ -427,7 +430,7 @@ e histórico de entregas em [`docs/BACKLOG.md`](docs/BACKLOG.md).
 | ✅ | #24 | Matching por cidade + trocas de mão dupla | entregue |
 | ✅ | #18 | Trade Binder público `/trade/<usuario>` | entregue |
 | ✅ | #15 | Progresso Shiny / 100% / Shundo | entregue |
-| ✅ | #20 | Faltantes sob demanda | entregue |
+| ✅ | #20 | Estoque sob demanda (Faltantes e Tenho) | entregue |
 | ⏳ | #25 | **Login com Google** — aguardando credenciais OAuth | ~½ dia |
-| 1 | #14 | **Formas regionais + exclusivos de região** | ~1–2 dias |
-| 2 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |
+| ✅ | #14 | Formas regionais + exclusivos de região | entregue |
+| 1 | #13 | Binder 3×3 + imagem compartilhável | ~1 dia |

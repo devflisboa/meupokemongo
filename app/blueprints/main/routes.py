@@ -236,15 +236,23 @@ def estoque(username: str):
     # #20: faltantes vão como JSON compacto e o navegador desenha 30 por vez
     # (antes: ~770 cards ocultos no HTML, pesado no celular)
     poke_name = current_app.jinja_env.filters["poke_name"]
-    missing_data = [
-        {
+
+    def _compact(f):
+        return {
             "id": f.species_id,
             "n": poke_name(f.species.name_pt or f.species.name),
             "t": f.type1 or "",
             "s": f.sprite_url or "",
             "b": "m" if f.species.is_mythical else ("l" if f.species.is_legendary else ""),
         }
-        for f in missing_forms
+
+    missing_data = [_compact(f) for f in missing_forms]
+    # #20b: aba Tenho também sob demanda (coleção grande = centenas de cards com botões)
+    owned_data = [
+        {**_compact(f), "f": f.id, "q": collection_map[f.id].quantity,
+         "tr": collection_map[f.id].for_trade, "sh": collection_map[f.id].has_shiny,
+         "pf": collection_map[f.id].has_perfect}
+        for f in owned_forms
     ]
 
     stats = get_collection_stats(profile_user.id)
@@ -261,6 +269,7 @@ def estoque(username: str):
         owned_forms=owned_forms,
         missing_forms=missing_forms,
         missing_data=missing_data,
+        owned_data=owned_data,
         trade_forms=trade_forms,
         collection_map=collection_map,
         stats=stats,

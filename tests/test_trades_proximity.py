@@ -146,3 +146,16 @@ def test_estoque_missing_as_json_not_html(client, town):
     data = json.loads(re.search(r"const MISSING = (\[.*?\]);", html, re.S).group(1))
     assert {p["id"] for p in data} == {9201, 9202}
     assert set(data[0]) == {"id", "n", "t", "s", "b"}
+
+    # #20b: aba Tenho também vem como JSON (sem cards no HTML), com o estado dos toggles
+    assert 'class="poke-card' not in html.split('id="tab-content-tenho"')[1].split('id="tab-content-faltantes"')[0]
+    owned = json.loads(re.search(r"const OWNED = (\[.*?\]);", html, re.S).group(1))
+    assert len(owned) == 1
+    p = owned[0]
+    assert (p["id"], p["q"], p["tr"], p["sh"], p["pf"]) == (9203, 2, True, True, True)
+    assert "const IS_OWNER = false" in html
+
+
+def test_estoque_owner_flag(client, town):
+    _login(client, town["ids"]["ash"])
+    assert "const IS_OWNER = true" in client.get("/estoque/ash").get_data(as_text=True)

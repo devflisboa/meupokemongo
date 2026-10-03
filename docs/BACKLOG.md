@@ -48,7 +48,7 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | 4 | [#25](#25--login-com-google) | Login com Google | ~½ dia | ⏳ Aguardando credenciais OAuth |
 | 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | ✅ Entregue |
 | 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | ✅ Entregue |
-| 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | 🔜 Próximo (sem dependência) |
+| 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | ✅ Entregue |
 | 8 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
 | — | #17 | Scan em lote (OCR) | 1–2 sem | Parado |
@@ -132,7 +132,7 @@ Cerca de 70% já existe: aba **"Para troca"** do estoque público `/estoque/<usu
 
 > ✅ **Entregue em 02/10/2026.** Faltantes vão como JSON compacto (`MISSING`) e o JS desenha 30 por vez; a busca filtra o JSON.
 > `/estoque/<usuario>#faltantes` abre direto a aba.
-> ⚠️ **Pendente (20b):** com coleção grande o peso migrou para a aba **Tenho** — em produção `/estoque/felipe`
+> ✅ **#20b entregue:** aba Tenho também sob demanda (JSON `OWNED` + toggles do dono sincronizados). Antes: com coleção grande o peso migrou para a aba **Tenho** — em produção `/estoque/felipe`
 > (698 possuídos) ainda tem ~816 KB. Aplicar o mesmo render sob demanda na aba Tenho (cards têm botões ⭐/🔄 do dono).
 
 **Status: parcial.** O estoque público já tem abas Tenho / Faltantes / Troca com scroll infinito (30 por vez),
@@ -155,8 +155,12 @@ Os dados já existem (`has_shiny`, `has_perfect`, `user_pokemon`). Em vez de "su
 
 ### #14 — Formas regionais + exclusivos de região
 
-> ⚠️ **Status corrigido:** estava marcado como ✅ implementado, mas **não está**.
-> O banco tem 1025 formas, todas `normal` — o sync nunca importou Alola/Galar/Hisui/Paldea/Mega.
+> ✅ **Entregue em 02/10/2026.** 57 formas regionais via `flask sync-forms` (também roda no fim do `sync-pokemon`);
+> ignorados totem/boné/Darmanitan Zen e Mega/G-Max. Lista curada de exclusivos em `app/data/regional.py`
+> (aproximada; fora os pares que alternam de região). Wishlist: toggle "Formas regionais" (`?formas=1`), card 🌍,
+> exclusivos no topo da Alta e filtro "Só por troca". Modal: aviso de exclusivo + "Formas regionais" com "+ Tenho".
+> Matching/mão dupla incluem formas regionais. % da Pokédex conta só formas normais.
+> Fora do escopo: catalogar por região e estoque público ainda mostram só formas normais.
 
 **Por que importa para a premissa:** exclusivos de região (Farfetch'd, Heracross, Corsola, Tauros…)
 **só se conseguem por troca** — é o caso de uso mais forte do app.
@@ -252,4 +256,5 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 02/10/2026 | Doces para evoluir (pogoapi), "Vitórias rápidas" no painel, matching automático, cabeçalho mobile | `918bf93` |
 | 02/10/2026 | Ambiente E2E isolado (`scripts/e2e_server.py` + Pokédex real em fixture) | `918bf93` |
 | 02/10/2026 | **#23** Perfil de troca (código, cidade IBGE, troca à distância, WhatsApp com consentimento), todos se enxergam, onboarding, apagar conta | `60e85a1` |
-| 02/10/2026 | **#24** proximidade + trocas de mão dupla · **#18** Trade Binder · **#15** progresso Shiny/100% · **#20** faltantes sob demanda | ver `git log` |
+| 02/10/2026 | **#24** proximidade + trocas de mão dupla · **#18** Trade Binder · **#15** progresso Shiny/100% · **#20** faltantes sob demanda | `fac64ef` |
+| 02/10/2026 | **#20b** aba Tenho sob demanda · **#14** formas regionais + exclusivos de região | ver `git log` |

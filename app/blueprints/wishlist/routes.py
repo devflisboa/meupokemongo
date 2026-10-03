@@ -7,6 +7,7 @@ from ...models.collection import UserCollection
 from ...models.user import User
 from ...models.pokemon import Form, Species, EvolutionChain
 from ..collection.routes import REGIONS
+from ...data.regional import exclusive_info, trade_only_in_brazil
 
 
 def _reachable_owner_filter(me: User):
@@ -20,8 +21,8 @@ def _reachable_owner_filter(me: User):
     )
 
 
-def get_missing_normal_forms(user_id: int) -> list[tuple[Form, Species]]:
-    """Wishlist automática: toda forma normal que o treinador ainda não possui."""
+def get_missing_normal_forms(user_id: int, include_regional: bool = False) -> list[tuple[Form, Species]]:
+    """Wishlist automática: toda forma normal (e, se pedido, regional — #14) que o treinador não possui."""
     owned_subq = (
         db.session.query(UserCollection.form_id)
         .filter(
@@ -31,20 +32,23 @@ def get_missing_normal_forms(user_id: int) -> list[tuple[Form, Species]]:
         )
         .scalar_subquery()
     )
-    return (
+    query = (
         db.session.query(Form, Species)
         .join(Species, Species.id == Form.species_id)
-        .filter(Form.form_name == "normal", Form.id.notin_(owned_subq))
-        .order_by(Species.id)
-        .all()
+        .filter(Form.id.notin_(owned_subq))
     )
+    if not include_regional:
+        query = query.filter(Form.form_name == "normal")
+    return query.order_by(Species.id, Form.form_name != "normal", Form.form_name).all()
 
 
 @bp.route("/")
 @login_required
 def index():
-    missing = get_missing_normal_forms(current_user.id)
+    include_regional = request.args.get("formas") == "1"
+    missing = get_missing_normal_forms(current_user.id, include_regional=include_regional)
     missing_ids = [f.id for f, _ in missing]
+    regional_total = db.session.query(Form).filter(Form.form_name != "normal").count()
 
     # Prioridade = linha na tabela wishlists (opcional, um toque na estrela)
     priority_ids = {
@@ -73,13 +77,23 @@ def index():
 
     evolve_from = get_evolve_sources(current_user.id, missing_ids)
 
+    # Exclusivos de outra região do mundo: no Brasil, só por troca (#14)
+    exclusives = {
+        f.id: exclusive_info(s.id)[0]
+        for f, s in missing
+        if f.form_name == "normal" and trade_only_in_brazil(s.id)
+    }
+
     # ⭐ manual primeiro; depois Alta (nada da família) antes de Evoluir;
-    # dentro de cada grupo, quem tem oferta de troca; por fim número da Pokédex
+    # dentro da Alta, exclusivos de região (só por troca) no topo;
+    # depois quem tem oferta de troca; por fim número da Pokédex
     missing.sort(key=lambda fs: (
         fs[0].id not in priority_ids,
         fs[0].id in evolve_from,
+        fs[0].id not in exclusives,
         fs[0].id not in offers,
         fs[1].id,
+        fs[0].form_name != "normal",
     ))
 
     return render_template(
@@ -88,6 +102,9 @@ def index():
         priority_ids=priority_ids,
         offers=offers,
         evolve_from=evolve_from,
+        exclusives=exclusives,
+        include_regional=include_regional,
+        regional_total=regional_total,
         regions=REGIONS,
     )
 

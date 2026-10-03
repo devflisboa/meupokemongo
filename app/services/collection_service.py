@@ -43,10 +43,14 @@ def get_pending_evolutions(user_id: int) -> list[dict]:
 
 def get_collection_stats(user_id: int) -> dict:
     total_species = db.session.query(Species).count()
-    owned_count = db.session.query(UserCollection).filter(
+    # Só formas normais: formas regionais (#14) não podem inflar o % da Pokédex
+    owned_count = db.session.query(UserCollection).join(
+        Form, Form.id == UserCollection.form_id
+    ).filter(
         UserCollection.user_id == user_id,
         UserCollection.owned.is_(True),
         UserCollection.quantity > 0,
+        Form.form_name == "normal",
     ).count()
 
     return {

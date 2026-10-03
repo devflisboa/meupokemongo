@@ -27,7 +27,14 @@
 {% if missing %}
 {% set n_evolve = evolve_from|length %}
 <!-- Resumo da prioridade automática -->
-<div class="grid grid-cols-2 gap-2 mb-4">
+<div class="grid {{ 'grid-cols-3' if exclusives else 'grid-cols-2' }} gap-2 mb-4">
+  {% if exclusives %}
+  <button type="button" onclick="setKind('exclusivo')"
+    class="text-left bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 hover:bg-indigo-100 transition-colors">
+    <div class="text-lg font-black text-indigo-600">🌍 {{ exclusives|length }}</div>
+    <div class="text-[11px] text-indigo-700 font-semibold leading-tight">Exclusivos de outra região — no Brasil, só por troca</div>
+  </button>
+  {% endif %}
   <button type="button" onclick="setKind('alta')"
     class="text-left bg-red-50 border border-red-200 rounded-xl px-3 py-2 hover:bg-red-100 transition-colors">
     <div class="text-lg font-black text-red-600">🔥 {{ missing|length - n_evolve }}</div>
@@ -46,6 +53,7 @@
     <option value="">Todas as prioridades</option>
     <option value="alta">🔥 Alta</option>
     <option value="evoluir">🧬 Evoluir</option>
+    <option value="exclusivo">🌍 Só por troca</option>
   </select>
   <input id="wish-search" type="search" placeholder="Nome ou #número..."
     class="flex-1 min-w-40 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
@@ -61,6 +69,13 @@
   <label class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 cursor-pointer">
     <input id="wish-prio" type="checkbox" class="accent-amber-500"> Só prioridades
   </label>
+  {% if regional_total %}
+  <a href="?{{ '' if include_regional else 'formas=1' }}" id="wish-regional-toggle"
+    class="flex items-center gap-1.5 border rounded-xl px-3 py-2 text-xs font-bold
+      {{ 'bg-[#1B2A4A] text-white border-[#1B2A4A]' if include_regional else 'bg-white text-gray-600 border-gray-200 hover:border-gray-300' }}">
+    {{ '✓' if include_regional else '+' }} Formas regionais (Alola, Galar, Hisui, Paldea)
+  </a>
+  {% endif %}
 </div>
 
 <div id="wish-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
@@ -70,13 +85,16 @@
   {% set prio = form.id in priority_ids %}
   {% set n_offers = offers.get(form.id, 0) %}
   {% set evo_src = evolve_from.get(form.id) %}
+  {% set excl = exclusives.get(form.id) %}
   <div class="wish-card poke-card relative bg-white rounded-xl shadow-sm border overflow-hidden cursor-pointer hover:shadow-md transition-all
-    {{ 'border-amber-400' if prio else 'border-gray-100' }}"
+    {{ 'border-amber-400' if prio else ('border-indigo-300' if excl else 'border-gray-100') }}"
     data-poke-id="{{ sp.id }}"
-    data-name="{{ pname.lower() }} {{ '%03d' % sp.id }}"
+    data-form-id="{{ form.id }}"
+    data-name="{{ pname.lower() }} {{ form.label.lower() }} {{ '%03d' % sp.id }}"
     data-num="{{ sp.id }}"
     data-offers="{{ n_offers }}"
     data-kind="{{ 'evoluir' if evo_src is not none else 'alta' }}"
+    data-exclusive="{{ 'true' if excl else 'false' }}"
     data-prio="{{ 'true' if prio else 'false' }}">
     <div class="bg-gradient-to-br {{ grad }} p-1.5 flex items-center justify-center min-h-[56px]">
       {% if form.sprite_url %}
@@ -87,6 +105,13 @@
     <div class="px-1.5 py-1.5 text-center">
       <div class="text-[9px] font-mono text-gray-400">#{{ '%03d' % sp.id }}</div>
       <div class="text-[11px] font-bold text-gray-800 leading-tight truncate">{{ pname }}</div>
+      {% if form.label %}
+      <div class="text-[9px] font-bold text-sky-700 truncate">de {{ form.label }}</div>
+      {% endif %}
+      {% if excl %}
+      <div class="mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 rounded px-1 truncate"
+        title="Exclusivo de região no Pokémon GO ({{ excl }}). No Brasil, só por troca. Lista aproximada.">🌍 {{ excl }}</div>
+      {% endif %}
       {% if evo_src is not none %}
       <div class="mt-0.5 text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate"
         title="Você tem {{ evo_src.name | poke_name }} — basta evoluir{% if evo_src.candy %} ({{ evo_src.candy }} doces){% endif %}">
@@ -149,7 +174,8 @@
       const n = parseInt(c.dataset.num);
       const show = (!q || c.dataset.name.includes(q))
         && n >= start && n <= end
-        && (!kind.value || c.dataset.kind === kind.value)
+        && (!kind.value || c.dataset.kind === kind.value
+            || (kind.value === 'exclusivo' && c.dataset.exclusive === 'true'))
         && (!onlyOffers.checked || parseInt(c.dataset.offers) > 0)
         && (!onlyPrio.checked || c.dataset.prio === 'true');
       c.classList.toggle('hidden', !show);

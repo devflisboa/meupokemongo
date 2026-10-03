@@ -53,10 +53,10 @@
         <div class="text-[11px] font-bold {{ color }} mb-1">{{ label }} ({{ forms|length }})</div>
         <div class="flex flex-wrap gap-1">
           {% for f in forms[:8] %}
-          <div class="w-11 text-center" data-poke-id="{{ f.species_id }}" title="{{ (f.species.name_pt or f.species.name) | poke_name }}">
+          <div class="w-11 text-center" data-poke-id="{{ f.species_id }}" title="{{ f.display_name }}">
             <img src="{{ f.sprite_url }}" alt="" class="w-10 h-10 mx-auto object-contain bg-gray-50 rounded-lg" loading="lazy"
               onerror="this.style.visibility='hidden'" />
-            <div class="text-[8px] text-gray-500 truncate">{{ (f.species.name_pt or f.species.name) | poke_name }}</div>
+            <div class="text-[8px] text-gray-500 truncate">{{ f.display_name }}</div>
           </div>
           {% endfor %}
           {% if forms|length > 8 %}
@@ -98,8 +98,8 @@
         <div class="text-white font-black text-lg leading-tight truncate">
           {{ (sp.name_pt or sp.name) | poke_name }}
         </div>
-        {% if match.form.form_name != 'normal' %}
-        <div class="text-white/70 text-xs capitalize">{{ match.form.form_name | replace('-', ' ') }}</div>
+        {% if match.form.label %}
+        <div class="text-white/80 text-xs font-bold">de {{ match.form.label }}</div>
         {% endif %}
       </div>
       <span class="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/90 text-gray-700">

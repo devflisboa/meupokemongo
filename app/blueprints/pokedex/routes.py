@@ -67,8 +67,38 @@ def api_detail(species_id: int):
             ],
         }
 
+    # Formas regionais da espécie (#14) com o status do treinador logado
+    from ...data.regional import exclusive_info
+    regional = (
+        db.session.query(Form)
+        .filter(Form.species_id == species_id, Form.form_name != "normal")
+        .order_by(Form.form_name)
+        .all()
+    )
+    reg_owned = {}
+    if current_user.is_authenticated and regional:
+        reg_owned = {
+            uc.form_id: uc for uc in db.session.query(UserCollection).filter(
+                UserCollection.user_id == current_user.id,
+                UserCollection.form_id.in_([f.id for f in regional]),
+            )
+        }
+    excl = exclusive_info(species_id)
+
     return jsonify({
         "id": species.id,
+        "regional_forms": [
+            {
+                "form_id": f.id,
+                "label": f.label,
+                "type1": f.type1,
+                "type2": f.type2,
+                "sprite_url": f.sprite_url,
+                "owned": bool(reg_owned.get(f.id) and reg_owned[f.id].owned and reg_owned[f.id].quantity > 0),
+            }
+            for f in regional
+        ],
+        "exclusive": {"where": excl[0], "in_brazil": excl[1]} if excl else None,
         "name": species.name,
         "name_pt": species.name_pt,
         "generation": species.generation,

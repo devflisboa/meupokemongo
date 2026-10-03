@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% macro poke_tile(f, badge=None) %}
-{% set pname = (f.species.name_pt or f.species.name) | poke_name %}
+{% set pname = f.display_name %}
 {% set uc = collection_map.get(f.id) %}
 <div class="poke-card relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow"
   data-poke-id="{{ f.species_id }}">

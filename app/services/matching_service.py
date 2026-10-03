@@ -64,7 +64,7 @@ def run_matching_for_user(user_id: int) -> int:
         db.session.query(UserCollection)
         .join(Form, Form.id == UserCollection.form_id)
         .filter(
-            Form.form_name == "normal",
+            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14)
             UserCollection.form_id.notin_(_owned_subq(user_id)),
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,
@@ -117,10 +117,7 @@ def get_active_matches_for_user(user_id: int) -> list[TradeMatch]:
 
 def _names(forms: list[Form], limit: int = 3) -> str:
     """'Lapras, Eevee e mais 2' — nomes em PT para mensagens."""
-    names = [
-        (f.species.name_pt or f.species.name).removesuffix("-normal").replace("-", " ").title()
-        for f in forms[:limit]
-    ]
+    names = [f.display_name for f in forms[:limit]]
     extra = len(forms) - limit
     return ", ".join(names) + (f" e mais {extra}" if extra > 0 else "")
 
@@ -138,7 +135,7 @@ def get_reciprocal_trades(user_id: int, limit: int = 20) -> list[dict]:
         db.session.query(UserCollection.user_id, Form)
         .join(Form, Form.id == UserCollection.form_id)
         .filter(
-            Form.form_name == "normal",
+            # todas as formas: regionais (Alola, Galar…) são justamente alvos de troca (#14)
             UserCollection.form_id.notin_(_owned_subq(user_id)),
             UserCollection.owned.is_(True),
             UserCollection.quantity > 0,

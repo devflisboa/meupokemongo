@@ -41,6 +41,18 @@ class Form(db.Model):
         db.UniqueConstraint("species_id", "form_name", name="uq_species_form"),
     )
 
+    @property
+    def label(self) -> str:
+        """'' para a forma normal; 'Alola', 'Paldea (Combate)'... para formas regionais (#14)."""
+        from ..data.regional import form_label
+        return form_label(self.form_name)
+
+    @property
+    def display_name(self) -> str:
+        """'Rattata' / 'Rattata de Alola'."""
+        name = (self.species.name_pt or self.species.name).removesuffix("-normal").replace("-", " ").title()
+        return f"{name} de {self.label}" if self.label else name
+
     def __repr__(self) -> str:
         return f"<Form {self.species_id} {self.form_name}>"
 

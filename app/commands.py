@@ -28,6 +28,14 @@ def sync_candy_cmd():
     sync_candy_costs(log=click.echo)
 
 
+@click.command("sync-forms")
+@with_appcontext
+def sync_forms_cmd():
+    """Importa as formas regionais (Alola, Galar, Hisui, Paldea) da PokeAPI."""
+    from .services.sync_service import sync_regional_forms
+    sync_regional_forms(log=click.echo)
+
+
 @click.command("create-admin")
 @click.argument("username")
 @click.argument("email")
@@ -50,3 +58,4 @@ def register_commands(app):
     app.cli.add_command(sync_pokemon_cmd)
     app.cli.add_command(create_admin_cmd)
     app.cli.add_command(sync_candy_cmd)
+    app.cli.add_command(sync_forms_cmd)

@@ -55,6 +55,58 @@ def _walk_chain(node: dict) -> list[tuple[int, int]]:
     return pairs
 
 
+def sync_regional_forms(log=print) -> dict:
+    """
+    #14: importa as formas regionais (Alola, Galar, Hisui, Paldea) como `Form`.
+    Usa a lista de variedades (/pokemon com id > 10000) — ~60 requisições, não 1025.
+    form_name = nome da variedade sem o nome da espécie ('rattata-alola' → 'alola').
+    """
+    from ..data.regional import REGIONAL_VARIETY, REGIONAL_SKIP
+
+    report = {"forms": 0, "skipped": 0, "errors": []}
+    try:
+        listing = _get(f"{POKEAPI}/pokemon?limit=2000&offset=1025")["results"]
+    except Exception as e:
+        report["errors"].append(f"Falha ao listar variedades: {e}")
+        return report
+
+    names = [r["name"] for r in listing
+             if REGIONAL_VARIETY.search(r["name"]) and r["name"] not in REGIONAL_SKIP]
+    log(f"[formas] {len(names)} formas regionais encontradas")
+
+    for name in names:
+        try:
+            pk = _get(f"{POKEAPI}/pokemon/{name}")
+            time.sleep(DELAY)
+            species_id = int(pk["species"]["url"].rstrip("/").split("/")[-1])
+            species = db.session.get(Species, species_id)
+            if not species:
+                report["skipped"] += 1  # espécie base ainda não sincronizada
+                continue
+            form_name = name[len(pk["species"]["name"]) + 1:]
+            types = [t["type"]["name"] for t in pk.get("types", [])]
+            form = db.session.query(Form).filter_by(species_id=species_id, form_name=form_name).first()
+            if not form:
+                form = Form(species_id=species_id, form_name=form_name)
+                db.session.add(form)
+            form.type1 = types[0] if types else None
+            form.type2 = types[1] if len(types) > 1 else None
+            form.sprite_url = _sprite_url(pk["id"])
+            artwork = pk.get("sprites", {}).get("other", {}).get("official-artwork", {})
+            form.is_shiny_available = bool(artwork.get("front_shiny"))
+            db.session.commit()
+            report["forms"] += 1
+            log(f"[formas] {name} → #{species_id:03d} {form_name}")
+        except Exception as e:
+            db.session.rollback()
+            report["errors"].append(f"{name}: {e}")
+            log(f"[ERRO] {name}: {e}")
+
+    log(f"[formas] Concluído: {report['forms']} formas, {report['skipped']} sem espécie base, "
+        f"{len(report['errors'])} erros")
+    return report
+
+
 def sync_pokemon(limit: int = 151, offset: int = 0, log=print) -> dict:
     """
     Sincroniza `limit` Pokémon a partir de `offset`.
@@ -183,6 +235,12 @@ def sync_pokemon(limit: int = 151, offset: int = 0, log=print) -> dict:
             log(f"[ERRO] {msg}")
 
     log(f"\n[sync] Concluído! Espécies={report['species']} Formas={report['forms']} Evoluções={report['evolutions']} Erros={len(report['errors'])}")
+
+    # Formas regionais (#14) — falha aqui não invalida o sync principal
+    try:
+        report["regional_forms"] = sync_regional_forms(log=log)["forms"]
+    except Exception as e:
+        report["errors"].append(f"Formas regionais: {e}")
 
     # Custos de doces do GO (pogoapi) — falha aqui não invalida o sync principal
     try:
