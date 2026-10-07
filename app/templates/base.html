@@ -283,23 +283,6 @@
   {# ── Pokémon Quick Modal ── #}
   <div id="poke-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="poke-modal-title">
     <div id="poke-modal-backdrop" class="absolute inset-0 bg-black/50" onclick="closePokeModal()"></div>
-    {# Botões de navegação ◀ ▶ entre Pokémon — visíveis só quando há prev/next na lista #}
-    <button id="poke-nav-prev" onclick="navigatePokeModal(-1)"
-      class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
-             flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-      aria-label="Pokémon anterior">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-      </svg>
-    </button>
-    <button id="poke-nav-next" onclick="navigatePokeModal(1)"
-      class="hidden absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
-             flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-      aria-label="Próximo Pokémon">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-      </svg>
-    </button>
     <div id="poke-modal-sheet"
       class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-out"
       style="transform:translateY(100%)">
@@ -389,6 +372,7 @@
       if (!res.ok) throw new Error();
       _pkData = await res.json();
       content.innerHTML = renderPokeModal(_pkData);
+      _updateNavBtns();
     } catch {
       content.innerHTML = '<div class="py-12 text-center text-gray-400 text-sm">Não foi possível carregar.</div>';
     }
@@ -421,6 +405,7 @@
       if (!res.ok) throw new Error();
       _pkData = await res.json();
       content.innerHTML = renderPokeModal(_pkData);
+      _updateNavBtns();
       if (expand) document.getElementById('modal-individuals')?.scrollIntoView({behavior: 'smooth', block: 'start'});
     } catch {
       content.innerHTML = '<div class="py-12 text-center text-gray-400 text-sm">Não foi possível carregar.</div>';
@@ -520,6 +505,22 @@
         <button onclick="closePokeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none">×</button>
       </div>
       <div class="bg-gradient-to-b ${grad} mx-4 rounded-2xl h-48 flex items-center justify-center relative">
+        <button id="poke-nav-prev" onclick="navigatePokeModal(-1)"
+          class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
+                 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+          aria-label="Pokémon anterior">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <button id="poke-nav-next" onclick="navigatePokeModal(1)"
+          class="hidden absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
+                 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+          aria-label="Próximo Pokémon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+          </svg>
+        </button>
         ${p.form?.sprite_url ? `<img id="modal-sprite" src="${modalSpriteSrc(p, col?.has_shiny)}" data-art="${_esc(p.form.sprite_url)}"
             class="${REDUCE_MOTION ? '' : 'sprite-anim '}w-36 h-36 object-contain drop-shadow-xl" alt="${name}"
             onload="fitAnim(this)" onerror="spriteFallback(this)"/>`
