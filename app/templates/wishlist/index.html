@@ -26,6 +26,64 @@
 
 {% if missing %}
 {% set n_evolve = evolve_from|length %}
+
+{# ── Seção 🧬 Evoluções disponíveis ─────────────────────────────────── #}
+{% if evolution_lines %}
+<div class="mb-5">
+  <div class="flex items-center gap-2 mb-2">
+    <span class="text-sm font-black text-green-700">🧬 Evoluções disponíveis</span>
+    <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ evolution_lines|length }}</span>
+    <span class="text-[11px] text-gray-400 ml-1">Custo de doces por etapa — o que o jogo exige</span>
+  </div>
+  <div class="space-y-2">
+    {% for line in evolution_lines %}
+    <div class="bg-white rounded-xl border border-green-100 shadow-sm px-3 py-2.5
+                flex items-center gap-1.5 overflow-x-auto">
+      {% for step in line.steps %}
+
+        {# ── Card da forma ── #}
+        {% set pname = (step.species.name_pt or step.species.name) | poke_name %}
+        <div class="flex-shrink-0 flex flex-col items-center text-center" style="min-width:60px;max-width:68px">
+          <div class="w-14 h-14 rounded-xl flex items-center justify-center
+            {{ 'bg-green-50 ring-2 ring-green-400' if step.owned else 'bg-gray-50 ring-1 ring-gray-200' }}">
+            {% if step.form.sprite_url %}
+            <img src="{{ step.form.sprite_url | sprite_small }}"
+                 alt="{{ pname }}"
+                 class="w-11 h-11 object-contain
+                   {{ 'drop-shadow-sm' if step.owned else 'opacity-55 grayscale-[15%]' }}"
+                 loading="lazy"
+                 onerror="spriteFallback(this)" />
+            {% endif %}
+          </div>
+          <div class="text-[9px] font-mono text-gray-400 mt-1">#{{ '%03d' % step.species.id }}</div>
+          <div class="text-[10px] font-bold leading-tight truncate w-full
+            {{ 'text-green-700' if step.owned else 'text-gray-700' }}">{{ pname }}</div>
+          {% if step.owned %}
+          <div class="text-[9px] text-green-600 font-semibold leading-tight">✓ você tem</div>
+          {% endif %}
+        </div>
+
+        {# ── Seta + doces entre etapas ── #}
+        {% if not loop.last %}
+        <div class="flex-shrink-0 flex flex-col items-center gap-0.5 px-1">
+          {% if step.candy_to_next %}
+          <div class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200
+                      rounded-md px-1.5 py-0.5 whitespace-nowrap leading-tight">
+            {{ step.candy_to_next }}&nbsp;🍬
+          </div>
+          {% endif %}
+          <div class="text-gray-300 text-lg font-light leading-none">›</div>
+        </div>
+        {% endif %}
+
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{# ── fim seção evoluções ─────────────────────────────────────────────── #}
+
 <!-- Resumo da prioridade automática -->
 <div class="grid {{ 'grid-cols-3' if exclusives else 'grid-cols-2' }} gap-2 mb-4">
   {% if exclusives %}

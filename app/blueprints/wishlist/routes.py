@@ -91,6 +91,7 @@ def build_wishlist(user: User, categories: set[str] | None = None, offers_for: U
         )
 
     evolve_from = get_evolve_sources(user.id, missing_ids)
+    evolution_lines = build_evolution_lines(user.id, evolve_from)
 
     # Exclusivos de outra região do mundo: no Brasil, só por troca (#14)
     exclusives = {
@@ -113,6 +114,7 @@ def build_wishlist(user: User, categories: set[str] | None = None, offers_for: U
         "offers": offers,
         "evolve_from": evolve_from,
         "exclusives": exclusives,
+        "evolution_lines": evolution_lines,
     }
 
 
@@ -195,7 +197,115 @@ def get_evolve_sources(user_id: int, missing_ids: list[int]) -> dict[int, dict]:
         .filter(Form.id.in_({p for p, _ in source.values()}))
         .all()
     }
-    return {fid: {"name": names.get(pid, ""), "candy": cost} for fid, (pid, cost) in source.items()}
+    return {
+        fid: {"name": names.get(pid, ""), "candy": cost, "source_form_id": pid}
+        for fid, (pid, cost) in source.items()
+    }
+
+
+def build_evolution_lines(user_id: int, evolve_from: dict) -> list[dict]:
+    """
+    Seção 🧬: monta linhas visuais de cadeia evolutiva.
+
+    Cada linha: [forma possuída ✓] → custo_por_passo → [faltante] → custo → [faltante] ...
+
+    O custo de doces vem do EvolutionChain (o que o jogo exige por etapa),
+    não do estoque atual do treinador.
+    Evoluções ramificadas (ex: Eevee) geram uma linha por ramo.
+    """
+    if not evolve_from:
+        return []
+
+    missing_ids = set(evolve_from.keys())
+    root_ids = {info["source_form_id"] for info in evolve_from.values()}
+
+    # Mapa para frente: from_form_id → [(to_form_id, candy_cost)]
+    forward: dict[int, list[tuple[int, int | None]]] = {}
+    for ch in db.session.query(EvolutionChain).all():
+        forward.setdefault(ch.from_form_id, []).append((ch.to_form_id, ch.candy_cost))
+
+    def _leads_to_missing(fid: int, visited: set) -> bool:
+        if fid in visited:
+            return False
+        visited.add(fid)
+        if fid in missing_ids:
+            return True
+        return any(_leads_to_missing(to, visited) for to, _ in forward.get(fid, []))
+
+    # Coleta todos os form_ids no caminho raiz → faltante
+    needed: set[int] = set(root_ids)
+    for root_id in root_ids:
+        stack = [root_id]
+        while stack:
+            fid = stack.pop()
+            for to_id, _ in forward.get(fid, []):
+                if to_id not in needed and _leads_to_missing(to_id, set()):
+                    needed.add(to_id)
+                    stack.append(to_id)
+
+    if not needed:
+        return []
+
+    form_info: dict[int, tuple] = {
+        f.id: (f, s)
+        for f, s in db.session.query(Form, Species)
+        .join(Species, Species.id == Form.species_id)
+        .filter(Form.id.in_(needed))
+        .all()
+    }
+
+    owned_ids: set[int] = {
+        row[0]
+        for row in db.session.query(UserCollection.form_id)
+        .filter(
+            UserCollection.user_id == user_id,
+            UserCollection.owned.is_(True),
+            UserCollection.quantity > 0,
+        )
+        .all()
+    }
+
+    lines: list[dict] = []
+
+    def _dfs(fid: int, path: list, seen: frozenset) -> None:
+        if fid in seen or fid not in form_info:
+            return
+        form, species = form_info[fid]
+        is_owned = fid in owned_ids
+        is_root = not path  # primeiro nó da linha = forma possuída
+
+        # Forma possuída não-raiz: treinador já tem → encerra a linha antes dela
+        if is_owned and not is_root:
+            if path and any(not s["owned"] for s in path):
+                # Zera candy_to_next do último passo (não faz sentido mostrar custo para algo já possuído)
+                closed = path[:-1] + [{**path[-1], "candy_to_next": None}]
+                lines.append({"steps": closed})
+            return
+
+        seen = seen | {fid}
+        children = sorted(
+            [(to, c) for to, c in forward.get(fid, []) if to in needed],
+            key=lambda x: form_info[x[0]][1].id if x[0] in form_info else 9999,
+        )
+
+        if not children:
+            step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": None}
+            full = path + [step]
+            if any(not s["owned"] for s in full):
+                lines.append({"steps": full})
+        else:
+            for child_id, candy in children:
+                step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": candy}
+                _dfs(child_id, path + [step], seen)
+
+    def _species_id(fid: int) -> int:
+        info = form_info.get(fid)
+        return info[1].id if info else 9999
+
+    for root_id in sorted(root_ids, key=_species_id):
+        _dfs(root_id, [], frozenset())
+
+    return lines
 
 
 @bp.route("/priority/<int:form_id>", methods=["POST"])

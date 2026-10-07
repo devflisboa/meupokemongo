@@ -50,6 +50,7 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | ✅ Entregue |
 | 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | ✅ Entregue |
 | 8 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
+| 9 | [#26](#26--expansões-pokeapi) | Expansões PokeAPI: moves, flavor text, egg groups | ~2 dias | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
 | — | #17 | Scan em lote (OCR) | 1–2 sem | Parado |
 | — | #22 | Discord + comunidade | — | Em avaliação |
@@ -186,6 +187,47 @@ Os dados já existem (`has_shiny`, `has_perfect`, `user_pokemon`). Em vez de "su
 - Benefício colateral: renderiza só 9 por vez
 
 Valor de divulgação, não ajuda a trocar diretamente — por isso depois do ciclo de troca.
+
+### #26 — Expansões PokeAPI
+
+> Explorado e testado em 07/10/2026. A PokéAPI tem 60+ endpoints — o sync atual usa só `pokemon`, `pokemon-species` e `pokemon-form`. Abaixo os endpoints com maior retorno para o app.
+
+**Endpoints disponíveis (ao vivo):** `/pokemon`, `/pokemon-species`, `/evolution-chain`, `/type`, `/move`, `/ability`, `/nature`, `/egg-group`, `/pokemon/{id}/encounters`, `/pokeathlon-stat`.
+
+#### Fase A — Flavor text (descrição do Pokédex) — ~3 h
+
+Endpoint: `GET /pokemon-species/{id}` → campo `flavor_text_entries`
+
+- Mostrar descrição do Pokédex na página de detalhe e no modal (versão Shield por padrão → Ruby → Red)
+- Pikachu: *"This forest-dwelling Pokémon stores electricity in its cheeks…"*
+- Dados já chegam no sync atual (`pokemon-species`) — só falta persistir e exibir
+- Campo novo em `species`: `flavor_text` (TEXT)
+
+#### Fase B — Moves detalhados — ~1 dia
+
+Endpoint: `GET /move/{id}` → `power`, `accuracy`, `pp`, `damage_class`, `type`, `effect_entries`
+
+- Enriquecer a listagem de golpes do exemplar (`user_pokemon.raw`): mostrar poder, tipo e precisão
+- No modal: substituir texto puro "Investida / Trovão" por cards com tipo colorido + dano
+- Tabela nova `moves` (id, name, name_pt, type, power, accuracy, pp, damage_class, effect_summary)
+- Sync via `flask sync-moves` (só os golpes que aparecem nos exemplares importados — ~200 no GO)
+
+#### Fase C — Egg groups + encounter locations — ~½ dia
+
+Endpoints: `GET /pokemon-species/{id}` → `egg_groups`; `GET /pokemon/{id}/encounters`
+
+- **Egg groups:** exibir no detalhe da espécie (informativo; breeding não existe no GO mas é dado da Pokédex)
+- **Encounter locations:** "Onde encontrar" por versão — útil para quem quer saber habitat no GO (nem todos os Pokémon têm dado, apenas os de jogos principais)
+
+#### Fase D — Type chart expandido — ~½ dia
+
+Endpoint: `GET /type/{name}` → `damage_relations`
+
+- Atualizar os multiplicadores do modal (hoje calculados localmente em `app/data/types.py`)
+- Sincronizar via PokeAPI em vez de tabela hardcoded — garante acerto com novos tipos
+- Campo novo: `type_chart` em JSON no banco, atualizado pelo `sync-pokemon`
+
+**Ordem recomendada:** A → B → D → C. Fase A entrega valor visual imediato; B é o mais pedido; D elimina dívida técnica; C é informativo.
 
 ---
 
