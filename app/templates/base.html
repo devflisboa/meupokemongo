@@ -283,6 +283,23 @@
   {# ── Pokémon Quick Modal ── #}
   <div id="poke-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="poke-modal-title">
     <div id="poke-modal-backdrop" class="absolute inset-0 bg-black/50" onclick="closePokeModal()"></div>
+    {# Botões de navegação ◀ ▶ entre Pokémon — visíveis só quando há prev/next na lista #}
+    <button id="poke-nav-prev" onclick="navigatePokeModal(-1)"
+      class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
+             flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+      aria-label="Pokémon anterior">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <button id="poke-nav-next" onclick="navigatePokeModal(1)"
+      class="hidden absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/95 shadow-lg rounded-full
+             flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+      aria-label="Próximo Pokémon">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
+    </button>
     <div id="poke-modal-sheet"
       class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-out"
       style="transform:translateY(100%)">
@@ -323,8 +340,67 @@
   };
 
   let _pkData = null;
-
   let _pkExpanded = false;
+
+  // ── Navegação entre cards do modal ──
+  let _navList = [];  // IDs das espécies visíveis na página
+  let _navIdx  = -1;
+
+  function _buildNavList(currentId) {
+    const seen = new Set(), ids = [];
+    document.querySelectorAll('[data-poke-id]').forEach(el => {
+      if (el.closest('#poke-modal')) return;
+      // elemento oculto (classe .hidden ou display:none)
+      if (el.closest('.hidden') || el.style.display === 'none') return;
+      const id = parseInt(el.dataset.pokeId);
+      if (id && !seen.has(id)) { seen.add(id); ids.push(id); }
+    });
+    _navList = ids;
+    _navIdx  = ids.indexOf(parseInt(currentId));
+  }
+
+  function _updateNavBtns() {
+    document.getElementById('poke-nav-prev')?.classList.toggle('hidden', _navIdx <= 0);
+    document.getElementById('poke-nav-next')?.classList.toggle('hidden', _navIdx < 0 || _navIdx >= _navList.length - 1);
+  }
+
+  async function navigatePokeModal(dir) {
+    const newIdx = _navIdx + dir;
+    if (newIdx < 0 || newIdx >= _navList.length) return;
+    _navIdx = newIdx;
+    const newId = _navList[_navIdx];
+    _updateNavBtns();
+
+    const content = document.getElementById('poke-modal-content');
+    // Desliza o conteúdo para fora
+    content.style.transition = 'transform 0.12s ease, opacity 0.12s ease';
+    content.style.transform = `translateX(${dir > 0 ? '-50px' : '50px'})`;
+    content.style.opacity = '0';
+    await new Promise(r => setTimeout(r, 120));
+
+    // Spinner enquanto carrega, reposicionado do lado oposto
+    content.innerHTML = '<div class="py-16 flex justify-center"><div class="w-8 h-8 border-4 border-gray-200 border-t-[#1B2A4A] rounded-full animate-spin"></div></div>';
+    content.style.transition = 'none';
+    content.style.transform = `translateX(${dir > 0 ? '50px' : '-50px'})`;
+    content.style.opacity = '0';
+
+    try {
+      const res = await fetch(`/pokedex/api/${newId}`);
+      if (!res.ok) throw new Error();
+      _pkData = await res.json();
+      content.innerHTML = renderPokeModal(_pkData);
+    } catch {
+      content.innerHTML = '<div class="py-12 text-center text-gray-400 text-sm">Não foi possível carregar.</div>';
+    }
+
+    // Desliza para dentro
+    requestAnimationFrame(() => {
+      content.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+      content.style.transform = 'translateX(0)';
+      content.style.opacity = '1';
+      setTimeout(() => { content.style.cssText = ''; }, 200);
+    });
+  }
 
   // expand=true (duplo clique): carta em tela cheia com todos os exemplares abertos
   async function openPokeModal(id, expand = false) {
@@ -338,6 +414,8 @@
     document.body.style.overflow = 'hidden';
     content.innerHTML = '<div class="py-16 flex justify-center"><div class="w-10 h-10 border-4 border-gray-200 border-t-[#1B2A4A] rounded-full animate-spin"></div></div>';
     requestAnimationFrame(() => { sheet.style.transform = 'translateY(0)'; });
+    _buildNavList(id);
+    _updateNavBtns();
     try {
       const res = await fetch(`/pokedex/api/${id}`);
       if (!res.ok) throw new Error();
@@ -353,6 +431,8 @@
     const sheet = document.getElementById('poke-modal-sheet');
     sheet.style.transform = 'translateY(100%)';
     document.body.style.overflow = '';
+    _navList = []; _navIdx = -1;
+    _updateNavBtns();
     setTimeout(() => document.getElementById('poke-modal').classList.add('hidden'), 300);
   }
 
@@ -858,7 +938,13 @@
     _clickTimer = setTimeout(() => { _clickTimer = null; openPokeModal(id); }, 250);
   });
 
-  document.addEventListener('keydown', e => { if (e.key==='Escape') closePokeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closePokeModal(); return; }
+    if (!document.getElementById('poke-modal').classList.contains('hidden')) {
+      if (e.key === 'ArrowLeft')  navigatePokeModal(-1);
+      if (e.key === 'ArrowRight') navigatePokeModal(1);
+    }
+  });
 
   // Swipe down para fechar
   (function() {
