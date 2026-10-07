@@ -8,6 +8,7 @@ from ...models.user import User
 from ...models.pokemon import Form, Species, EvolutionChain
 from ..collection.routes import REGIONS
 from ...data.regional import exclusive_info, trade_only_in_brazil, form_category, CATEGORIES
+from ...data.evolution_conditions import GO_CONDITIONS
 
 
 def _reachable_owner_filter(me: User):
@@ -278,7 +279,7 @@ def build_evolution_lines(user_id: int, evolve_from: dict) -> list[dict]:
         if is_owned and not is_root:
             if path and any(not s["owned"] for s in path):
                 # Zera candy_to_next do último passo (não faz sentido mostrar custo para algo já possuído)
-                closed = path[:-1] + [{**path[-1], "candy_to_next": None}]
+                closed = path[:-1] + [{**path[-1], "candy_to_next": None, "condition": None}]
                 lines.append({"steps": closed})
             return
 
@@ -289,13 +290,15 @@ def build_evolution_lines(user_id: int, evolve_from: dict) -> list[dict]:
         )
 
         if not children:
-            step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": None}
+            step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": None, "condition": None}
             full = path + [step]
             if any(not s["owned"] for s in full):
                 lines.append({"steps": full})
         else:
             for child_id, candy in children:
-                step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": candy}
+                next_sid = form_info[child_id][1].id if child_id in form_info else None
+                condition = GO_CONDITIONS.get((species.id, next_sid)) if next_sid else None
+                step = {"form": form, "species": species, "owned": is_owned, "candy_to_next": candy, "condition": condition}
                 _dfs(child_id, path + [step], seen)
 
     def _species_id(fid: int) -> int:
