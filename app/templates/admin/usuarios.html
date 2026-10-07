@@ -14,6 +14,12 @@
   </div>
 </div>
 
+<div class="mb-4">
+  <input id="user-search" type="search" placeholder="Filtrar por usuário ou e-mail..."
+    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+    oninput="filterUsers(this.value)" />
+</div>
+
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
@@ -81,4 +87,16 @@
     </table>
   </div>
 </div>
+
+<script>
+function filterUsers(q) {
+  q = q.toLowerCase().trim();
+  let visible = 0;
+  document.querySelectorAll('tbody tr').forEach(row => {
+    const show = !q || row.textContent.toLowerCase().includes(q);
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+}
+</script>
 {% endblock %}

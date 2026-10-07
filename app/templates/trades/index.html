@@ -27,6 +27,19 @@
   </p>
 </div>
 
+{# ── Barra de busca ── #}
+<div class="flex flex-wrap gap-2 mb-5">
+  <input id="trade-search" type="search" placeholder="Filtrar por Pokémon ou treinador..."
+    class="flex-1 min-w-48 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+    oninput="filterTrades(this.value)" />
+  <button onclick="filterTrades(''); document.getElementById('trade-search').value=''"
+    id="btn-clear-filter"
+    class="hidden px-3 py-2 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
+    ✕ Limpar
+  </button>
+</div>
+<p id="trade-empty" class="hidden text-center text-sm text-gray-400 py-8">Nenhum resultado para essa busca.</p>
+
 {# ── Trocas de mão dupla (#24): os dois lados ganham ── #}
 {% if reciprocal %}
 <section class="mb-8">
@@ -35,7 +48,9 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     {% for r in reciprocal %}
     {% set other = r.user %}
-    <div class="bg-white rounded-2xl shadow-sm border border-green-200 p-4 reciprocal-card" data-user="{{ other.username }}">
+    <div class="bg-white rounded-2xl shadow-sm border border-green-200 p-4 reciprocal-card"
+         data-user="{{ other.username }}"
+         data-forms="{{ (r.they_names ~ ' ' ~ r.i_names ~ ' ' ~ other.username) | lower }}">
       <div class="flex items-start justify-between gap-2 mb-3">
         <div class="min-w-0">
           <a href="{{ url_for('main.trade_binder', username=other.username) }}"
@@ -80,7 +95,8 @@
   {% for match in matches %}
   {% set sp = match.form.species %}
   {% set grad = type_grad.get(match.form.type1, "from-gray-300 to-gray-400") %}
-  <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+  <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 match-card"
+       data-name="{{ (sp.name_pt or sp.name) | poke_name | lower }} {{ '%03d' % sp.id }} {{ match.owner.username | lower }}">
     <!-- Sprite header -->
     <div class="bg-gradient-to-br {{ grad }} p-4 flex items-center gap-3 relative">
       {% if match.form.sprite_url %}
@@ -201,4 +217,33 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+function filterTrades(q) {
+  q = q.toLowerCase().trim();
+  const clearBtn = document.getElementById('btn-clear-filter');
+  const emptyMsg = document.getElementById('trade-empty');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !q);
+
+  let visible = 0;
+  document.querySelectorAll('.reciprocal-card').forEach(card => {
+    const show = !q || card.dataset.forms.includes(q);
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  document.querySelectorAll('.match-card').forEach(card => {
+    const show = !q || card.dataset.name.includes(q);
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+
+  // Oculta cabeçalhos de seção quando todos os itens da seção estão ocultos
+  const recipSection = document.querySelector('section');
+  if (recipSection) {
+    const anyRecip = [...recipSection.querySelectorAll('.reciprocal-card')].some(c => !c.classList.contains('hidden'));
+    recipSection.classList.toggle('hidden', !anyRecip);
+  }
+  if (emptyMsg) emptyMsg.classList.toggle('hidden', visible > 0 || !q);
+}
+</script>
 {% endblock %}

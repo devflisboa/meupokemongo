@@ -114,11 +114,12 @@
 </div>
 
 {# ── Busca ── #}
-<div class="mb-3">
+<div class="mb-2">
   <input id="card-search" type="search" placeholder="Filtrar Pokémon por nome ou #número..."
     class="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A] focus:border-transparent"
     oninput="filterCards(this.value)" />
 </div>
+<div id="cross-tab-hint" class="hidden mb-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 flex flex-wrap items-center gap-2"></div>
 
 {# ── Abas desktop ── #}
 <div class="hidden sm:flex gap-1 mb-4 bg-white rounded-xl p-1 shadow-sm border border-gray-100 w-fit">
@@ -383,20 +384,41 @@ function syncOwned(formId, changes) {
   if (item) Object.assign(item, changes);
 }
 
-// ── Busca em tempo real ──
+// ── Busca em tempo real com dica de aba cruzada ──
 function filterCards(q) {
   q = q.toLowerCase().trim();
-  // identify active tab
   const tabs = ['tenho','faltantes','troca'];
   const active = tabs.find(t => !document.getElementById('tab-content-' + t).classList.contains('hidden'));
-  if (active === 'faltantes') { Missing.filter(q); return; }
-  if (active === 'tenho') { Owned.filter(q); return; }
-  const grid = document.getElementById('tab-content-' + active);
-  if (!grid) return;
-  grid.querySelectorAll('.poke-card').forEach(card => {
-    const name = card.dataset.name || '';
-    card.style.display = !q || name.includes(q) ? '' : 'none';
-  });
+
+  if (active === 'faltantes') Missing.filter(q);
+  else if (active === 'tenho') Owned.filter(q);
+  else {
+    const grid = document.getElementById('tab-content-' + active);
+    if (grid) grid.querySelectorAll('.poke-card').forEach(card => {
+      card.style.display = !q || (card.dataset.name || '').includes(q) ? '' : 'none';
+    });
+  }
+
+  // Dica de aba cruzada: mostra se 0 resultados na aba ativa mas tem em outras
+  const hint = document.getElementById('cross-tab-hint');
+  if (!hint || !q) { if (hint) hint.classList.add('hidden'); return; }
+
+  // conta resultados nas outras abas
+  const matchFn = p => `${p.n.toLowerCase()} ${num(p.id)}`.includes(q);
+  const counts = {
+    tenho:     typeof OWNED    !== 'undefined' ? OWNED.filter(matchFn).length    : 0,
+    faltantes: typeof MISSING  !== 'undefined' ? MISSING.filter(matchFn).length  : 0,
+    troca:     [...(document.querySelectorAll('#tab-content-troca .poke-card') || [])]
+                 .filter(c => (c.dataset.name || '').includes(q)).length,
+  };
+  const others = tabs.filter(t => t !== active && counts[t] > 0);
+  if (!others.length) { hint.classList.add('hidden'); return; }
+
+  const tabLabel = { tenho: '✓ Tenho', faltantes: '✗ Faltantes', troca: '🔄 Para troca' };
+  hint.innerHTML = '🔍 Não encontrado aqui — encontrado em: '
+    + others.map(t => `<button onclick="showTab('${t}'); filterCards(document.getElementById('card-search').value)"
+        class="font-bold underline hover:no-underline">${tabLabel[t]} (${counts[t]})</button>`).join(' · ');
+  hint.classList.remove('hidden');
 }
 
 // Link direto para uma aba: /estoque/<user>#faltantes (usado pela Vitrine de Trocas)

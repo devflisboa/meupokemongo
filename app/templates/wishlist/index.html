@@ -29,7 +29,7 @@
 
 {# ── Seção 🧬 Evoluções disponíveis ─────────────────────────────────── #}
 {% if evolution_lines %}
-<div class="mb-5">
+<div class="mb-5" id="evo-section">
   <div class="flex items-center gap-2 mb-2">
     <span class="text-sm font-black text-green-700">🧬 Evoluções disponíveis</span>
     <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ evolution_lines|length }}</span>
@@ -38,7 +38,8 @@
   <div class="space-y-2">
     {% for line in evolution_lines %}
     <div class="bg-white rounded-xl border border-green-100 shadow-sm px-3 py-2.5
-                flex items-center gap-1.5 overflow-x-auto">
+                flex items-center gap-1.5 overflow-x-auto evo-line"
+         data-nums="{{ line.steps | map(attribute='species') | map(attribute='id') | list | join(',') }}">
       {% for step in line.steps %}
 
         {# ── Card da forma ── #}
@@ -263,13 +264,46 @@
     });
     document.getElementById('wish-count').textContent = visible;
     document.getElementById('wish-empty').classList.toggle('hidden', visible > 0);
+
+    // Filtra linhas evolutivas pela região e pela busca
+    const evoLines = document.querySelectorAll('.evo-line');
+    evoLines.forEach(line => {
+      const nums = (line.dataset.nums || '').split(',').map(Number).filter(Boolean);
+      const inRegion = !region.value || nums.some(n => n >= start && n <= end);
+      const inSearch = !q || line.textContent.toLowerCase().includes(q);
+      line.classList.toggle('hidden', !inRegion || !inSearch);
+    });
+    const evoSection = document.getElementById('evo-section');
+    if (evoSection) {
+      const anyEvoVisible = [...evoLines].some(l => !l.classList.contains('hidden'));
+      evoSection.classList.toggle('hidden', !anyEvoVisible);
+    }
   }
   [search, region, onlyOffers, onlyPrio, kind].forEach(el => el.addEventListener('input', apply));
   window._wishApply = apply;
   window.setKind = k => { kind.value = kind.value === k ? '' : k; apply(); };
-  // Link do painel: /wishlist/?kind=evoluir já abre filtrado
-  const initialKind = new URLSearchParams(location.search).get('kind');
-  if (initialKind) { kind.value = initialKind; apply(); }
+  // Restaura filtros do URL (preservados ao trocar categorias de formas)
+  const _p = new URLSearchParams(location.search);
+  if (_p.get('q') && search) search.value = _p.get('q');
+  if (_p.get('region') && region) region.value = _p.get('region');
+  if (_p.get('offers') && onlyOffers) onlyOffers.checked = true;
+  if (_p.get('prio') && onlyPrio) onlyPrio.checked = true;
+  const initialKind = _p.get('kind');
+  if (initialKind && kind) kind.value = initialKind;
+  if (_p.get('q') || _p.get('region') || _p.get('offers') || _p.get('prio') || initialKind) apply();
+
+  // Preserva filtros JS ao clicar nos toggles de forma (regional / mega / gmax / especial)
+  document.querySelectorAll('#wish-categories a').forEach(a => {
+    a.addEventListener('click', function () {
+      const url = new URL(this.href, location.origin);
+      if (search && search.value.trim()) url.searchParams.set('q', search.value.trim());
+      if (region && region.value) url.searchParams.set('region', region.value);
+      if (onlyOffers && onlyOffers.checked) url.searchParams.set('offers', '1');
+      if (onlyPrio && onlyPrio.checked) url.searchParams.set('prio', '1');
+      if (kind && kind.value) url.searchParams.set('kind', kind.value);
+      this.href = url.toString();
+    });
+  });
 })();
 
 async function togglePriority(formId, btn) {
