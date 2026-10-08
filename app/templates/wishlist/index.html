@@ -2,6 +2,17 @@
 {% block title %}Lista de Desejos{% endblock %}
 
 {% block content %}
+<style>
+.evo-line-wrap { position: relative; }
+.evo-line-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, white);
+  pointer-events: none;
+}
+</style>
 {% set type_grad = {
   "fire": "from-orange-400 to-red-500", "water": "from-blue-400 to-cyan-500",
   "grass": "from-green-400 to-emerald-500", "electric": "from-yellow-300 to-amber-400",
@@ -31,12 +42,13 @@
 {% if evolution_lines %}
 <div class="mb-5" id="evo-section">
   <div class="flex items-center gap-2 mb-2">
-    <span class="text-sm font-black text-green-700">🧬 Evoluções disponíveis</span>
+    <span class="text-sm font-black text-green-700"><span aria-hidden="true">🧬</span> Evoluções disponíveis</span>
     <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">{{ evolution_lines|length }}</span>
     <span class="text-[11px] text-gray-400 ml-1">Custo de doces por etapa — o que o jogo exige</span>
   </div>
   <div class="space-y-2">
     {% for line in evolution_lines %}
+    <div class="evo-line-wrap relative">
     <div class="bg-white rounded-xl border border-green-100 shadow-sm px-3 py-2.5
                 flex items-center gap-1.5 overflow-x-auto evo-line"
          data-nums="{{ line.steps | map(attribute='species') | map(attribute='id') | list | join(',') }}">
@@ -89,6 +101,7 @@
 
       {% endfor %}
     </div>
+    </div>{# /.evo-line-wrap #}
     {% endfor %}
   </div>
 </div>
@@ -100,18 +113,18 @@
   {% if exclusives %}
   <button type="button" onclick="setKind('exclusivo')"
     class="text-left bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 hover:bg-indigo-100 transition-colors">
-    <div class="text-lg font-black text-indigo-600">🌍 {{ exclusives|length }}</div>
+    <div class="text-lg font-black text-indigo-600"><span aria-hidden="true">🌍</span> {{ exclusives|length }}</div>
     <div class="text-[11px] text-indigo-700 font-semibold leading-tight">Exclusivos de outra região — no Brasil, só por troca</div>
   </button>
   {% endif %}
   <button type="button" onclick="setKind('alta')"
     class="text-left bg-red-50 border border-red-200 rounded-xl px-3 py-2 hover:bg-red-100 transition-colors">
-    <div class="text-lg font-black text-red-600">🔥 {{ missing|length - n_evolve }}</div>
+    <div class="text-lg font-black text-red-600"><span aria-hidden="true">🔥</span> {{ missing|length - n_evolve }}</div>
     <div class="text-[11px] text-red-700 font-semibold leading-tight">Prioridade alta — você não tem nada da família</div>
   </button>
   <button type="button" onclick="setKind('evoluir')"
     class="text-left bg-green-50 border border-green-200 rounded-xl px-3 py-2 hover:bg-green-100 transition-colors">
-    <div class="text-lg font-black text-green-600">🧬 {{ n_evolve }}</div>
+    <div class="text-lg font-black text-green-600"><span aria-hidden="true">🧬</span> {{ n_evolve }}</div>
     <div class="text-[11px] text-green-700 font-semibold leading-tight">Basta evoluir — você já tem a pré-evolução</div>
   </button>
 </div>
@@ -157,7 +170,7 @@
 </div>
 {% endif %}
 
-<div id="wish-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+<div id="wish-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
   {% for form, sp in missing %}
   {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
   {% set pname = (sp.name_pt or sp.name) | poke_name %}
@@ -175,14 +188,14 @@
     data-kind="{{ 'evoluir' if evo_src is not none else 'alta' }}"
     data-exclusive="{{ 'true' if excl else 'false' }}"
     data-prio="{{ 'true' if prio else 'false' }}">
-    <div class="bg-gradient-to-br {{ grad }} p-1.5 flex items-center justify-center min-h-[56px]">
+    <div class="bg-gradient-to-br {{ grad }} p-2 flex items-center justify-center min-h-[80px]">
       {% if form.sprite_url %}
-      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-12 h-12 object-contain drop-shadow grayscale-[30%]" loading="lazy" onerror="spriteFallback(this)" />
+      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ pname }}" class="sprite-sm w-16 h-16 object-contain drop-shadow grayscale-[30%]" loading="lazy" onerror="spriteFallback(this)" />
       {% endif %}
     </div>
-    <div class="px-1.5 py-1.5 text-center">
-      <div class="text-[9px] font-mono text-gray-400">#{{ '%03d' % sp.id }}</div>
-      <div class="text-[11px] font-bold text-gray-800 leading-tight truncate">{{ pname }}</div>
+    <div class="px-2 py-2 text-center">
+      <div class="text-[10px] font-mono text-gray-400">#{{ '%03d' % sp.id }}</div>
+      <div class="text-sm font-bold text-gray-800 leading-tight truncate" title="{{ pname }}">{{ pname }}</div>
       {% if form.label %}
       {% set cat_color = {'regional': 'text-sky-700', 'mega': 'text-fuchsia-700', 'gmax': 'text-rose-700', 'especial': 'text-amber-700'} %}
       <div class="text-[9px] font-bold truncate {{ cat_color.get(form.category, 'text-gray-500') }}">
@@ -191,15 +204,15 @@
       {% endif %}
       {% if excl %}
       <div class="mt-0.5 text-[9px] font-bold text-indigo-700 bg-indigo-50 rounded px-1 truncate"
-        title="Exclusivo de região no Pokémon GO ({{ excl }}). No Brasil, só por troca. Lista aproximada.">🌍 {{ excl }}</div>
+        title="Exclusivo de região no Pokémon GO ({{ excl }}). No Brasil, só por troca. Lista aproximada."><span aria-hidden="true">🌍</span> {{ excl }}</div>
       {% endif %}
       {% if evo_src is not none %}
       <div class="mt-0.5 text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate"
         title="Você tem {{ evo_src.name | poke_name }} — basta evoluir{% if evo_src.candy %} ({{ evo_src.candy }} doces){% endif %}">
-        🧬 {{ evo_src.name | poke_name }}{% if evo_src.candy %} · {{ evo_src.candy }}🍬{% endif %}
+        <span aria-hidden="true">🧬</span> {{ evo_src.name | poke_name }}{% if evo_src.candy %} · {{ evo_src.candy }}<span aria-hidden="true">🍬</span>{% endif %}
       </div>
       {% else %}
-      <div class="mt-0.5 text-[9px] font-bold text-red-600 bg-red-50 rounded px-1">🔥 Alta</div>
+      <div class="mt-0.5 text-[9px] font-bold text-red-600 bg-red-50 rounded px-1"><span aria-hidden="true">🔥</span> Alta</div>
       {% endif %}
       {% if n_offers %}
       <div class="mt-0.5 text-[9px] font-bold text-blue-600">🔄 {{ n_offers }} p/ troca</div>
@@ -225,7 +238,7 @@
 <div class="mt-6 text-center">
   <a href="{{ url_for('trades.sync') }}"
     class="inline-flex items-center gap-2 bg-[#1B2A4A] hover:opacity-90 text-white text-sm px-4 py-2 rounded-lg font-bold">
-    🔄 Buscar trocas para a wishlist
+    <span aria-hidden="true">🔄</span> Buscar trocas para a wishlist
   </a>
 </div>
 

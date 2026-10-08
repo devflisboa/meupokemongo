@@ -72,7 +72,7 @@
       class="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 w-40" />
   </div>
 
-  <select name="generation"
+  <select name="generation" onchange="this.form.submit()"
     class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
     <option value="">Todas as regiões</option>
     {% for g, region in [(1,'Kanto'),(2,'Johto'),(3,'Hoenn'),(4,'Sinnoh'),(5,'Unova'),(6,'Kalos'),(7,'Alola'),(8,'Galar'),(9,'Paldea')] %}
@@ -80,7 +80,7 @@
     {% endfor %}
   </select>
 
-  <select name="type"
+  <select name="type" onchange="this.form.submit()"
     class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
     <option value="">Tipo</option>
     {% for t in types %}
@@ -89,7 +89,7 @@
   </select>
 
   {% if current_user.is_authenticated %}
-  <select name="captured"
+  <select name="captured" onchange="this.form.submit()"
     class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
     <option value="">Captura</option>
     <option value="yes" {% if captured == "yes" %}selected{% endif %}>✓ Capturados</option>
@@ -142,9 +142,9 @@
 
       {# Badge: lendário / mítico #}
       {% if species.is_mythical %}
-      <span class="absolute top-1.5 left-1.5 bg-purple-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">✦</span>
+      <span class="absolute top-1.5 left-1.5 bg-purple-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full" aria-hidden="true">✦</span>
       {% elif species.is_legendary %}
-      <span class="absolute top-1.5 left-1.5 bg-yellow-400/90 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">★</span>
+      <span class="absolute top-1.5 left-1.5 bg-yellow-400/90 text-yellow-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full" aria-hidden="true">★</span>
       {% endif %}
 
       {# Badge: capturado #}
@@ -218,7 +218,7 @@
   <p class="text-4xl mb-3">📭</p>
   <p class="text-sm text-gray-500 mb-4">Nenhum Pokémon encontrado para esse filtro.</p>
   {% if q or generation or type_filter or captured %}
-  <a href="{{ url_for('pokedex.index') }}" class="text-xs text-blue-600 hover:underline">Limpar filtros</a>
+  <a href="{{ url_for('pokedex.index') }}" class="inline-block bg-[#1B2A4A] text-white text-sm px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity mt-4">Limpar filtros</a>
   {% else %}
   <a href="{{ url_for('admin.index') }}" class="text-xs text-blue-600 hover:underline">Sincronizar dados →</a>
   {% endif %}

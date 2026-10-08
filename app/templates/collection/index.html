@@ -47,7 +47,7 @@
     {# Catalogar saiu do menu e mora aqui, em destaque #}
     <a href="{{ url_for('collection.catalogar') }}" id="btn-catalogar"
       class="flex-shrink-0 bg-[#CC0000] hover:bg-red-700 text-white text-sm font-black px-4 py-2 rounded-xl shadow active:scale-95 transition-all">
-      📋 Catalogar por região
+      <span aria-hidden="true">📋</span> Catalogar por região
     </a>
   </div>
 </div>
@@ -56,7 +56,7 @@
 {% if total_owned == 0 %}
 <a href="{{ url_for('collection.catalogar') }}" id="catalogar-convite"
   class="block mb-5 rounded-2xl bg-gradient-to-br from-[#1B2A4A] to-[#CC0000] text-white p-5 shadow-lg hover:shadow-xl transition-shadow">
-  <div class="text-2xl">📋</div>
+  <div class="text-2xl" aria-hidden="true">📋</div>
   <div class="font-black text-lg mt-1">Comece marcando o que você tem</div>
   <p class="text-sm text-white/80 mt-1">
     Escolha uma região e toque só nos Pokémon que <b>faltam</b> — o resto é marcado como seu.
@@ -78,14 +78,14 @@
     data-progress="{{ key }}"
     class="border rounded-xl px-3 py-2 {{ color }} {{ 'ring-2 ring-offset-1 ring-current' if show == key }} {{ 'hover:opacity-80' if clickable }}"
     {% if key == 'shundo' %}title="Brilhante e 100% IV na mesma espécie"{% endif %}>
-    <div class="text-lg font-black leading-none">{{ icon }} {{ progress[key] }}<span class="text-xs font-semibold opacity-60">/{{ total_species }}</span></div>
+    <div class="text-lg font-black leading-none"><span aria-hidden="true">{{ icon }}</span> {{ progress[key] }}<span class="text-xs font-semibold opacity-60">/{{ total_species }}</span></div>
     <div class="text-[11px] font-semibold mt-0.5">{{ label }}</div>
   </{{ 'a' if clickable else 'div' }}>
   {% endfor %}
 </div>
 
 <!-- Filtros -->
-<form method="get" class="flex flex-wrap items-center gap-2 mb-5">
+<form id="collection-filter" method="get" class="flex flex-wrap items-center gap-2 mb-5 sticky top-0 z-30 bg-gray-100 py-2 -mx-4 px-4">
   <!-- Tabs -->
   <div class="flex bg-white rounded-xl border border-gray-200 p-1">
     {% for val, label in [('all', 'Todos'), ('owned', 'Capturados'), ('missing', 'Faltantes'), ('shiny', '⭐'), ('perfect', '💯')] %}
@@ -101,7 +101,6 @@
     <input type="text" name="q" value="{{ q }}" placeholder="Nome ou #número..."
       class="flex-1 px-3 py-2 text-sm focus:outline-none" />
     <input type="hidden" name="show" value="{{ show }}" />
-    <input type="hidden" name="generation" value="{{ generation or '' }}" />
     <button type="submit" class="px-3 text-gray-400 hover:text-gray-600">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
@@ -122,7 +121,7 @@
 <!-- Grid de cards -->
 {% set items = pagination.items %}
 {% if items %}
-<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 mb-6" id="pokegrid">
+<div class="grid grid-cols-3 gap-4 mb-6" id="pokegrid">
   {% for species in items %}
   {% set data = species_data.get(species.id, {}) %}
   {% set form = data.get('form') %}
@@ -146,11 +145,11 @@
     data-perfect="{{ 'true' if has_perfect else 'false' }}">
 
     <!-- Sprite area -->
-    <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-2 pb-1 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:72px">
+    <div class="relative bg-gradient-to-br {{ grad }} {% if not owned %}opacity-40{% endif %} pt-3 pb-2 px-2 flex items-center justify-center transition-opacity duration-300" style="min-height:108px">
       {% if form and form.sprite_url %}
-      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ species.name }}" class="sprite-sm w-14 h-14 object-contain drop-shadow-sm lazy" loading="lazy" onerror="spriteFallback(this)" />
+      <img src="{{ form.sprite_url | sprite_small }}" data-art="{{ form.sprite_url }}" alt="{{ species.name }}" class="sprite-sm w-20 h-20 object-contain drop-shadow-sm lazy" loading="lazy" onerror="spriteFallback(this)" />
       {% else %}
-      <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+      <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
         <span class="text-lg text-white/60 font-mono">{{ '%03d' % species.id }}</span>
       </div>
       {% endif %}
@@ -179,29 +178,41 @@
 
       <!-- Selo 100% IV — canto inferior direito -->
       <span class="perfect-badge absolute bottom-1 right-1.5 z-10 pointer-events-none px-1 rounded bg-emerald-500 text-white text-[9px] font-black shadow-sm {{ '' if has_perfect else 'hidden' }}" title="100% IV">100</span>
+
+      <!-- Badge shiny — canto inferior esquerdo -->
+      <span class="shiny-badge absolute bottom-1 left-1.5 z-10 pointer-events-none text-sm leading-none drop-shadow {{ '' if has_shiny else 'hidden' }}" title="Tem Brilhante!">⭐</span>
     </div>
 
     <!-- Info -->
-    <div class="px-2 pt-1.5 pb-2">
+    <div class="px-2 pt-2 pb-2">
       <div class="text-gray-400 font-mono text-[10px] leading-none">#{{ '%03d' % species.id }}</div>
       <a href="{{ url_for('pokedex.detail', species_id=species.id) }}"
-        class="block text-xs font-black text-gray-800 leading-tight truncate hover:text-blue-600 transition-colors">
+        class="block text-sm font-black text-gray-800 leading-tight truncate hover:text-blue-600 transition-colors mt-0.5"
+        title="{{ (species.name_pt or species.name) | poke_name }}">
         {{ (species.name_pt or species.name) | poke_name }}
       </a>
 
       <!-- Type badges -->
       {% if form %}
       <div class="flex flex-wrap gap-0.5 mt-1">
-        <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type1, 'bg-gray-100 text-gray-500') }}">
+        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold {{ type_badge.get(form.type1, 'bg-gray-100 text-gray-500') }}">
           {{ (form.type1 | tipo) or '?' }}
         </span>
         {% if form.type2 %}
-        <span class="text-[9px] px-1 py-0.5 rounded font-bold {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">
+        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold {{ type_badge.get(form.type2, 'bg-gray-100 text-gray-500') }}">
           {{ form.type2 | tipo }}
         </span>
         {% endif %}
       </div>
       {% endif %}
+
+      <!-- Status resumido (qty + shiny) quando capturado -->
+      <div class="status-row flex items-center gap-1 mt-1.5 flex-wrap {{ '' if owned else 'hidden' }}">
+        <span class="qty-pill text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">×{{ qty }}</span>
+        <span class="shiny-pill text-[10px] font-bold text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded {{ '' if has_shiny else 'hidden' }}"><span aria-hidden="true">⭐</span> Shiny</span>
+        <span class="perfect-pill text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded {{ '' if has_perfect else 'hidden' }}"><span aria-hidden="true">💯</span></span>
+        <span class="trade-pill text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded {{ '' if for_trade else 'hidden' }}"><span aria-hidden="true">🔄</span></span>
+      </div>
 
       <!-- Controls -->
       {% if form_id %}
@@ -223,17 +234,17 @@
           <button onclick="toggleTrade(this)"
             class="trade-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-blue-100 text-blue-700' if for_trade else 'bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-500' }}">
-            {{ '🔄 Para troca' if for_trade else 'Troca?' }}
+            {% if for_trade %}<span aria-hidden="true">🔄</span> Para troca{% else %}Troca?{% endif %}
           </button>
           <button onclick="toggleShiny(this)"
             class="shiny-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-yellow-100 text-yellow-700' if has_shiny else 'bg-gray-50 text-gray-400 hover:bg-yellow-50 hover:text-yellow-500' }}">
-            {{ '⭐ Tenho Brilhante!' if has_shiny else '⭐ Brilhante?' }}
+            {% if has_shiny %}<span aria-hidden="true">⭐</span> Tenho Brilhante!{% else %}<span aria-hidden="true">⭐</span> Brilhante?{% endif %}
           </button>
           <button onclick="togglePerfect(this)"
             class="perfect-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors mt-1
               {{ 'bg-emerald-100 text-emerald-700' if has_perfect else 'bg-gray-50 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600' }}">
-            {{ '💯 Tenho 100%!' if has_perfect else '💯 100%?' }}
+            {% if has_perfect %}<span aria-hidden="true">💯</span> Tenho 100%!{% else %}<span aria-hidden="true">💯</span> 100%?{% endif %}
           </button>
         </div>
       </div>
@@ -255,7 +266,8 @@
     {% if p %}
     <a href="?page={{ p }}&show={{ show }}&q={{ q }}&generation={{ generation or '' }}"
       class="px-3 py-1.5 rounded-lg text-sm border transition-colors
-        {{ 'bg-[#1B2A4A] text-white border-transparent' if p == pagination.page else 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}">
+        {{ 'bg-[#1B2A4A] text-white border-transparent' if p == pagination.page else 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50' }}"
+      {% if p == pagination.page %}aria-current="page"{% endif %}>
       {{ p }}
     </a>
     {% else %}
@@ -374,10 +386,14 @@ function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
   const tradeBtn = card.querySelector('.trade-btn');
   const shinyBtn = card.querySelector('.shiny-btn');
   const ownedBadge = card.querySelector('.owned-badge');
+  const shinyBadge = card.querySelector('.shiny-badge');
+  const statusRow = card.querySelector('.status-row');
+  const qtyPill = card.querySelector('.qty-pill');
+  const shinyPill = card.querySelector('.shiny-pill');
+  const perfectPill = card.querySelector('.perfect-pill');
+  const tradePill = card.querySelector('.trade-pill');
 
-  if (spriteArea) {
-    spriteArea.classList.toggle('opacity-40', !owned);
-  }
+  if (spriteArea) spriteArea.classList.toggle('opacity-40', !owned);
 
   if (capBtn) {
     if (owned) {
@@ -391,13 +407,10 @@ function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
     }
   }
 
-  if (ownedControls) {
-    ownedControls.classList.toggle('hidden', !owned);
-  }
-
-  if (qtyDisplay) {
-    qtyDisplay.textContent = qty;
-  }
+  if (ownedControls) ownedControls.classList.toggle('hidden', !owned);
+  if (statusRow) statusRow.classList.toggle('hidden', !owned);
+  if (qtyDisplay) qtyDisplay.textContent = qty;
+  if (qtyPill) qtyPill.textContent = '×' + qty;
 
   if (tradeBtn) {
     if (forTrade) {
@@ -415,6 +428,11 @@ function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
     ownedBadge.classList.toggle('hidden', !owned);
     ownedBadge.classList.toggle('flex', owned);
   }
+
+  if (shinyBadge) shinyBadge.classList.toggle('hidden', !hasShiny);
+  if (shinyPill) shinyPill.classList.toggle('hidden', !hasShiny);
+  if (perfectPill) perfectPill.classList.toggle('hidden', !hasPerfect);
+  if (tradePill) tradePill.classList.toggle('hidden', !forTrade);
 
   if (shinyBtn) {
     if (hasShiny) {

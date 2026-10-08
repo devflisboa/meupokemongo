@@ -31,8 +31,8 @@
 <div class="flex flex-wrap gap-2 mb-5">
   <input id="trade-search" type="search" placeholder="Filtrar por Pokémon ou treinador..."
     class="flex-1 min-w-48 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
-    oninput="filterTrades(this.value)" />
-  <button onclick="filterTrades(''); document.getElementById('trade-search').value=''"
+    oninput="debouncedFilter(() => filterTrades(this.value))" />
+  <button onclick="clearTimeout(_filterTimer); filterTrades(''); document.getElementById('trade-search').value=''"
     id="btn-clear-filter"
     class="hidden px-3 py-2 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
     ✕ Limpar
@@ -43,7 +43,7 @@
 {# ── Trocas de mão dupla (#24): os dois lados ganham ── #}
 {% if reciprocal %}
 <section class="mb-8">
-  <h2 class="font-black text-gray-900 mb-1">🤝 Trocas de mão dupla</h2>
+  <h2 class="font-black text-gray-900 mb-1"><span aria-hidden="true">🤝</span> Trocas de mão dupla</h2>
   <p class="text-xs text-gray-400 mb-3">Eles têm o que te falta e você tem o que falta para eles.</p>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     {% for r in reciprocal %}
@@ -201,7 +201,7 @@
 
 {% else %}
 <div class="bg-white rounded-2xl shadow-sm p-12 text-center border border-gray-100">
-  <div class="text-5xl mb-4">🔄</div>
+  <div class="text-5xl mb-4" aria-hidden="true">🔄</div>
   <h2 class="text-lg font-black text-gray-800 mb-2">Nenhuma oportunidade encontrada</h2>
   <p class="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
     Sua wishlist já contém tudo que falta na coleção. Clique em "Buscar matches" para encontrar treinadores com o que você precisa.
@@ -220,6 +220,12 @@
 {% endif %}
 
 <script>
+let _filterTimer = null;
+function debouncedFilter(fn) {
+  clearTimeout(_filterTimer);
+  _filterTimer = setTimeout(fn, 250);
+}
+
 function filterTrades(q) {
   q = q.toLowerCase().trim();
   const clearBtn = document.getElementById('btn-clear-filter');

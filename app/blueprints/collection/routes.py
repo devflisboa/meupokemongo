@@ -1,10 +1,11 @@
 from flask import render_template, request, jsonify, abort
 from flask_login import login_required, current_user
+from sqlalchemy import case
 from . import bp
 from ...extensions import db
 from ...models.collection import UserCollection
 from ...models.individual import UserPokemon
-from ...models.pokemon import Form, Species
+from ...models.pokemon import Form, Species, EvolutionChain
 from ...services.analytics_service import log_event
 
 REGIONS = [
@@ -79,7 +80,19 @@ def index():
     elif show == "perfect":
         query = query.filter(Species.id.in_(perfect_species or {-1}))
 
-    pagination = query.order_by(Species.id).paginate(page=page, per_page=24, error_out=False)
+    # Espécies com cadeia de evolução primeiro; sem evolução nenhuma por último
+    chain_species_sq = (
+        db.session.query(Form.species_id)
+        .filter(
+            Form.id.in_(
+                db.session.query(EvolutionChain.from_form_id)
+                .union(db.session.query(EvolutionChain.to_form_id))
+            )
+        )
+        .subquery()
+    )
+    has_evol = case((Species.id.in_(chain_species_sq), 0), else_=1)
+    pagination = query.order_by(has_evol, Species.id).paginate(page=page, per_page=24, error_out=False)
 
     page_species_ids = [s.id for s in pagination.items]
 

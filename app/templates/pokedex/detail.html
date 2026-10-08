@@ -62,7 +62,8 @@
   <div class="bg-gradient-to-b {{ bg }} rounded-2xl flex items-center justify-center w-full md:w-56 h-56 shadow-md flex-shrink-0">
     {% if default_form and default_form.sprite_url %}
     <img src="{{ default_form.sprite_url }}" alt="{{ display_name }}"
-         class="w-44 h-44 object-contain drop-shadow-lg" />
+         class="w-44 h-44 object-contain drop-shadow-lg"
+         width="176" height="176" loading="lazy" />
     {% else %}
     <span class="text-8xl select-none">❓</span>
     {% endif %}
@@ -83,10 +84,10 @@
 
     <div class="flex gap-2 mb-4 flex-wrap">
       {% if species.is_legendary %}
-      <span class="bg-yellow-100 text-yellow-700 text-sm px-3 py-1 rounded-full font-bold">★ Lendário</span>
+      <span class="bg-yellow-100 text-yellow-700 text-sm px-3 py-1 rounded-full font-bold"><span aria-hidden="true">★</span> Lendário</span>
       {% endif %}
       {% if species.is_mythical %}
-      <span class="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full font-bold">✦ Mítico</span>
+      <span class="bg-purple-100 text-purple-700 text-sm px-3 py-1 rounded-full font-bold"><span aria-hidden="true">✦</span> Mítico</span>
       {% endif %}
     </div>
 

@@ -6,7 +6,7 @@
 > **Princípio de UX:** mínimo input. Se o usuário precisa cadastrar muita coisa, ele não usa —
 > o padrão é automático (ex.: a wishlist já é tudo que falta).
 
-*Última revisão: 02/10/2026*
+*Última revisão: 07/10/2026*
 
 ---
 
@@ -238,7 +238,27 @@ Endpoint: `GET /type/{name}` → `damage_relations`
 | #16 | **Rastreamento por gênero** (Nidoran ♂/♀, Pikachu coração) — toggle por espécie, ~4 h | Nicho ("living dex perfeito"); não ajuda a trocar |
 | #19 | **Valor da coleção** em poeira estelar/doces (Collectr) | Falta dado de custo de PL por espécie; `candy_cost` já existe |
 | #21 | **Numeração dupla** "#025 Pikachu / #034 da sua coleção Kanto", ~3 h | Baixo impacto |
-| #17 | **Scan em lote** (Mint): câmera + Tesseract.js, 9 cards por foto | Caro (1–2 semanas); import PokeGenie + cadastro rápido de exemplar cobrem o básico |
+| #17 | **Catalogação em lote** — import PokeGenie (já existe), vídeo+OCR ou ADB via USB | Discutido em 07/10/2026 (ver abaixo); PokeGenie é o caminho recomendado |
+
+### #17 — Catalogação em lote (revisão 07/10/2026)
+
+Contexto: o treinador tem uma coleção real rica (shinies, 100% IVs) que ainda não está no app — o cadastro manual um a um é inviável.
+
+**Três abordagens avaliadas:**
+
+| Abordagem | Dados capturados | Complexidade | Recomendação |
+|---|---|---|---|
+| **PokeGenie export CSV** (import já existe) | owned + shiny + IV% + CP + level | Baixa (instalar app + exportar) | ✅ Caminho principal |
+| **Vídeo do Pokédex + OCR** (Python) | Só owned (colorido vs cinza) | Média (~2 dias) | Fallback sem app extra |
+| **ADB via cabo USB** | Só owned (screenshot automático) | Alta (ADB, possível bloqueio GO) | Apenas se PokeGenie inviável |
+
+**Decisão:** priorizar o import PokeGenie — é o único que captura shiny + IV% + CP sem visão computacional complexa.
+O modelo `UserCollection` já tem `has_shiny`, `has_perfect`. O import existente precisa ser validado com CSV real de coleção grande antes de partir para OCR.
+
+**Ação imediata:** o treinador instala PokeGenie, deixa escanear a mochila, exporta e usa o import existente.
+Se quiser o vídeo/ADB, criar script dedicado (`scripts/bulk_catalog_ocr.py`) — estimativa 1–2 dias.
+
+---
 
 ### #22 — Discord + comunidade de trocas (em avaliação)
 
@@ -311,3 +331,6 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 03/10/2026 | Página **Treinadores** (`/treinadores`, card do painel e menu) · revisão **PT-BR** (tipos via `app/data/i18n.py`, Brilhante, PC/PS, Lista de Desejos, Vitrine de Trocas, Início) | `f583610` |
 | 03/10/2026 | Miniaturas HD nos cards (WebP 160 px gerado da arte oficial, `/img/t/<id>.webp`, cache em disco + 1 ano no navegador) · GIF com suavização e ampliação limitada · menu: Perfil sai (foto), Catalogar entra · card do treinador com a cor do tipo do favorito + aviso para escolher favorito | `a97c7bb` `298100c` |
 | 03/10/2026 | **Início redesenhado**: logado = Painel (cor do favorito, anel de progresso, Brilhante/100%, barras por região) → Central de Trocas (mão dupla, "o que fazer agora", treinadores perto) → Feed (quem tem o que você procura, treinadores novos, eventos); sem login = página de apresentação com vitrine de treinadores · decimais com vírgula | ver `git log` |
+| 07/10/2026 | Pesquisa de mercado: PokeAPI 60+ endpoints testados ao vivo · 10 projetos GitHub analisados (nenhum relevante para incorporar) · `docs/PESQUISA-GITHUB.md` + `#26` no backlog | `1de54e9` |
+| 07/10/2026 | **Wishlist — seção 🧬 Evoluções disponíveis:** linhas visuais da cadeia completa com custo de doces por etapa (não o estoque do treinador), ramificações (Eevee → 8 ramos), formas possuídas marcadas (✓ você tem); DFS por raiz ordenada por Pokédex | `1de54e9` |
+| 07/10/2026 | **Wishlist — condições GO nas evoluções:** `app/data/evolution_conditions.py` com 75+ entradas (Pedra de Sinnoh/Unova, Iscas, km de parceiro, troca grátis, batalhas, Lua Cheia…); badge azul entre as etapas; cards clicáveis abrindo modal de detalhes | `1f643df` |

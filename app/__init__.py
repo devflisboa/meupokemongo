@@ -23,7 +23,7 @@ def create_app(env: str | None = None) -> Flask:
     csrf.init_app(app)
     limiter.init_app(app)
 
-    from .models import user, pokemon, collection, wishlist, friendship, trade, event, individual  # noqa: F401
+    from .models import user, pokemon, collection, wishlist, friendship, trade, event, individual, anime  # noqa: F401
 
     from .blueprints.main import bp as main_bp
     from .blueprints.auth import bp as auth_bp
@@ -34,8 +34,10 @@ def create_app(env: str | None = None) -> Flask:
     from .blueprints.import_ import bp as import_bp
     from .blueprints.admin import bp as admin_bp
     from .blueprints.wishlist import bp as wishlist_bp
+    from .blueprints.anime import bp as anime_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(anime_bp, url_prefix="/anime")
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(pokedex_bp, url_prefix="/pokedex")
     app.register_blueprint(collection_bp, url_prefix="/collection")

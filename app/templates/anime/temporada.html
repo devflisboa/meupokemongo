@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ temporada.titulo }} — Pokémon{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#0F1729] text-white py-8 px-4">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Voltar -->
+    <a href="{{ url_for('anime.index') }}"
+       class="inline-flex items-center gap-1 text-gray-400 hover:text-white text-sm mb-6 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Todas as temporadas
+    </a>
+
+    <!-- Header da temporada -->
+    <div class="flex items-start gap-4 mb-8">
+      {% if temporada.capa_url %}
+      <img src="{{ temporada.capa_url }}" alt="{{ temporada.titulo }}"
+           class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
+      {% else %}
+      <div class="w-20 h-20 rounded-lg bg-[#1B2A4A] flex items-center justify-center text-3xl flex-shrink-0">🎮</div>
+      {% endif %}
+      <div>
+        <span class="text-xs text-[#CC0000] font-bold uppercase tracking-wide">{{ temporada.codigo }}</span>
+        <h1 class="text-xl font-bold mt-0.5">{{ temporada.titulo }}</h1>
+        <p class="text-gray-400 text-sm mt-1">{{ episodios|length }} episódios</p>
+        {% if temporada.descricao %}
+        <p class="text-gray-300 text-sm mt-2">{{ temporada.descricao }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Lista de episódios -->
+    {% if episodios %}
+    <div class="space-y-2">
+      {% for ep in episodios %}
+      <a href="{{ url_for('anime.player', ep_id=ep.id) }}"
+         class="flex items-center gap-4 bg-[#1B2A4A] hover:bg-[#243660] rounded-xl p-3 transition-colors group">
+
+        <!-- Thumbnail ou número -->
+        <div class="w-24 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[#0F1729] flex items-center justify-center">
+          {% if ep.thumbnail_url %}
+          <img src="{{ ep.thumbnail_url }}" alt="" class="w-full h-full object-cover">
+          {% else %}
+          <div class="text-center">
+            <div class="text-[#CC0000] font-black text-lg leading-none">{{ ep.numero_fmt }}</div>
+            <div class="text-gray-500 text-[10px] mt-0.5">EP</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 font-mono">EP {{ ep.numero_fmt }}</span>
+            {% if ep.duracao_fmt %}
+            <span class="text-xs text-gray-600">{{ ep.duracao_fmt }}</span>
+            {% endif %}
+          </div>
+          <p class="font-medium text-sm leading-tight mt-0.5 truncate group-hover:text-white transition-colors">
+            {{ ep.titulo }}
+          </p>
+        </div>
+
+        <!-- Seta -->
+        <svg class="w-5 h-5 text-gray-600 group-hover:text-[#CC0000] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-16">
+      <div class="text-5xl mb-3">📭</div>
+      <p class="text-gray-400">Nenhum episódio cadastrado ainda.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

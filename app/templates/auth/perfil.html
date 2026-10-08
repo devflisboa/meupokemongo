@@ -28,8 +28,9 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
         </div>
+        <div id="avatar-uploading" class="hidden absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold">Enviando...</div>
         <input type="file" name="avatar" class="hidden"
-          accept="image/jpeg,image/png,image/webp" onchange="this.form.submit()" />
+          accept="image/jpeg,image/png,image/webp" onchange="uploadAvatar(this)" />
       </label>
     </form>
     <div>
@@ -210,4 +211,14 @@
 
   </div>
 </div>
+
+<script>
+function uploadAvatar(input) {
+  var label = input.closest('label') || input.parentElement;
+  var overlay = label.querySelector('#avatar-uploading');
+  if (overlay) overlay.classList.remove('hidden');
+  input.disabled = true;
+  input.closest('form').submit();
+}
+</script>
 {% endblock %}

@@ -52,7 +52,8 @@
   {% if all_users %}
   <div class="bg-[#1B2A4A] text-white rounded-xl p-3 mb-6 flex items-center gap-3 flex-wrap" id="admin-bar">
     <span class="text-xs font-bold text-yellow-300">🛡️ Admin — ver como</span>
-    <select onchange="location.href='/trade/' + this.value"
+    <select onmousedown="this.dataset.prev=this.selectedIndex"
+      onchange="if(confirm('Visualizar binder de ' + this.options[this.selectedIndex].text + '?')) location.href='/trade/' + this.value; else this.selectedIndex=this.dataset.prev;"
       class="ml-auto bg-[#243660] text-white text-xs rounded-lg px-2 py-1.5 border border-[#2d4270] focus:outline-none cursor-pointer">
       {% for u in all_users %}
       <option value="{{ u.username }}" {% if u.id == owner.id %}selected{% endif %}>{{ u.username }}{% if u.is_admin %} ★{% endif %}{% if not u.show_in_trades %} (oculto){% endif %}</option>

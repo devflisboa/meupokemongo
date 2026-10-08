@@ -46,11 +46,11 @@
 {# ── Toggle modo ── #}
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
   <div class="flex gap-3">
-    <button id="btn-modo-falta" onclick="setModo('falta')"
+    <button id="btn-modo-falta" onclick="setModo('falta')" aria-pressed="true"
       class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors bg-red-500 text-white">
       <span>✗</span> Marcar o que FALTA
     </button>
-    <button id="btn-modo-tenho" onclick="setModo('tenho')"
+    <button id="btn-modo-tenho" onclick="setModo('tenho')" aria-pressed="false"
       class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors bg-gray-100 text-gray-500 hover:bg-gray-200">
       <span>✓</span> Marcar o que TENHO
     </button>
@@ -79,7 +79,7 @@
 
 {# ── Grid de cards ── #}
 <div id="poke-grid"
-  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 mb-32">
+  class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 mb-32">
   {% for form, species in rows %}
   {% set grad = type_grad.get(form.type1 or '', "from-gray-300 to-gray-400") %}
   {% set pname = (species.name_pt or species.name) | poke_name %}
@@ -115,10 +115,11 @@
   </button>
   {% endfor %}
 </div>
+<p id="cat-empty" class="hidden text-center text-sm text-gray-400 py-8 col-span-full">Nenhum Pokémon encontrado.</p>
 
 {# ── Barra flutuante de confirmação ── #}
 <div id="confirm-bar"
-  class="fixed bottom-16 sm:bottom-4 left-4 right-4 z-50 bg-[#1B2A4A] text-white rounded-2xl shadow-xl px-4 py-3 hidden">
+  class="fixed bottom-16 sm:bottom-4 left-4 right-4 z-[60] bg-[#1B2A4A] text-white rounded-2xl shadow-xl px-4 py-3 hidden">
   <div class="flex items-center justify-between gap-3">
     <p id="confirm-text" class="text-sm font-semibold leading-tight"></p>
     <div class="flex gap-2 flex-shrink-0">
@@ -146,12 +147,16 @@ const selected = new Set();
 function setModo(m) {
   modo = m;
   const isFalta = m === 'falta';
-  document.getElementById('btn-modo-falta').className =
+  const btnFalta = document.getElementById('btn-modo-falta');
+  const btnTenho = document.getElementById('btn-modo-tenho');
+  btnFalta.className =
     'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ' +
     (isFalta ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200');
-  document.getElementById('btn-modo-tenho').className =
+  btnFalta.setAttribute('aria-pressed', isFalta ? 'true' : 'false');
+  btnTenho.className =
     'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors ' +
     (!isFalta ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200');
+  btnTenho.setAttribute('aria-pressed', !isFalta ? 'true' : 'false');
   document.getElementById('modo-desc').innerHTML = isFalta
     ? 'Marcando o que <strong>FALTA</strong>. O resto será salvo como TENHO.'
     : 'Marcando o que <strong>TENHO</strong>. Apenas esses serão salvos.';
@@ -229,10 +234,14 @@ function selectAll() {
 
 function filterCards(q) {
   q = q.toLowerCase();
+  let visible = 0;
   document.querySelectorAll('.poke-card').forEach(card => {
     const match = card.dataset.name.includes(q);
     card.style.display = match ? '' : 'none';
+    if (match) visible++;
   });
+  const empty = document.getElementById('cat-empty');
+  if (empty) empty.classList.toggle('hidden', visible !== 0);
 }
 
 async function confirmar() {

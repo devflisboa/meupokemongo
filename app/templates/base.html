@@ -21,6 +21,12 @@
     [data-poke-id] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     [data-poke-id] img { -webkit-user-drag: none; }
     [data-poke-id].poke-pressing { transform: scale(0.94); transition: transform .45s ease-out; filter: brightness(.95); }
+    /* Touch targets mínimos WCAG 2.5.5 (44×44 px) em mobile */
+    @media (pointer: coarse) {
+      button, [role="button"], a[href] { min-height: 44px; min-width: 44px; }
+      /* Exceções: badges, pills, links de texto corrido */
+      .poke-card a, nav a, .text-link { min-height: unset; min-width: unset; }
+    }
   </style>
   <script>
     /* Imagens: GIF só onde é destaque; "reduzir movimento" do sistema = imagem parada (data-static) */
@@ -28,7 +34,7 @@
     /* GIF pequeno (45–115 px) esticado demais borra: limita a ~2,2× o tamanho original */
     function fitAnim(img) {
       if (!/\.gif($|\?)/.test(img.src) || !img.naturalWidth) { img.style.width = img.style.height = ''; return; }
-      const max = 144, k = Math.min(max / img.naturalWidth, max / img.naturalHeight, 2.2);
+      const max = 144, k = Math.min(max / img.naturalWidth, max / img.naturalHeight, 2.8);
       img.style.width = Math.round(img.naturalWidth * k) + 'px';
       img.style.height = Math.round(img.naturalHeight * k) + 'px';
     }
@@ -80,7 +86,7 @@
 
         <!-- Logo: Pokéball SVG + nome (encolhe no mobile em vez de empurrar os botões) -->
         <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 font-extrabold text-base sm:text-lg tracking-tight min-w-0">
-          <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 flex-shrink-0">
+          <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 flex-shrink-0" role="img" aria-label="MeuPokémonGO">
             <!-- Base branca -->
             <circle cx="20" cy="20" r="19" fill="#E5E5E5"/>
             <!-- Metade vermelha (topo) -->
@@ -143,6 +149,12 @@
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             Treinadores
           </a>
+          <a href="{{ url_for('anime.index') }}"
+             class="px-4 py-1.5 rounded-full transition-colors
+               {% if request.blueprint == 'anime' %}bg-white text-[#1B2A4A] font-bold
+               {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
+            <span aria-hidden="true">📺</span> Assistir
+          </a>
           {# deslogado: "Entrar" fica só à direita, junto do "Cadastrar" #}
         </div>
 
@@ -150,13 +162,15 @@
         <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           {% if current_user.is_authenticated %}
           <!-- Notificações (só logado — deslogado não há o que notificar) -->
-          <a href="{{ url_for('trades.index') }}" title="Oportunidades de troca" class="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <a href="{{ url_for('trades.index') }}" title="Oportunidades de troca"
+            {% if current_user.is_authenticated and notif_count > 0 %}aria-label="Oportunidades de troca — {{ notif_count }} nova{{ 's' if notif_count > 1 }}"{% else %}aria-label="Oportunidades de troca"{% endif %}
+            class="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
             {% if current_user.is_authenticated and notif_count > 0 %}
-            <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-black">{{ notif_count if notif_count < 10 else '9+' }}</span>
+            <span class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-black" aria-hidden="true">{{ notif_count if notif_count < 10 else '9+' }}</span>
             {% endif %}
           </a>
           {% endif %}
@@ -210,7 +224,7 @@
           </svg>
           <input type="text" name="q"
             placeholder="Buscar Pokémon, #001, tipo, região..."
-            class="w-full pl-9 pr-4 py-2 bg-[#243660] text-gray-200 placeholder-gray-500 rounded-lg text-sm border border-[#2d4270] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            class="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-[#243660] text-gray-200 placeholder-gray-500 rounded-lg text-sm border border-[#2d4270] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
         </form>
       </div>
     </div>
@@ -221,9 +235,9 @@
   <!-- FLASH MESSAGES -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div class="max-w-7xl mx-auto w-full px-4 mt-3 space-y-2">
+    <div class="max-w-7xl mx-auto w-full px-4 mt-3 space-y-2" role="status" aria-live="polite" aria-atomic="false">
       {% for category, message in messages %}
-      <div class="px-4 py-2 rounded-lg text-sm font-medium
+      <div role="alert" class="px-4 py-2 rounded-lg text-sm font-medium
         {% if category == 'success' %}bg-green-100 text-green-800 border border-green-200
         {% elif category == 'danger' %}bg-red-100 text-red-800 border border-red-200
         {% elif category == 'warning' %}bg-yellow-100 text-yellow-800 border border-yellow-200
@@ -284,8 +298,8 @@
   <div id="poke-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="poke-modal-title">
     <div id="poke-modal-backdrop" class="absolute inset-0 bg-black/50" onclick="closePokeModal()"></div>
     <div id="poke-modal-sheet"
-      class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto transition-transform duration-300 ease-out"
-      style="transform:translateY(100%)">
+      class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[92vh] overflow-y-auto transition-transform duration-300 ease-out"
+      style="transform:translateY(100%);padding-bottom:env(safe-area-inset-bottom,0px)">
       <div id="poke-modal-content"></div>
     </div>
   </div>
@@ -502,7 +516,7 @@
       <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-1"></div>
       <div class="flex justify-between items-center px-4 pt-1 pb-1">
         <span class="text-xs text-gray-400 font-mono">#${num} · Geração ${p.generation}</span>
-        <button onclick="closePokeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none">×</button>
+        <button onclick="closePokeModal()" aria-label="Fechar" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold text-xl leading-none" aria-hidden="false">×</button>
       </div>
       <div class="bg-gradient-to-b ${grad} mx-4 rounded-2xl h-48 flex items-center justify-center relative">
         <button id="poke-nav-prev" onclick="navigatePokeModal(-1)"
@@ -961,6 +975,7 @@
   {% if current_user.is_authenticated %}
   <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#1B2A4A] border-t border-[#152238] grid grid-cols-5 sm:hidden">
     <a href="{{ url_for('main.index') }}"
+      {% if request.endpoint == 'main.index' %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
         {% if request.endpoint == 'main.index' %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -971,6 +986,7 @@
     </a>
     {# Início · Coleção · Desejos · Trocas · Treinadores — Pokédex/Catalogar dentro da Coleção #}
     <a href="{{ url_for('collection.index') }}" id="bnav-colecao"
+      {% if request.blueprint in ('collection', 'pokedex') %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
         {% if request.blueprint in ('collection', 'pokedex') %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -980,6 +996,7 @@
       <span>Coleção</span>
     </a>
     <a href="{{ url_for('wishlist.index') }}" id="bnav-desejos"
+      {% if request.blueprint == 'wishlist' %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
         {% if request.blueprint == 'wishlist' %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -989,6 +1006,7 @@
       <span>Desejos</span>
     </a>
     <a href="{{ url_for('trades.index') }}" id="bnav-trocas"
+      {% if request.blueprint == 'trades' %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
         {% if request.blueprint == 'trades' %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -998,6 +1016,7 @@
       <span>Trocas</span>
     </a>
     <a href="{{ url_for('main.treinadores') }}" id="bnav-treinadores"
+      {% if request.endpoint in ('main.treinadores', 'main.trade_binder') %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
         {% if request.endpoint in ('main.treinadores', 'main.trade_binder') %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
