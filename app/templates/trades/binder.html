@@ -125,8 +125,8 @@
         {% if not owner.show_in_trades %}
         <span class="text-xs bg-amber-400 text-amber-950 font-bold px-3 py-2 rounded-lg">Você está oculto nas trocas — só você vê esta página</span>
         {% endif %}
-        <a href="https://wa.me/?text={{ ('Meus Pokémon para troca no Pokémon GO: ' ~ share_url) | urlencode }}" target="_blank" rel="noopener"
-          class="text-xs font-bold bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg">💬 Divulgar no WhatsApp</a>
+        <button type="button" onclick="ownerShareWA()"
+          class="text-xs font-bold bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg">💬 Divulgar no WhatsApp</button>
       {% elif current_user.is_authenticated %}
         {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi sua Vitrine de Trocas no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
              ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
@@ -216,7 +216,7 @@
 {# ── Bar fixo: checklist do visitante ── #}
 {% if not is_self %}
 <div id="guest-bar" class="hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl">
-  <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+  <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap" style="padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px))">
     <div class="flex-1 min-w-0 text-xs font-bold">
       <span class="text-green-700">Eu tenho: <span id="bar-have-n" class="text-base font-black">0</span></span>
       <span class="mx-2 text-gray-300">·</span>
@@ -238,6 +238,17 @@
 {% endif %}
 
 <script>
+// ── Botão "Divulgar no WhatsApp" (dono) ──────────────────────────────────────
+function ownerShareWA() {
+  var url  = {{ share_url | tojson }};
+  var text = 'Meus Pokémon para troca no Pokémon GO: ' + url;
+  if (navigator.share) {
+    navigator.share({ text: text, url: url }).catch(function () {});
+  } else {
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  }
+}
+
 const WANTED = {{ wanted | tojson }};
 const Wanted = (function () {
   const grid = document.getElementById('wanted-grid');
@@ -339,16 +350,18 @@ const Wanted = (function () {
     const msg  = buildMsg();
     const text = encodeURIComponent(msg);
     if (OWNER_WA) {
-      // número conhecido: link direto (location.href é confiável no iOS/Android)
-      window.location.href = `https://wa.me/${OWNER_WA}?text=${text}`;
+      // Deep link direto: bypassa o redirect wa.me, abre o WhatsApp sem sair da página
+      window.location.href = 'whatsapp://send?phone=' + OWNER_WA + '&text=' + text;
+      // Fallback: se WhatsApp não abriu em 2 s (documento ainda tem foco), vai pela URL web
+      setTimeout(function () {
+        if (document.hasFocus()) {
+          window.open('https://wa.me/' + OWNER_WA + '?text=' + text, '_blank');
+        }
+      }, 2000);
     } else if (navigator.share) {
-      // sem número: usa o share nativo do celular (mais confiável que wa.me sem número)
-      navigator.share({ text: msg }).catch(() => {
-        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-      });
+      navigator.share({ text: msg }).catch(function () {});
     } else {
-      // desktop sem número: abre web.whatsapp.com para escolher contato
-      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+      window.open('https://api.whatsapp.com/send?text=' + text, '_blank');
     }
   };
 
