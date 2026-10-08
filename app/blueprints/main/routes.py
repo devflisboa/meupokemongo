@@ -1,5 +1,5 @@
 from datetime import date
-from flask import render_template, redirect, abort, request, jsonify, current_app
+from flask import render_template, redirect, url_for, abort, request, jsonify, current_app
 from ...data.sprites import sprite_small
 from flask_login import current_user
 from . import bp
