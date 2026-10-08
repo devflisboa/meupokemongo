@@ -23,6 +23,7 @@
 {% set uc = collection_map.get(f.id) %}
 <div class="poke-card relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow"
   data-poke-id="{{ f.species_id }}"
+  data-poke-name="{{ pname }}"
   data-name="{{ pname.lower() }} {{ '%03d' % f.species_id }}">
   <div class="bg-gray-50 p-1">
     {% if anim %}
@@ -46,7 +47,7 @@
 {% endmacro %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-4xl mx-auto pb-28">
 
   {# ── Admin: trocar de treinador (somente leitura) ── #}
   {% if all_users %}
@@ -119,6 +120,16 @@
     </div>
   </div>
 
+  {# ── Banner checklist para visitante (não é o dono) ── #}
+  {% if not is_self %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 text-sm text-amber-900" id="guest-banner">
+    <p class="font-black mb-1">Como usar esta página</p>
+    <p>Toque nos Pokémon da seção <strong class="text-green-700">Procuro</strong> que você tem → ficam verdes.<br>
+       Toque nos da seção <strong class="text-blue-700">Tenho para troca</strong> que você quer → ficam azuis.<br>
+       Depois clique em <strong>Enviar pelo WhatsApp</strong> no rodapé.</p>
+  </div>
+  {% endif %}
+
   {# ── Visitante logado: troca de mão dupla possível ── #}
   {% if i_can_offer %}
   <section class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-5">
@@ -182,6 +193,30 @@
   </section>
 </div>
 
+{# ── Bar fixo: checklist do visitante ── #}
+{% if not is_self %}
+<div id="guest-bar" class="hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl">
+  <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+    <div class="flex-1 min-w-0 text-xs font-bold">
+      <span class="text-green-700">Eu tenho: <span id="bar-have-n" class="text-base font-black">0</span></span>
+      <span class="mx-2 text-gray-300">·</span>
+      <span class="text-blue-700">Eu procuro: <span id="bar-want-n" class="text-base font-black">0</span></span>
+    </div>
+    <button onclick="guestSendWhatsApp()"
+      class="flex items-center gap-2 bg-green-500 hover:bg-green-600 active:scale-95 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all">
+      <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
+      </svg>
+      Enviar pelo WhatsApp
+    </button>
+    <button onclick="guestCopyMsg()" id="btn-copy-msg"
+      class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 text-sm font-bold px-4 py-2 rounded-xl transition-all">
+      Copiar mensagem
+    </button>
+  </div>
+</div>
+{% endif %}
+
 <script>
 const WANTED = {{ wanted | tojson }};
 const Wanted = (function () {
@@ -198,7 +233,7 @@ const Wanted = (function () {
       : w.k === 'evoluir' ? `<div class="text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate">🧬 ${esc(w.e || 'Evoluir')}</div>`
       : '<div class="text-[9px] font-bold text-red-600 bg-red-50 rounded px-1">🔥 Alta</div>';
     return `<div class="poke-card relative bg-white rounded-xl border ${w.v ? 'border-green-400 ring-1 ring-green-300' : w.p ? 'border-amber-400' : 'border-gray-100'}
-        shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow" data-poke-id="${w.id}">
+        shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow" data-poke-id="${w.id}" data-poke-name="${esc(w.n)}">`
       ${w.p ? '<span class="absolute top-1 right-1 text-amber-500 text-xs" title="Prioridade">★</span>' : ''}
       <div class="bg-gray-50 p-1"><img src="${esc(w.s)}" data-art="${esc(w.a || '')}" alt="${esc(w.n)}" class="sprite-sm w-14 h-14 mx-auto object-contain" loading="lazy"
         onerror="spriteFallback(this)" /></div>
@@ -251,6 +286,82 @@ const Wanted = (function () {
     },
     setQuery(q) { query = q; apply(); },
   };
+})();
+
+// ── Checklist do visitante (sem login) ──────────────────────────────────────
+(function () {
+  const IS_SELF = {{ 'true' if is_self else 'false' }};
+  if (IS_SELF) return;
+
+  const OWNER_NAME = {{ owner.username | tojson }};
+  const OWNER_WA   = {{ (owner.whatsapp if owner.allow_whatsapp and owner.whatsapp else '') | tojson }};
+
+  const haveNames = new Map(); // id → nome  (eu tenho — da seção Procuro)
+  const wantNames = new Map(); // id → nome  (eu procuro — da seção Tenho para troca)
+
+  function updateBar() {
+    const bar = document.getElementById('guest-bar');
+    if (!bar) return;
+    const total = haveNames.size + wantNames.size;
+    bar.classList.toggle('hidden', total === 0);
+    document.getElementById('bar-have-n').textContent = haveNames.size;
+    document.getElementById('bar-want-n').textContent = wantNames.size;
+  }
+
+  function buildMsg() {
+    let msg = `Oi ${OWNER_NAME}!`;
+    if (haveNames.size) msg += ` Eu tenho: ${[...haveNames.values()].join(', ')}.`;
+    if (wantNames.size) msg += ` Procuro: ${[...wantNames.values()].join(', ')}.`;
+    return msg;
+  }
+
+  window.guestSendWhatsApp = function () {
+    const text = encodeURIComponent(buildMsg());
+    const url = OWNER_WA ? `https://wa.me/${OWNER_WA}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(url, '_blank');
+  };
+
+  window.guestCopyMsg = function () {
+    navigator.clipboard.writeText(buildMsg()).then(() => {
+      const btn = document.getElementById('btn-copy-msg');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  };
+
+  function toggleCard(card, map, bgColor, ringColor) {
+    const id   = parseInt(card.dataset.pokeId);
+    const name = card.dataset.pokeName;
+    if (!id || !name) return;
+    if (map.has(id)) {
+      map.delete(id);
+      card.style.backgroundColor = '';
+      card.classList.remove('ring-2', ringColor);
+    } else {
+      map.set(id, name);
+      card.style.backgroundColor = bgColor;
+      card.classList.add('ring-2', ringColor);
+    }
+    updateBar();
+  }
+
+  // Seção "Procuro" → amigo marca verde = eu tenho
+  document.getElementById('wanted-grid').addEventListener('click', function (e) {
+    e.stopPropagation();
+    const card = e.target.closest('.poke-card');
+    if (card) toggleCard(card, haveNames, '#f0fdf4', 'ring-green-500');
+  });
+
+  // Seção "Tenho para troca" → amigo marca azul = eu procuro
+  const tradeGrid = document.getElementById('binder-trade');
+  if (tradeGrid) {
+    tradeGrid.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const card = e.target.closest('.poke-card');
+      if (card) toggleCard(card, wantNames, '#eff6ff', 'ring-blue-500');
+    });
+  }
 })();
 </script>
 {% endblock %}
