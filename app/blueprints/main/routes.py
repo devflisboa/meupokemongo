@@ -92,17 +92,11 @@ def index():
     events_page_url = f"https://pokemongo.com/pt-BR/events/{_MONTH_EN[today.month]}-{today.year}"
 
     if not current_user.is_authenticated:
-        total_offers = db.session.query(UserCollection).filter(
-            UserCollection.for_trade.is_(True), UserCollection.owned.is_(True), UserCollection.quantity > 0
-        ).count()
-        return render_template(
-            "main/landing.html",
-            showcase=hs.showcase_trainers(),
-            total_trainers=total_trainers,
-            total_offers=total_offers,
-            game_events=GAME_EVENTS,
-            events_page_url=events_page_url,
-        )
+        # Tela inicial = binder do admin principal (Felipe é o ponto central do app)
+        admin = db.session.query(User).filter_by(is_admin=True).order_by(User.id).first()
+        if admin:
+            return redirect(url_for("main.trade_binder", username=admin.username))
+        return redirect(url_for("auth.registro"))
 
     from ..wishlist.routes import build_wishlist
     from ...services.matching_service import get_reciprocal_trades, run_matching_for_user

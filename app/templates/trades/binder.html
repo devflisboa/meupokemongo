@@ -47,6 +47,25 @@
 {% endmacro %}
 
 {% block content %}
+
+{# ── CTA topo: convite para criar conta (visitante anônimo) ── #}
+{% if not current_user.is_authenticated %}
+<div class="bg-[#1B2A4A] text-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+  <div class="flex-1 min-w-0">
+    <p class="text-sm font-black leading-tight">Você joga Pokémon GO?</p>
+    <p class="text-xs text-white/60 mt-0.5">Cadastre-se e veja se você e {{ owner.username }} podem trocar Pokémon.</p>
+  </div>
+  <a href="{{ url_for('auth.registro') }}"
+    class="flex-shrink-0 bg-white text-[#1B2A4A] text-xs font-black px-4 py-2 rounded-xl hover:bg-gray-100 transition-colors">
+    Criar conta
+  </a>
+  <a href="{{ url_for('auth.login') }}"
+    class="flex-shrink-0 text-white/60 text-xs font-bold hover:text-white transition-colors">
+    Entrar
+  </a>
+</div>
+{% endif %}
+
 <div class="max-w-4xl mx-auto pb-28">
 
   {# ── Admin: trocar de treinador (somente leitura) ── #}
@@ -112,7 +131,8 @@
         {{ contact_buttons(owner, 'Oi ' ~ owner.username ~ '! Vi sua Vitrine de Trocas no MeuPokémonGO (' ~ share_url ~ ') e quero trocar.'
              ~ (' Meu código de amigo: ' ~ current_user.trainer_code if current_user.trainer_code else '')) }}
       {% else %}
-        <a href="{{ url_for('auth.registro') }}" class="text-xs font-bold bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">Criar conta para trocar</a>
+        <a href="{{ url_for('auth.registro') }}" class="text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-2 rounded-lg">Criar conta</a>
+        <a href="{{ url_for('auth.login') }}" class="text-xs font-bold text-white/60 hover:text-white px-3 py-2 rounded-lg">Entrar</a>
       {% endif %}
       <button type="button" id="btn-copy-binder"
         onclick="navigator.clipboard.writeText('{{ share_url }}').then(() => { this.textContent = '✓ Link copiado'; setTimeout(() => this.textContent = '🔗 Copiar link', 1500); })"
