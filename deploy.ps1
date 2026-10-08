@@ -53,7 +53,7 @@ docker exec `$W flask db upgrade 2>&1 | grep -E 'Running upgrade|Error|error' ||
 echo "   alembic: `$(docker exec `$W flask db current 2>/dev/null | grep -oE '^[0-9a-f]{12}.*')"
 
 for i in `$(seq 1 15); do
-  code=`$(curl -s -o /dev/null -w '%{http_code}' http://localhost:5001/ || true)
+  code=`$(curl -sL -o /dev/null -w '%{http_code}' http://localhost:5001/ || true)
   [ "`$code" = "200" ] && break
   sleep 2
 done
