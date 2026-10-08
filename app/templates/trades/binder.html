@@ -336,9 +336,20 @@ const Wanted = (function () {
   }
 
   window.guestSendWhatsApp = function () {
-    const text = encodeURIComponent(buildMsg());
-    const url = OWNER_WA ? `https://wa.me/${OWNER_WA}?text=${text}` : `https://wa.me/?text=${text}`;
-    window.open(url, '_blank');
+    const msg  = buildMsg();
+    const text = encodeURIComponent(msg);
+    if (OWNER_WA) {
+      // número conhecido: link direto (location.href é confiável no iOS/Android)
+      window.location.href = `https://wa.me/${OWNER_WA}?text=${text}`;
+    } else if (navigator.share) {
+      // sem número: usa o share nativo do celular (mais confiável que wa.me sem número)
+      navigator.share({ text: msg }).catch(() => {
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+      });
+    } else {
+      // desktop sem número: abre web.whatsapp.com para escolher contato
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
   };
 
   window.guestCopyMsg = function () {
