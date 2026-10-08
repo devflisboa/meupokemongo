@@ -253,7 +253,7 @@ const Wanted = (function () {
       : w.k === 'evoluir' ? `<div class="text-[9px] font-bold text-green-700 bg-green-50 rounded px-1 truncate">🧬 ${esc(w.e || 'Evoluir')}</div>`
       : '<div class="text-[9px] font-bold text-red-600 bg-red-50 rounded px-1">🔥 Alta</div>';
     return `<div class="poke-card relative bg-white rounded-xl border ${w.v ? 'border-green-400 ring-1 ring-green-300' : w.p ? 'border-amber-400' : 'border-gray-100'}
-        shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow" data-poke-id="${w.id}" data-poke-name="${esc(w.n)}">`
+        shadow-sm overflow-hidden text-center cursor-pointer hover:shadow-md transition-shadow" data-poke-id="${w.id}" data-poke-name="${esc(w.n)}">
       ${w.p ? '<span class="absolute top-1 right-1 text-amber-500 text-xs" title="Prioridade">★</span>' : ''}
       <div class="bg-gray-50 p-1"><img src="${esc(w.s)}" data-art="${esc(w.a || '')}" alt="${esc(w.n)}" class="sprite-sm w-14 h-14 mx-auto object-contain" loading="lazy"
         onerror="spriteFallback(this)" /></div>
