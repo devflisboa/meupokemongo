@@ -437,9 +437,13 @@ def regionais():
 
     for item in exclusives:
         raw = item["pokemon"].lower().strip()
-        sp = name_map.get(raw) or name_map.get(_norm(raw))
+        # Tenta: exato → normalizado → primeira palavra normalizada (cobre variantes "Shellos Rosa", "Oricorio Baile")
+        sp = (name_map.get(raw)
+              or name_map.get(_norm(raw))
+              or name_map.get(_norm(raw.split()[0])))
         item["species_id"] = sp.id if sp else None
-        item["species_name"] = _display_name(sp) if sp else item["pokemon"]
+        # Nome de exibição vem sempre do JSON — já tem apóstrofos e capitalização corretos
+        item["species_name"] = item["pokemon"]
 
     # Conjunto de species_id que o usuário logado possui (owned=True, quantity>0)
     owned_species: set[int] = set()
