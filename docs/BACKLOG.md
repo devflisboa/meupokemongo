@@ -49,8 +49,9 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | ✅ Entregue |
 | 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | ✅ Entregue |
 | 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | ✅ Entregue |
-| 8 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
-| 9 | [#26](#26--expansões-pokeapi) | Expansões PokeAPI: moves, flavor text, egg groups | ~2 dias | Pendente |
+| 8 | [#17-B](#17-b--ocr-via-screenshot-especificado-em-13102026) | OCR via screenshot (upload print GO → catalogar) | ~2 dias | Pendente · spec pronta |
+| 9 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
+| 10 | [#26](#26--expansões-pokeapi) | Expansões PokeAPI: moves, flavor text, egg groups | ~2 dias | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
 | — | #17 | Scan em lote (OCR) | 1–2 sem | Parado |
 | — | #22 | Discord + comunidade | — | Em avaliação |
@@ -239,17 +240,19 @@ Endpoint: `GET /type/{name}` → `damage_relations`
 | #19 | **Valor da coleção** em poeira estelar/doces (Collectr) | Falta dado de custo de PL por espécie; `candy_cost` já existe |
 | #21 | **Numeração dupla** "#025 Pikachu / #034 da sua coleção Kanto", ~3 h | Baixo impacto |
 | #17 | **Catalogação em lote** — import PokeGenie (já existe), vídeo+OCR ou ADB via USB | Discutido em 07/10/2026 (ver abaixo); PokeGenie é o caminho recomendado |
+| #17-B | **OCR via screenshot** — upload de print do GO → OCR no servidor → pré-preenche formulário | Especificado em 13/10/2026 · `docs/SPEC-OCR-SCAN.md` · ~2 dias · Pendente |
 
 ### #17 — Catalogação em lote (revisão 07/10/2026)
 
 Contexto: o treinador tem uma coleção real rica (shinies, 100% IVs) que ainda não está no app — o cadastro manual um a um é inviável.
 
-**Três abordagens avaliadas:**
+**Quatro abordagens avaliadas:**
 
 | Abordagem | Dados capturados | Complexidade | Recomendação |
 |---|---|---|---|
 | **PokeGenie export CSV** (import já existe) | owned + shiny + IV% + CP + level | Baixa (instalar app + exportar) | ✅ Caminho principal |
-| **Vídeo do Pokédex + OCR** (Python) | Só owned (colorido vs cinza) | Média (~2 dias) | Fallback sem app extra |
+| **#17-B — Screenshot + OCR no Flask** (ver abaixo) | nome, CP, HP, IVs (appraisal), shiny | Média (~2 dias) | ✅ Segunda opção — sem app extra |
+| **Vídeo do Pokédex + OCR** (Python) | Só owned (colorido vs cinza) | Média (~2 dias) | Fallback, menos dados que #17-B |
 | **ADB via cabo USB** | Só owned (screenshot automático) | Alta (ADB, possível bloqueio GO) | Apenas se PokeGenie inviável |
 
 **Decisão:** priorizar o import PokeGenie — é o único que captura shiny + IV% + CP sem visão computacional complexa.
@@ -257,6 +260,32 @@ O modelo `UserCollection` já tem `has_shiny`, `has_perfect`. O import existente
 
 **Ação imediata:** o treinador instala PokeGenie, deixa escanear a mochila, exporta e usa o import existente.
 Se quiser o vídeo/ADB, criar script dedicado (`scripts/bulk_catalog_ocr.py`) — estimativa 1–2 dias.
+
+### #17-B — OCR via screenshot (especificado em 13/10/2026)
+
+Quarta abordagem, mais ergonômica que vídeo/ADB: upload de screenshot da tela do
+Pokémon GO → pytesseract + Pillow no servidor Flask → preview editável → salva como
+`UserPokemon` (source="scan") + atualiza `UserCollection`.
+
+**Spec completa:** `docs/SPEC-OCR-SCAN.md`
+
+**O que extrai:**
+
+| Tela enviada | Dados capturados |
+|---|---|
+| Tela principal do Pokémon | nome, CP, HP, shiny (heurística) |
+| Tela de Appraisal | nome, CP, IVs 0–15 (ataque, defesa, PS) → IV% calculado |
+
+**Arquitetura:**
+- Novo blueprint `scan` em `app/blueprints/scan/` (padrão do `import_`)
+- Serviço `app/services/ocr_service.py` (testável isolado)
+- Templates `scan/index.html` (mobile-first, câmera) + `scan/preview.html` (campos editáveis)
+- Dependências: `pytesseract>=0.3.10` + `tesseract-ocr tesseract-ocr-por` no Dockerfile
+
+**Limitações documentadas:** formas regionais exigem seleção manual; screenshots < 720p
+podem falhar no CP/IV; shiny é heurística por cor (sempre mostra checkbox de confirmação).
+
+**Estimativa:** ~2 dias · Rate limit: 5/min, 30/hora (OCR é CPU-intensivo)
 
 ---
 

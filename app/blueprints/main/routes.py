@@ -10,7 +10,7 @@ from ...services.analytics_service import log_event
 from ...extensions import db
 from ...models.user import User
 from ...models.collection import UserCollection
-from ...models.pokemon import Form
+from ...models.pokemon import Form, Species
 
 # Meses em inglês para montar a URL do site oficial
 _MONTH_EN = {
@@ -24,6 +24,10 @@ GAME_EVENTS = [
         "title": "Semana Mundial do Espaço",
         "category": "Evento Especial",
         "date": "4–10 de out",
+        "date_start": date(2026, 10, 4),
+        "date_end": date(2026, 10, 10),
+        "location": "Global",
+        "coordinates": [],
         "description": "Pikachu Astronauta faz estreia mundial! Pesquisa temporária gratuita com encontro garantido.",
         "badge": "bg-indigo-100 text-indigo-700",
         "image_url": "https://lh3.googleusercontent.com/qmKASG93iVfM7wXo20u46tH4KyFM3Y52Rp0wBNNaoPblF-2MT0Qmra8EdlN4Uqb8n-x1I_vaZEOBokaBvFJK9-vlPXRsI1OU2zj9Qds",
@@ -33,6 +37,10 @@ GAME_EVENTS = [
         "title": "Dia Comunitário — Zorua",
         "category": "Dia Comunitário",
         "date": "10 de out · 14h–17h",
+        "date_start": date(2026, 10, 10),
+        "date_end": date(2026, 10, 10),
+        "location": "Global",
+        "coordinates": [],
         "description": "Zorua em destaque. Evolua para Zoroark e aprenda Soco Enganador. Bônus de PE e Doces.",
         "badge": "bg-gray-100 text-gray-700",
         "image_url": "https://lh3.googleusercontent.com/ceoPPXZSHd10nn28HI8DVWvgnXq2vQeWRgsjjC1jHs0CTw0YgowKWrSoKJHNolzfFnG2UoCcGch2mfbN8yoNyii3x15BmmXn8TqrG0U",
@@ -42,6 +50,10 @@ GAME_EVENTS = [
         "title": "Maratona das Folhas: Caminhada Companheira",
         "category": "Evento Especial",
         "date": "13–19 de out",
+        "date_start": date(2026, 10, 13),
+        "date_end": date(2026, 10, 19),
+        "location": "Global",
+        "coordinates": [],
         "description": "Bramblin estreia no GO! Mega Manectric alcança o Super Nível. Growlithe de Hisui com Incenso.",
         "badge": "bg-emerald-100 text-emerald-700",
         "image_url": "https://lh3.googleusercontent.com/zk6NTDv0rngAmui4G_58zN_RpKsMy66tEAIFyTQkpHpQeFh0tAyDSmh2OdD61EtEfA1g9jmqnubXIArQ6mkSIzUy6I97URVZ__rQ0A",
@@ -51,6 +63,10 @@ GAME_EVENTS = [
         "title": "Dia de Chocar Sandile",
         "category": "Dia de Eclosão",
         "date": "17 de out",
+        "date_start": date(2026, 10, 17),
+        "date_end": date(2026, 10, 17),
+        "location": "Global",
+        "coordinates": [],
         "description": "Sandile em Ovos de 2 km com mais chance de Brilhante! ½ distância de incubação e Candy extra.",
         "badge": "bg-amber-100 text-amber-700",
         "image_url": "https://lh3.googleusercontent.com/1KTYlzx5ELkb-sjHcUnlkqRZqgH6o6zn_coO2G54QtULKb7XU7f4mSbsC0otOarQey9fR5sO0bLSRI5pjF50aiK-CpcQgujdYxcpKQQR",
@@ -60,6 +76,10 @@ GAME_EVENTS = [
         "title": "adidas × Pokémon GO",
         "category": "Parceria",
         "date": "até 13 fev 2027",
+        "date_start": date(2026, 9, 1),
+        "date_end": date(2027, 2, 13),
+        "location": "Lojas adidas (Global)",
+        "coordinates": [],
         "description": "Visite uma loja adidas para desbloquear pesquisa com bonê, jaqueta e encontro com Lucario.",
         "badge": "bg-slate-100 text-slate-700",
         "image_url": "https://lh3.googleusercontent.com/V8KxsOIOlODCRRSMML9kQVBwd34t9teBV-y7AmaPr-w0liKdvKDyl_X03IT8C-61eHglnseLZzAYVZK-wS86vy02bf9aYYbPIQynZv69",
@@ -69,6 +89,10 @@ GAME_EVENTS = [
         "title": "Área Selvagem GO 2026",
         "category": "Área Selvagem GO",
         "date": "6–8 nov (presencial) · 14–15 nov (global)",
+        "date_start": date(2026, 11, 6),
+        "date_end": date(2026, 11, 15),
+        "location": "Sendai (JP) + Cidade do México (MX) → Global",
+        "coordinates": [[38.27, 140.87], [19.43, -99.13]],
         "description": "Dialga e Palkia Dinamax estreiam! Evento presencial em Sendai e Cidade do México.",
         "badge": "bg-teal-100 text-teal-700",
         "image_url": "https://lh3.googleusercontent.com/-DOgjFf8fTm7lMO6LYK5vXr4yVXqo-SQ04L6OXobY_4ty_su7sYjEI6fpIIDHs7UOvvc_9CRP1Ox7kNSv1ynowxxFBT8ZvS7JTDw8D4",
@@ -126,6 +150,7 @@ def index():
         total_trainers=total_trainers,
         game_events=GAME_EVENTS,
         events_page_url=events_page_url,
+        today=today,
     )
 
 
@@ -373,3 +398,30 @@ def estoque(username: str):
         share_url=share_url,
         all_users=all_users,
     )
+
+
+@bp.route("/regionais")
+def regionais():
+    """Mapa interativo de Pokémon exclusivos por região geográfica."""
+    import json, os
+    from flask import current_app
+
+    data_path = os.path.join(current_app.static_folder, "data", "regional_exclusives.json")
+    with open(data_path, encoding="utf-8") as f:
+        exclusives = json.load(f)
+
+    # Associa cada entrada ao Species do banco (para sprite e ID)
+    name_map: dict[str, "Species"] = {}
+    for sp in db.session.query(Species).all():
+        if sp.name_pt:
+            name_map[sp.name_pt.strip().lower()] = sp
+        name_map[sp.name.strip().lower()] = sp
+
+    for item in exclusives:
+        raw = item["pokemon"].lower().strip()
+        sp = name_map.get(raw) or name_map.get(raw.split()[0])
+        item["species_id"] = sp.id if sp else None
+        item["species_name"] = sp.name_pt or sp.name if sp else item["pokemon"]
+
+    log_event("PAGE_VIEW", {"page": "regionais"})
+    return render_template("main/regionais.html", exclusives=exclusives)

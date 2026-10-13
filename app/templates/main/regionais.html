@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Pokémon Regionais — MeuPokémonGO{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+  {# Cabeçalho #}
+  <div>
+    <h1 class="text-2xl font-black text-gray-900">🌍 Pokémon Regionais</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Pokémon que só aparecem em determinadas regiões do mundo — e que você
+      <strong>só consegue por troca</strong> se estiver fora da área deles.
+    </p>
+  </div>
+
+  {# Mapa interativo #}
+  <div class="rounded-2xl overflow-hidden shadow border border-gray-200" style="height: 360px;">
+    <div id="mapa-regionais" class="w-full h-full"></div>
+  </div>
+
+  {# Busca #}
+  <div class="relative">
+    <input id="busca-regional" type="search" placeholder="Buscar Pokémon ou região…"
+      class="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 pl-9 text-sm text-gray-800
+             placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm" />
+    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+    </svg>
+  </div>
+
+  {# Contador #}
+  <p id="contador-regionais" class="text-xs text-gray-400">
+    Mostrando <span id="n-visiveis">{{ exclusives|length }}</span> de {{ exclusives|length }} Pokémon
+  </p>
+
+  {# Grade de cards #}
+  <div id="grade-regionais" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    {% for item in exclusives %}
+    <div class="card-regional bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex gap-3 items-start"
+         data-nome="{{ item.pokemon | lower }}"
+         data-regiao="{{ item.regiao | lower }}">
+
+      {# Sprite — /img/t/<id>.webp é a miniatura HD gerada pelo thumb service #}
+      <div class="flex-shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden">
+        {% if item.species_id %}
+          <img src="/img/t/{{ item.species_id }}.webp"
+               alt="{{ item.species_name }}"
+               class="w-12 h-12 object-contain"
+               onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{{ item.species_id }}.png'" />
+        {% else %}
+          <span class="text-2xl">❓</span>
+        {% endif %}
+      </div>
+
+      {# Informações #}
+      <div class="flex-1 min-w-0">
+        <p class="font-black text-gray-900 text-sm leading-tight">{{ item.species_name or item.pokemon }}</p>
+        <p class="text-xs text-blue-600 font-semibold mt-0.5 leading-snug">
+          📍 {{ item.regiao }}
+        </p>
+        <div class="flex flex-wrap gap-1 mt-1.5">
+          {% for coord in item.coordenadas %}
+          <button type="button"
+                  class="btn-coord text-[10px] font-mono bg-gray-100 hover:bg-blue-100 text-gray-500 hover:text-blue-700
+                         px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                  data-lat="{{ coord[0] }}" data-lon="{{ coord[1] }}"
+                  title="Ir para {{ coord[0] }}, {{ coord[1] }} no mapa">
+            {{ "%.1f"|format(coord[0]) }}, {{ "%.1f"|format(coord[1]) }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Estado vazio #}
+  <p id="sem-resultados" class="hidden text-center text-gray-400 py-8">
+    Nenhum Pokémon encontrado para essa busca.
+  </p>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  const REGIONAIS = {{ exclusives | tojson }};
+
+  const map = L.map("mapa-regionais", { zoomControl: true, scrollWheelZoom: false })
+    .setView([20, 0], 2);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 10,
+  }).addTo(map);
+
+  function pokeIcon(speciesId) {
+    const src = speciesId
+      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${speciesId}.png`
+      : null;
+    return L.divIcon({
+      className: "",
+      html: src
+        ? `<div style="background:#fff;border-radius:50%;border:2px solid #3b82f6;width:36px;height:36px;
+                       display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25)">
+             <img src="${src}" width="28" height="28" style="object-fit:contain"/>
+           </div>`
+        : `<div style="background:#fff;border-radius:50%;border:2px solid #3b82f6;width:36px;height:36px;
+                       display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25);font-size:16px">❓</div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -20],
+    });
+  }
+
+  const markers = {};
+  REGIONAIS.forEach((item, idx) => {
+    if (!item.coordenadas || !item.coordenadas.length) return;
+    const icon = pokeIcon(item.species_id);
+    item.coordenadas.forEach(([lat, lon]) => {
+      const m = L.marker([lat, lon], { icon })
+        .addTo(map)
+        .bindPopup(`<strong>${item.species_name || item.pokemon}</strong><br>
+                    <span style="font-size:11px;color:#3b82f6">📍 ${item.regiao}</span>`);
+      if (!markers[idx]) markers[idx] = [];
+      markers[idx].push(m);
+    });
+  });
+
+  // Clique nas coordenadas dos cards → move o mapa + copia para clipboard
+  document.querySelectorAll(".btn-coord").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const lat = parseFloat(btn.dataset.lat);
+      const lon = parseFloat(btn.dataset.lon);
+
+      // Navega o mapa
+      map.setView([lat, lon], 5, { animate: true });
+      const top = document.getElementById("mapa-regionais").getBoundingClientRect().top + scrollY - 80;
+      window.scrollTo({ top, behavior: "smooth" });
+
+      // Copia para o clipboard e dá feedback visual
+      const texto = `${lat},${lon}`;
+      navigator.clipboard.writeText(texto).then(() => {
+        const original = btn.textContent;
+        btn.textContent = "✓ Copiado!";
+        btn.classList.add("bg-green-100", "text-green-700");
+        btn.classList.remove("bg-gray-100", "text-gray-500");
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove("bg-green-100", "text-green-700");
+          btn.classList.add("bg-gray-100", "text-gray-500");
+        }, 1500);
+      });
+    });
+  });
+
+  // Busca filtra cards e marcadores
+  const cards = Array.from(document.querySelectorAll(".card-regional"));
+  const input  = document.getElementById("busca-regional");
+  const semRes = document.getElementById("sem-resultados");
+  const nVis   = document.getElementById("n-visiveis");
+
+  input.addEventListener("input", () => {
+    const q = input.value.toLowerCase().trim();
+    let vis = 0;
+
+    cards.forEach((card, idx) => {
+      const match = !q || card.dataset.nome.includes(q) || card.dataset.regiao.includes(q);
+      card.classList.toggle("hidden", !match);
+      if (match) vis++;
+      if (markers[idx]) {
+        markers[idx].forEach(m => match ? m.addTo(map) : map.removeLayer(m));
+      }
+    });
+
+    nVis.textContent = vis;
+    semRes.classList.toggle("hidden", vis > 0);
+  });
+})();
+</script>
+{% endblock %}
