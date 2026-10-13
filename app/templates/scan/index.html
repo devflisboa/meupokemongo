@@ -7,78 +7,200 @@
   <div>
     <h1 class="text-2xl font-black text-gray-900">📷 Catalogar por Print</h1>
     <p class="text-sm text-gray-500 mt-1">
-      Tire um print da tela do Pokémon GO e o app extrai nome, CP, HP e IVs automaticamente.
+      Envie prints do Pokémon GO — o app extrai nome, CP, HP e IVs automaticamente.
     </p>
   </div>
 
-  {# Instruções #}
-  <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
-    <p class="text-sm font-bold text-blue-800">Como tirar o print certo</p>
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
-        <p class="font-bold text-blue-700">Tela Principal</p>
-        <p>Toque no Pokémon → tire o print com o <strong>nome e CP</strong> visíveis.</p>
-        <p class="text-gray-400">Extrai: nome, CP, HP</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
-        <p class="font-bold text-green-700">Tela de Appraisal</p>
-        <p>Toque em <strong>Avaliar</strong> → print com os IVs numéricos.</p>
-        <p class="text-gray-400">Extrai: nome, CP, IVs</p>
-      </div>
+  {# ── Banner: capturas pendentes do ADB ── #}
+  {% if queued > 0 %}
+  <div class="rounded-2xl border-2 border-blue-400 bg-blue-50 p-4 flex items-center gap-4">
+    <div class="text-3xl flex-shrink-0">📦</div>
+    <div class="flex-1 min-w-0">
+      <p class="font-bold text-blue-900">{{ queued }} Pokémon aguardando revisão</p>
+      <p class="text-xs text-blue-600 mt-0.5">Capturados pelo script ADB. Revise e confirme para salvar na coleção.</p>
     </div>
-    <p class="text-[11px] text-blue-600">Você pode enviar os dois prints do mesmo Pokémon — o app identifica cada tela.</p>
+    <div class="flex flex-col gap-2 flex-shrink-0">
+      <a href="{{ url_for('scan.preview') }}"
+         class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl text-center transition-colors">
+        Revisar →
+      </a>
+      <form action="{{ url_for('scan.limpar') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="w-full text-xs text-red-500 hover:text-red-700 font-medium">Descartar</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Tabs: Manual / ADB ── #}
+  <div class="flex rounded-xl border border-gray-200 overflow-hidden">
+    <button id="tab-manual" onclick="switchTab('manual')"
+            class="flex-1 py-2.5 text-sm font-bold transition-colors bg-blue-600 text-white">
+      📤 Upload manual
+    </button>
+    <button id="tab-adb" onclick="switchTab('adb')"
+            class="flex-1 py-2.5 text-sm font-bold transition-colors bg-white text-gray-500 hover:bg-gray-50">
+      🤖 ADB automático
+    </button>
   </div>
 
-  {# Formulário #}
-  <form action="{{ url_for('scan.upload') }}" method="POST" enctype="multipart/form-data" id="scan-form">
-    {{ csrf_token() if csrf_token is defined else "" }}
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  {# ══════════ PAINEL MANUAL ══════════ #}
+  <div id="panel-manual" class="space-y-5">
 
-    {# Drop zone #}
-    <label for="file-input"
-           class="drop-zone flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300
-                  rounded-2xl p-8 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
-           id="drop-zone">
-      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
-                 m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-      </svg>
-      <div class="text-center">
-        <p class="text-sm font-bold text-gray-700">
-          <span class="text-blue-600">📷 Câmera</span> ou <span class="text-blue-600">📁 Galeria</span>
-        </p>
-        <p class="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · até 10 imagens · 10 MB cada</p>
+    {# Instruções #}
+    <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
+      <p class="text-sm font-bold text-blue-800">Como tirar o print certo</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
+          <p class="font-bold text-blue-700">Tela Principal</p>
+          <p>Toque no Pokémon → print com <strong>nome e CP</strong> visíveis.</p>
+          <p class="text-gray-400">Extrai: nome, CP, HP</p>
+        </div>
+        <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
+          <p class="font-bold text-green-700">Tela de Appraisal</p>
+          <p>Toque em <strong>Avaliar</strong> → print com IVs numéricos.</p>
+          <p class="text-gray-400">Extrai: nome, CP, IVs</p>
+        </div>
       </div>
-      <input id="file-input" name="files" type="file"
-             accept="image/jpeg,image/png,image/webp"
-             multiple capture="environment"
-             class="hidden"/>
-    </label>
+      <p class="text-[11px] text-blue-600">Você pode enviar os dois prints do mesmo Pokémon — o app identifica cada tela.</p>
+    </div>
 
-    {# Preview thumbnails dos arquivos selecionados #}
-    <div id="thumb-grid" class="hidden mt-4 grid grid-cols-3 gap-2"></div>
+    {# Form upload #}
+    <form action="{{ url_for('scan.upload') }}" method="POST" enctype="multipart/form-data" id="scan-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-    {# Contador #}
-    <p id="file-count" class="hidden text-xs text-gray-500 text-center mt-2"></p>
+      <label for="file-input"
+             class="drop-zone flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300
+                    rounded-2xl p-8 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+             id="drop-zone">
+        <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
+                   m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <div class="text-center">
+          <p class="text-sm font-bold text-gray-700">
+            <span class="text-blue-600">📷 Câmera</span> ou <span class="text-blue-600">📁 Galeria</span>
+          </p>
+          <p class="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · até 10 imagens · 10 MB cada</p>
+        </div>
+        <input id="file-input" name="files" type="file"
+               accept="image/jpeg,image/png,image/webp"
+               multiple capture="environment"
+               class="hidden"/>
+      </label>
 
-    <button type="submit" id="submit-btn"
-            class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6
-                   rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex
-                   items-center justify-center gap-2"
-            disabled>
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
-                 M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-      </svg>
-      Analisar prints
-    </button>
-  </form>
+      <div id="thumb-grid" class="hidden mt-4 grid grid-cols-3 gap-2"></div>
+      <p id="file-count" class="hidden text-xs text-gray-500 text-center mt-2"></p>
+
+      <button type="submit" id="submit-btn"
+              class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6
+                     rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex
+                     items-center justify-center gap-2"
+              disabled>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+                   M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        Analisar prints
+      </button>
+    </form>
+  </div>
+
+  {# ══════════ PAINEL ADB ══════════ #}
+  <div id="panel-adb" class="hidden space-y-4">
+
+    <div class="rounded-2xl border border-green-200 bg-green-50 p-4 space-y-2">
+      <p class="text-sm font-bold text-green-800">🤖 Como funciona o modo automático</p>
+      <p class="text-xs text-green-700 leading-relaxed">
+        Um script Python roda no PC conectado ao celular via USB. Ele monitora a tela
+        do Pokémon GO e captura automaticamente cada Pokémon que você abrir — sem precisar
+        tirar print manualmente. Você só navega pelos seus Pokémon; o script faz o resto.
+      </p>
+    </div>
+
+    {# Passo a passo #}
+    <div class="space-y-3">
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">1</span>
+          Instale os pré-requisitos no PC
+        </p>
+        <div class="bg-gray-50 rounded-lg p-2.5 font-mono text-[11px] text-gray-600 space-y-1">
+          <div># Python + bibliotecas</div>
+          <div class="text-blue-700 select-all">pip install Pillow requests</div>
+          <div class="mt-1"># Android Platform Tools (ADB)</div>
+          <div class="text-blue-700 select-all">https://developer.android.com/tools/releases/platform-tools</div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">2</span>
+          Ative USB Debugging no celular
+        </p>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          <strong>Configurações</strong> → <strong>Sobre o telefone</strong> → toque 7× em
+          <strong>Número da versão</strong> → volte para Configurações →
+          <strong>Opções do desenvolvedor</strong> → ative <strong>Depuração USB</strong>.
+          Conecte o cabo USB e confirme "Permitir" no celular.
+        </p>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">3</span>
+          Execute o script no PC (terminal)
+        </p>
+        <div class="bg-gray-900 rounded-lg p-3 font-mono text-[11px] text-green-400 leading-relaxed select-all">
+          python scripts/adb_scan.py \<br>
+          &nbsp;&nbsp;--url https://meupokemongo.duckdns.org \<br>
+          &nbsp;&nbsp;--user <span class="text-yellow-300">SEU_USUARIO</span> \<br>
+          &nbsp;&nbsp;--password <span class="text-yellow-300">SUA_SENHA</span>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">4</span>
+          Navegue pelos Pokémon no GO
+        </p>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          Abra cada Pokémon que quiser catalogar. O script detecta automaticamente e captura.
+          Você verá o nome e CP confirmados no terminal + uma notificação no celular.
+          Quando terminar, pressione <strong>Ctrl+C</strong> no terminal.
+        </p>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <p class="text-xs font-bold text-gray-700 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-green-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">5</span>
+          Revise e confirme aqui
+        </p>
+        <p class="text-xs text-gray-500">
+          Após encerrar o script, volte aqui — o botão "Revisar" vai aparecer com todos os
+          Pokémon capturados para você corrigir e confirmar antes de salvar na coleção.
+        </p>
+      </div>
+    </div>
+
+    {# Aviso de limitações #}
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
+      <p class="text-[11px] text-amber-700 leading-relaxed">
+        <strong>⚠ Limitações:</strong> a detecção de tela é por heurística de cor — prints muito escuros
+        ou com fundo incomum podem ser ignorados. O script descarta telas que não parecem um Pokémon
+        (mapa, menus, batalhas). IVs só são extraídos da tela de Appraisal.
+      </p>
+    </div>
+
+  </div>{# /panel-adb #}
 
 </div>
 
 <script>
+// ── Upload manual ──────────────────────────────────────────────────────────
 const input     = document.getElementById('file-input');
 const dropZone  = document.getElementById('drop-zone');
 const thumbGrid = document.getElementById('thumb-grid');
@@ -88,8 +210,12 @@ const submitBtn = document.getElementById('submit-btn');
 function handleFiles(files) {
   thumbGrid.innerHTML = '';
   const list = Array.from(files).slice(0, 10);
-  if (!list.length) { submitBtn.disabled = true; thumbGrid.classList.add('hidden'); countEl.classList.add('hidden'); return; }
-
+  if (!list.length) {
+    submitBtn.disabled = true;
+    thumbGrid.classList.add('hidden');
+    countEl.classList.add('hidden');
+    return;
+  }
   list.forEach(file => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -103,7 +229,6 @@ function handleFiles(files) {
     };
     reader.readAsDataURL(file);
   });
-
   thumbGrid.classList.remove('hidden');
   countEl.textContent = `${list.length} imagem${list.length > 1 ? 'ns' : ''} selecionada${list.length > 1 ? 's' : ''}`;
   countEl.classList.remove('hidden');
@@ -112,7 +237,6 @@ function handleFiles(files) {
 
 input.addEventListener('change', () => handleFiles(input.files));
 
-// Drag & drop
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-blue-500'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500'));
 dropZone.addEventListener('drop', e => {
@@ -124,10 +248,27 @@ dropZone.addEventListener('drop', e => {
   handleFiles(dt.files);
 });
 
-// Feedback de loading no submit
 document.getElementById('scan-form').addEventListener('submit', () => {
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Analisando…';
 });
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  const isManual = tab === 'manual';
+  document.getElementById('panel-manual').classList.toggle('hidden', !isManual);
+  document.getElementById('panel-adb').classList.toggle('hidden', isManual);
+  document.getElementById('tab-manual').className =
+    'flex-1 py-2.5 text-sm font-bold transition-colors ' +
+    (isManual ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50');
+  document.getElementById('tab-adb').className =
+    'flex-1 py-2.5 text-sm font-bold transition-colors ' +
+    (!isManual ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 hover:bg-gray-50');
+  localStorage.setItem('scan-tab', tab);
+}
+
+// Restaura última aba usada
+const saved = localStorage.getItem('scan-tab');
+if (saved === 'adb') switchTab('adb');
 </script>
 {% endblock %}
