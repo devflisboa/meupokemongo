@@ -11,7 +11,7 @@ from ...extensions import db, limiter, csrf
 from ...models.pokemon import Species, Form
 from ...models.individual import UserPokemon
 from ...models.collection import UserCollection
-from ...services.ocr_service import process_images, build_name_index
+from ...services.ocr_service import process_images, build_name_index, calc_iv_pct
 from ...config import now_br
 
 _ALLOWED = {"jpg", "jpeg", "png", "webp"}
@@ -202,9 +202,7 @@ def confirmar():
         sta_iv   = request.form.get(f"sta_iv_{i}", type=int)
         is_shiny = bool(request.form.get(f"is_shiny_{i}"))
 
-        iv_pct = None
-        if all(v is not None for v in [atk_iv, def_iv, sta_iv]):
-            iv_pct = round((atk_iv + def_iv + sta_iv) / 45 * 100, 1)
+        iv_pct = calc_iv_pct(atk_iv, def_iv, sta_iv)
 
         poke = UserPokemon(
             user_id=current_user.id,

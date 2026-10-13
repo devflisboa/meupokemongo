@@ -89,7 +89,10 @@ def login():
         user = db.session.query(User).filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user)
-            return redirect(request.args.get("next") or url_for("main.index"))
+            next_url = request.args.get("next", "")
+            from urllib.parse import urlparse
+            safe = next_url and urlparse(next_url).netloc == "" and next_url.startswith("/")
+            return redirect(next_url if safe else url_for("main.index"))
         flash("Usuário ou senha incorretos.", "danger")
     return render_template("auth/login.html")
 

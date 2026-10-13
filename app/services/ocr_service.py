@@ -27,6 +27,16 @@ if _TESSERACT_PATH and _HAS_TESSERACT:
 _OCR_CFG = "--psm 6 --oem 3"
 
 
+def calc_iv_pct(atk: int | None, def_: int | None, sta: int | None) -> float | None:
+    """(atk+def+sta)/45*100 com validação de bounds. Retorna None se qualquer IV for None."""
+    if any(v is None for v in (atk, def_, sta)):
+        return None
+    atk = max(0, min(15, atk))
+    def_ = max(0, min(15, def_))
+    sta = max(0, min(15, sta))
+    return round((atk + def_ + sta) / 45 * 100, 1)
+
+
 # ---------------------------------------------------------------------------
 # Dataclass de resultado
 # ---------------------------------------------------------------------------
@@ -175,9 +185,8 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
         result.atk_iv = _extract_iv(_ocr_roi(img, 0.30, 0.42, 0.60, 0.95))
         result.def_iv = _extract_iv(_ocr_roi(img, 0.42, 0.54, 0.60, 0.95))
         result.sta_iv = _extract_iv(_ocr_roi(img, 0.54, 0.66, 0.60, 0.95))
-        if all(v is not None for v in [result.atk_iv, result.def_iv, result.sta_iv]):
-            result.iv_pct = round((result.atk_iv + result.def_iv + result.sta_iv) / 45 * 100, 1)
-        else:
+        result.iv_pct = calc_iv_pct(result.atk_iv, result.def_iv, result.sta_iv)
+        if result.iv_pct is None:
             result.warnings.append("IVs não lidos com precisão — preencha manualmente.")
 
     # Shiny (heurística por pixel dourado)
