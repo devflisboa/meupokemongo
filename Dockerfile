@@ -7,12 +7,13 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-por \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+RUN useradd -m appuser
+
+COPY --chown=appuser:appuser requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=appuser:appuser . .
 
-RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
 EXPOSE 5000
