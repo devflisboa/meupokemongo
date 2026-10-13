@@ -49,7 +49,7 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | 5 | [#20](#20--faltantes-sob-demanda) | Faltantes sob demanda (desempenho) | ~3 h | ✅ Entregue |
 | 6 | [#15](#15--progresso-shiny-e-100-versão-enxuta) | Progresso Shiny e 100% (versão enxuta) | ~3 h | ✅ Entregue |
 | 7 | [#14](#14--formas-regionais--exclusivos-de-região) | Formas regionais + exclusivos de região | ~1–2 dias | ✅ Entregue |
-| 8 | [#17-B](#17-b--ocr-via-screenshot-especificado-em-13102026) | OCR via screenshot (upload print GO → catalogar) | ~2 dias | Pendente · spec pronta |
+| 8 | [#17-B](#17-b--ocr-via-screenshot-especificado-em-13102026) | OCR via screenshot (upload print GO → catalogar) | ~2 dias | ✅ Entregue |
 | 9 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
 | 10 | [#26](#26--expansões-pokeapi) | Expansões PokeAPI: moves, flavor text, egg groups | ~2 dias | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
@@ -240,7 +240,6 @@ Endpoint: `GET /type/{name}` → `damage_relations`
 | #19 | **Valor da coleção** em poeira estelar/doces (Collectr) | Falta dado de custo de PL por espécie; `candy_cost` já existe |
 | #21 | **Numeração dupla** "#025 Pikachu / #034 da sua coleção Kanto", ~3 h | Baixo impacto |
 | #17 | **Catalogação em lote** — import PokeGenie (já existe), vídeo+OCR ou ADB via USB | Discutido em 07/10/2026 (ver abaixo); PokeGenie é o caminho recomendado |
-| #17-B | **OCR via screenshot** — upload de print do GO → OCR no servidor → pré-preenche formulário | Especificado em 13/10/2026 · `docs/SPEC-OCR-SCAN.md` · ~2 dias · Pendente |
 
 ### #17 — Catalogação em lote (revisão 07/10/2026)
 
@@ -363,3 +362,4 @@ Arquivos: `app/blueprints/discord/routes.py`, `bot/bot.py` (discord.py), `docs/D
 | 07/10/2026 | Pesquisa de mercado: PokeAPI 60+ endpoints testados ao vivo · 10 projetos GitHub analisados (nenhum relevante para incorporar) · `docs/PESQUISA-GITHUB.md` + `#26` no backlog | `1de54e9` |
 | 07/10/2026 | **Wishlist — seção 🧬 Evoluções disponíveis:** linhas visuais da cadeia completa com custo de doces por etapa (não o estoque do treinador), ramificações (Eevee → 8 ramos), formas possuídas marcadas (✓ você tem); DFS por raiz ordenada por Pokédex | `1de54e9` |
 | 07/10/2026 | **Wishlist — condições GO nas evoluções:** `app/data/evolution_conditions.py` com 75+ entradas (Pedra de Sinnoh/Unova, Iscas, km de parceiro, troca grátis, batalhas, Lua Cheia…); badge azul entre as etapas; cards clicáveis abrindo modal de detalhes | `1f643df` |
+| 13/10/2026 | **#17-B OCR via screenshot:** blueprint `scan`, `ocr_service.py` (pytesseract + Pillow, ROI por tela, fuzzy match, heurística shiny), templates mobile-first com revisão editável, rate limit 5/min 30/h, link no import · Pokébola nos botões Capturar (detalhe, modal, collection) · regionais com pokébola owned/not-owned e coordenadas copiáveis | — |

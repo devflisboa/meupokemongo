@@ -24,3 +24,6 @@ WhatsApp Image*
 # Cypress: artefatos gerados (imagens do README ficam em docs/screenshots/)
 cypress/screenshots/
 cypress/videos/
+
+# Thumbnails temporários do scanner OCR
+app/static/scan_temp/

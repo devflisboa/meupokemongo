@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Catalogar por Print — MeuPokémonGO{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-6 space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-black text-gray-900">📷 Catalogar por Print</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Tire um print da tela do Pokémon GO e o app extrai nome, CP, HP e IVs automaticamente.
+    </p>
+  </div>
+
+  {# Instruções #}
+  <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4 space-y-3">
+    <p class="text-sm font-bold text-blue-800">Como tirar o print certo</p>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
+        <p class="font-bold text-blue-700">Tela Principal</p>
+        <p>Toque no Pokémon → tire o print com o <strong>nome e CP</strong> visíveis.</p>
+        <p class="text-gray-400">Extrai: nome, CP, HP</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 text-xs text-gray-700 space-y-1 border border-blue-100">
+        <p class="font-bold text-green-700">Tela de Appraisal</p>
+        <p>Toque em <strong>Avaliar</strong> → print com os IVs numéricos.</p>
+        <p class="text-gray-400">Extrai: nome, CP, IVs</p>
+      </div>
+    </div>
+    <p class="text-[11px] text-blue-600">Você pode enviar os dois prints do mesmo Pokémon — o app identifica cada tela.</p>
+  </div>
+
+  {# Formulário #}
+  <form action="{{ url_for('scan.upload') }}" method="POST" enctype="multipart/form-data" id="scan-form">
+    {{ csrf_token() if csrf_token is defined else "" }}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+    {# Drop zone #}
+    <label for="file-input"
+           class="drop-zone flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-300
+                  rounded-2xl p-8 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+           id="drop-zone">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
+                 m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <div class="text-center">
+        <p class="text-sm font-bold text-gray-700">
+          <span class="text-blue-600">📷 Câmera</span> ou <span class="text-blue-600">📁 Galeria</span>
+        </p>
+        <p class="text-xs text-gray-400 mt-0.5">JPG, PNG ou WebP · até 10 imagens · 10 MB cada</p>
+      </div>
+      <input id="file-input" name="files" type="file"
+             accept="image/jpeg,image/png,image/webp"
+             multiple capture="environment"
+             class="hidden"/>
+    </label>
+
+    {# Preview thumbnails dos arquivos selecionados #}
+    <div id="thumb-grid" class="hidden mt-4 grid grid-cols-3 gap-2"></div>
+
+    {# Contador #}
+    <p id="file-count" class="hidden text-xs text-gray-500 text-center mt-2"></p>
+
+    <button type="submit" id="submit-btn"
+            class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6
+                   rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex
+                   items-center justify-center gap-2"
+            disabled>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
+                 M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+      Analisar prints
+    </button>
+  </form>
+
+</div>
+
+<script>
+const input     = document.getElementById('file-input');
+const dropZone  = document.getElementById('drop-zone');
+const thumbGrid = document.getElementById('thumb-grid');
+const countEl   = document.getElementById('file-count');
+const submitBtn = document.getElementById('submit-btn');
+
+function handleFiles(files) {
+  thumbGrid.innerHTML = '';
+  const list = Array.from(files).slice(0, 10);
+  if (!list.length) { submitBtn.disabled = true; thumbGrid.classList.add('hidden'); countEl.classList.add('hidden'); return; }
+
+  list.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'aspect-square rounded-xl overflow-hidden bg-gray-100';
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'w-full h-full object-cover';
+      div.appendChild(img);
+      thumbGrid.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  thumbGrid.classList.remove('hidden');
+  countEl.textContent = `${list.length} imagem${list.length > 1 ? 'ns' : ''} selecionada${list.length > 1 ? 's' : ''}`;
+  countEl.classList.remove('hidden');
+  submitBtn.disabled = false;
+}
+
+input.addEventListener('change', () => handleFiles(input.files));
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-blue-500'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('border-blue-500');
+  const dt = new DataTransfer();
+  Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  handleFiles(dt.files);
+});
+
+// Feedback de loading no submit
+document.getElementById('scan-form').addEventListener('submit', () => {
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Analisando…';
+});
+</script>
+{% endblock %}

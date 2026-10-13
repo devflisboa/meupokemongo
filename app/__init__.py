@@ -35,6 +35,7 @@ def create_app(env: str | None = None) -> Flask:
     from .blueprints.admin import bp as admin_bp
     from .blueprints.wishlist import bp as wishlist_bp
     from .blueprints.anime import bp as anime_bp
+    from .blueprints.scan import bp as scan_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(anime_bp, url_prefix="/anime")
@@ -46,6 +47,7 @@ def create_app(env: str | None = None) -> Flask:
     app.register_blueprint(import_bp, url_prefix="/import")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(wishlist_bp, url_prefix="/wishlist")
+    app.register_blueprint(scan_bp, url_prefix="/scan")
 
     from .commands import register_commands
     register_commands(app)
