@@ -92,29 +92,143 @@ REGION_EXCLUSIVES: dict[int, tuple[str, bool]] = {
 
 
 REGION_COORDS: dict[int, list[list[float]]] = {
-    83:  [[36.2, 138.3], [36.5, 127.9], [35.9, 104.2]],          # Farfetch'd
-    115: [[-25.3, 133.8]],                                         # Kangaskhan
-    122: [[50.0, 10.0]],                                           # Mr. Mime
-    128: [[39.8, -98.6], [49.9, -97.1]],                          # Tauros
-    214: [[-15.0, -60.0], [13.0, -86.0], [26.0, -80.8]],         # Heracross
-    222: [[-3.5, -60.0], [23.6, -102.6], [5.0, 110.0], [-15.0, 133.0]],  # Corsola
-    324: [[22.0, 79.0], [5.0, 110.0]],                            # Torkoal
-    357: [[2.0, 20.0], [29.0, 45.0]],                             # Tropius
-    369: [[-40.9, 174.9], [-10.0, -160.0]],                       # Relicanth
-    417: [[64.2, -149.5], [65.0, -110.0], [64.0, 100.0]],        # Pachirisu
-    439: [[50.0, 10.0]],                                           # Mime Jr.
-    441: [[-45.0, 0.0]],                                           # Chatot
-    455: [[32.5, -84.0], [-3.5, -60.0]],                          # Carnivine
-    511: [[10.0, 120.0]],                                          # Pansage
-    513: [[50.0, 10.0], [2.0, 20.0], [29.0, 45.0]],              # Pansear
-    515: [[45.0, -100.0], [-15.0, -60.0]],                        # Panpour
-    556: [[31.0, -100.0], [23.6, -102.6], [13.0, -86.0]],        # Maractus
-    561: [[26.8, 30.8], [39.1, 21.8], [31.0, 34.9]],             # Sigilyph
-    626: [[40.7, -74.0], [48.9, 2.3]],                            # Bouffalant
-    701: [[23.6, -102.6], [5.0, -70.0]],                          # Hawlucha
-    707: [[46.2, 2.2], [50.0, 10.0]],                             # Klefki
-    764: [[20.8, -156.3]],                                         # Comfey
-    874: [[54.0, -2.0]],                                           # Stonjourner
+    # Farfetch'd — Ásia
+    83: [
+        [35.7150,  139.7738],  # Tokyo: Ueno Park
+        [37.5796,  126.9770],  # Seoul: Gyeongbokgung Palace
+        [31.2350,  121.4905],  # Shanghai: The Bund
+    ],
+    # Kangaskhan — Austrália e Nova Zelândia
+    115: [
+        [-33.8740,  151.2099], # Sydney: Hyde Park
+        [-37.8182,  144.9691], # Melbourne: Federation Square
+    ],
+    # Mr. Mime — Europa
+    122: [
+        [48.8548,    2.2945],  # Paris: Champ de Mars (Torre Eiffel)
+        [51.5085,   -0.1660],  # London: Hyde Park
+        [52.5144,   13.3501],  # Berlin: Tiergarten
+    ],
+    # Tauros — América do Norte
+    128: [
+        [40.7851,  -73.9683],  # New York: Central Park
+        [41.8827,  -87.6233],  # Chicago: Millennium Park
+        [34.1184, -118.3004],  # Los Angeles: Griffith Park
+    ],
+    # Heracross — América Latina (aparece no Brasil)
+    214: [
+        [-3.7298,  -38.5002],  # Fortaleza: Beira Mar
+        [-22.9368, -43.1730],  # Rio de Janeiro: Aterro do Flamengo
+        [-23.5918, -46.6570],  # São Paulo: Parque do Ibirapuera
+        [4.6574,   -74.1027],  # Bogotá: Parque Simón Bolívar
+        [-34.6169, -58.3634],  # Buenos Aires: Puerto Madero
+    ],
+    # Corsola — faixa tropical (aparece no Brasil)
+    222: [
+        [-3.7431,  -38.4644],  # Fortaleza: Praia do Futuro
+        [-12.9714, -38.5097],  # Salvador: Pelourinho
+        [-3.0619,  -60.0677],  # Manaus: Praia da Ponta Negra
+        [25.7853,  -80.1300],  # Miami: South Beach
+    ],
+    # Torkoal — Sul e Sudeste da Ásia
+    324: [
+        [18.9219,   72.8348],  # Mumbai: Gateway of India
+        [13.7500,  100.4913],  # Bangkok: Grand Palace
+        [1.2816,   103.8636],  # Singapura: Gardens by the Bay
+    ],
+    # Tropius — África e Mediterrâneo
+    357: [
+        [-1.2892,   36.8219],  # Nairobi: Uhuru Park
+        [-33.9031,  18.4178],  # Cape Town: V&A Waterfront
+        [30.0590,   31.2263],  # Cairo: Al-Azhar Park
+    ],
+    # Relicanth — Nova Zelândia e ilhas do Pacífico
+    369: [
+        [-41.2865,  174.7762], # Wellington: Waterfront
+        [-36.8617,  174.7713], # Auckland: Auckland Domain
+    ],
+    # Pachirisu — Alasca, Canadá e Rússia
+    417: [
+        [64.8401,  -147.7228], # Fairbanks: Pioneer Park
+        [61.2181,  -149.9003], # Anchorage: Town Square Park
+        [60.7212,  -135.0568], # Whitehorse: Rotary Peace Park
+    ],
+    # Mime Jr. — Europa (mesmas regiões do Mr. Mime)
+    439: [
+        [48.8548,    2.2945],  # Paris: Champ de Mars
+        [51.5085,   -0.1660],  # London: Hyde Park
+        [52.5144,   13.3501],  # Berlin: Tiergarten
+    ],
+    # Chatot — Hemisfério Sul (aparece no Brasil)
+    441: [
+        [-22.9676, -43.2194],  # Rio de Janeiro: Jardim Botânico
+        [-3.7215,  -38.5153],  # Fortaleza: Dragão do Mar
+        [-34.5705, -58.4194],  # Buenos Aires: Parque Palermo
+        [-33.8979,  151.2318], # Sydney: Centennial Park
+    ],
+    # Carnivine — Sudeste dos EUA
+    455: [
+        [25.7748,  -80.1836],  # Miami: Bayfront Park
+        [29.9584,  -90.0634],  # New Orleans: Jackson Square
+        [33.7601,  -84.3921],  # Atlanta: Centennial Olympic Park
+    ],
+    # Pansage — Ásia-Pacífico
+    511: [
+        [35.6856,  139.7104],  # Tokyo: Shinjuku Gyoen
+        [-33.8713,  151.1994], # Sydney: Darling Harbour
+        [25.0338,  121.5448],  # Taipei: Daan Park
+    ],
+    # Pansear — Europa, Oriente Médio e África
+    513: [
+        [51.5080,   -0.1281],  # London: Trafalgar Square
+        [25.1972,   55.2744],  # Dubai: Downtown / Burj Khalifa
+        [-26.1545,  28.0347],  # Johannesburg: Zoo Lake
+    ],
+    # Panpour — Américas (aparece no Brasil)
+    515: [
+        [-3.7473,  -38.4766],  # Fortaleza: Parque do Cocó
+        [-23.5918, -46.6570],  # São Paulo: Parque do Ibirapuera
+        [40.7007,  -73.9964],  # New York: Brooklyn Bridge Park
+        [4.6574,   -74.1027],  # Bogotá: Parque Simón Bolívar
+    ],
+    # Maractus — América Latina (aparece no Brasil)
+    556: [
+        [-3.7215,  -38.5153],  # Fortaleza: Dragão do Mar
+        [19.4204,  -99.1963],  # Cidade do México: Chapultepec
+        [10.4236,  -75.5519],  # Cartagena: Ciudad Amurallada
+    ],
+    # Sigilyph — Egito e Grécia
+    561: [
+        [30.0590,   31.2263],  # Cairo: Praça Tahrir (Al-Azhar Park)
+        [37.9761,   23.7261],  # Atenas: Monastiraki Square
+        [41.0055,   28.9769],  # Istambul: Sultanahmet / Hagia Sophia
+    ],
+    # Bouffalant — Nova York e Paris
+    626: [
+        [40.7851,  -73.9683],  # New York: Central Park
+        [48.8623,    2.2891],  # Paris: Trocadéro
+    ],
+    # Hawlucha — México
+    701: [
+        [19.4204,  -99.1963],  # Cidade do México: Chapultepec
+        [20.9674,  -89.6235],  # Mérida: Paseo de Montejo
+    ],
+    # Klefki — França
+    707: [
+        [48.8548,    2.2945],  # Paris: Champ de Mars (Torre Eiffel)
+        [45.7573,    4.8327],  # Lyon: Place Bellecour
+    ],
+    # Comfey — Havaí
+    764: [
+        [21.2765,  -157.8268], # Honolulu: Waikiki Beach
+        [21.3069,  -157.8583], # Honolulu: Downtown / Aloha Tower
+    ],
+    # Stonjourner — Reino Unido
+    874: [
+        [51.1789,   -1.8262],  # Amesbury: cidade próxima a Stonehenge
+        [51.5081,   -0.0759],  # London: Tower of London
+        [55.9533,   -3.1883],  # Edinburgh: Old Town / Royal Mile
+    ],
 }
 
 
