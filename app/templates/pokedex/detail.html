@@ -295,20 +295,35 @@
 {% endif %}
 
 <script>
+function copyCoord(btn, text) {
+  function flash() {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    btn.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+    btn.classList.remove('bg-white/80', 'text-gray-500', 'border-gray-200');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-300');
+      btn.classList.add('bg-white/80', 'text-gray-500', 'border-gray-200');
+    }, 1500);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(flash).catch(() => fallback(text, flash));
+  } else {
+    fallback(text, flash);
+  }
+}
+function fallback(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); cb(); } catch(e) {}
+  document.body.removeChild(ta);
+}
 document.querySelectorAll('.coord-copy-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    navigator.clipboard.writeText(btn.dataset.coord).then(() => {
-      const orig = btn.textContent;
-      btn.textContent = '✓ Copiado!';
-      btn.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
-      btn.classList.remove('bg-white/80', 'text-gray-500', 'border-gray-200');
-      setTimeout(() => {
-        btn.textContent = orig;
-        btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-300');
-        btn.classList.add('bg-white/80', 'text-gray-500', 'border-gray-200');
-      }, 1500);
-    });
-  });
+  btn.addEventListener('click', e => { e.stopPropagation(); copyCoord(btn, btn.dataset.coord); });
 });
 </script>
 {% endblock %}
