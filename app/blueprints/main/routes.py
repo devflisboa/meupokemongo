@@ -413,18 +413,33 @@ def regionais():
     with open(data_path, encoding="utf-8") as f:
         exclusives = json.load(f)
 
+    import re
+
+    def _norm(s: str) -> str:
+        """Remove tudo exceto letras/dígitos — 'Farfetch\\'d' → 'farfetchd', 'Mr. Mime' → 'mrmime'."""
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+
     # Associa cada entrada ao Species do banco (para sprite e ID)
+    # Indexa pelo nome original E pela versão normalizada para tolerar apóstrofos, hífens, pontos
     name_map: dict[str, "Species"] = {}
     for sp in db.session.query(Species).all():
-        if sp.name_pt:
-            name_map[sp.name_pt.strip().lower()] = sp
-        name_map[sp.name.strip().lower()] = sp
+        for n in [sp.name_pt, sp.name]:
+            if n:
+                n = n.strip()
+                name_map[n.lower()] = sp
+                name_map[_norm(n)] = sp
+
+    def _display_name(sp) -> str:
+        name = (sp.name_pt or sp.name).strip()
+        if name.lower().endswith("-normal"):
+            name = name[:-7]
+        return name.replace("-", " ").title()
 
     for item in exclusives:
         raw = item["pokemon"].lower().strip()
-        sp = name_map.get(raw) or name_map.get(raw.split()[0])
+        sp = name_map.get(raw) or name_map.get(_norm(raw))
         item["species_id"] = sp.id if sp else None
-        item["species_name"] = sp.name_pt or sp.name if sp else item["pokemon"]
+        item["species_name"] = _display_name(sp) if sp else item["pokemon"]
 
     # Conjunto de species_id que o usuário logado possui (owned=True, quantity>0)
     owned_species: set[int] = set()
