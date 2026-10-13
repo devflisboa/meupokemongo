@@ -42,19 +42,43 @@
   {# Grade de cards #}
   <div id="grade-regionais" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     {% for item in exclusives %}
-    <div class="card-regional bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex gap-3 items-start"
+    {% set is_owned = item.species_id and item.species_id in owned_species %}
+    <div class="card-regional bg-white rounded-2xl border shadow-sm p-3 flex gap-3 items-start
+                {{ 'border-green-200' if is_owned else 'border-gray-100' }}"
          data-nome="{{ item.pokemon | lower }}"
          data-regiao="{{ item.regiao | lower }}">
 
-      {# Sprite — /img/t/<id>.webp é a miniatura HD gerada pelo thumb service #}
-      <div class="flex-shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden">
+      {# Sprite + Pokéball badge #}
+      <div class="relative flex-shrink-0 w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center overflow-visible">
         {% if item.species_id %}
           <img src="/img/t/{{ item.species_id }}.webp"
                alt="{{ item.species_name }}"
-               class="w-12 h-12 object-contain"
+               class="w-12 h-12 object-contain {{ '' if is_owned else 'opacity-50' }}"
                onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{{ item.species_id }}.png'" />
         {% else %}
-          <span class="text-2xl">❓</span>
+          <span class="text-2xl {{ '' if is_owned else 'opacity-50' }}">❓</span>
+        {% endif %}
+
+        {# Pokébola fechada — capturado #}
+        {% if is_owned %}
+        <div class="absolute -top-1 -right-1 w-5 h-5 drop-shadow">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/>
+            <path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/>
+            <circle cx="12" cy="12" r="11" fill="none" stroke="#1f2937" stroke-width="1.5"/>
+            <rect x="1" y="11" width="22" height="2" fill="#1f2937"/>
+            <circle cx="12" cy="12" r="3.5" fill="white" stroke="#1f2937" stroke-width="1.5"/>
+          </svg>
+        </div>
+        {% else %}
+        {# Pokébola aberta — não capturado #}
+        <div class="absolute -top-1 -right-1 w-5 h-5 opacity-35">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="11" fill="none" stroke="#9ca3af" stroke-width="1.5"/>
+            <line x1="1" y1="12" x2="23" y2="12" stroke="#9ca3af" stroke-width="1.5"/>
+            <circle cx="12" cy="12" r="3.5" fill="white" stroke="#9ca3af" stroke-width="1.5"/>
+          </svg>
+        </div>
         {% endif %}
       </div>
 

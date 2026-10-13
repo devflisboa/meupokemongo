@@ -405,6 +405,9 @@ def regionais():
     """Mapa interativo de Pokémon exclusivos por região geográfica."""
     import json, os
     from flask import current_app
+    from flask_login import current_user
+    from ...models.collection import UserCollection
+    from ...models.pokemon import Form
 
     data_path = os.path.join(current_app.static_folder, "data", "regional_exclusives.json")
     with open(data_path, encoding="utf-8") as f:
@@ -423,5 +426,20 @@ def regionais():
         item["species_id"] = sp.id if sp else None
         item["species_name"] = sp.name_pt or sp.name if sp else item["pokemon"]
 
+    # Conjunto de species_id que o usuário logado possui (owned=True, quantity>0)
+    owned_species: set[int] = set()
+    if current_user.is_authenticated:
+        rows = (
+            db.session.query(Form.species_id)
+            .join(UserCollection, UserCollection.form_id == Form.id)
+            .filter(
+                UserCollection.user_id == current_user.id,
+                UserCollection.owned.is_(True),
+                UserCollection.quantity > 0,
+            )
+            .all()
+        )
+        owned_species = {r.species_id for r in rows}
+
     log_event("PAGE_VIEW", {"page": "regionais"})
-    return render_template("main/regionais.html", exclusives=exclusives)
+    return render_template("main/regionais.html", exclusives=exclusives, owned_species=owned_species)

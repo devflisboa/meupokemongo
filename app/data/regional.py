@@ -91,8 +91,44 @@ REGION_EXCLUSIVES: dict[int, tuple[str, bool]] = {
 }
 
 
+REGION_COORDS: dict[int, list[list[float]]] = {
+    83:  [[36.2, 138.3], [36.5, 127.9], [35.9, 104.2]],          # Farfetch'd
+    115: [[-25.3, 133.8]],                                         # Kangaskhan
+    122: [[50.0, 10.0]],                                           # Mr. Mime
+    128: [[39.8, -98.6], [49.9, -97.1]],                          # Tauros
+    214: [[-15.0, -60.0], [13.0, -86.0], [26.0, -80.8]],         # Heracross
+    222: [[-3.5, -60.0], [23.6, -102.6], [5.0, 110.0], [-15.0, 133.0]],  # Corsola
+    324: [[22.0, 79.0], [5.0, 110.0]],                            # Torkoal
+    357: [[2.0, 20.0], [29.0, 45.0]],                             # Tropius
+    369: [[-40.9, 174.9], [-10.0, -160.0]],                       # Relicanth
+    417: [[64.2, -149.5], [65.0, -110.0], [64.0, 100.0]],        # Pachirisu
+    439: [[50.0, 10.0]],                                           # Mime Jr.
+    441: [[-45.0, 0.0]],                                           # Chatot
+    455: [[32.5, -84.0], [-3.5, -60.0]],                          # Carnivine
+    511: [[10.0, 120.0]],                                          # Pansage
+    513: [[50.0, 10.0], [2.0, 20.0], [29.0, 45.0]],              # Pansear
+    515: [[45.0, -100.0], [-15.0, -60.0]],                        # Panpour
+    556: [[31.0, -100.0], [23.6, -102.6], [13.0, -86.0]],        # Maractus
+    561: [[26.8, 30.8], [39.1, 21.8], [31.0, 34.9]],             # Sigilyph
+    626: [[40.7, -74.0], [48.9, 2.3]],                            # Bouffalant
+    701: [[23.6, -102.6], [5.0, -70.0]],                          # Hawlucha
+    707: [[46.2, 2.2], [50.0, 10.0]],                             # Klefki
+    764: [[20.8, -156.3]],                                         # Comfey
+    874: [[54.0, -2.0]],                                           # Stonjourner
+}
+
+
 def exclusive_info(species_id: int) -> tuple[str, bool] | None:
     return REGION_EXCLUSIVES.get(species_id)
+
+
+def exclusive_full(species_id: int) -> dict | None:
+    """Returns {region, in_brazil, coords} or None if not a regional exclusive."""
+    info = REGION_EXCLUSIVES.get(species_id)
+    if not info:
+        return None
+    region, in_brazil = info
+    return {"region": region, "in_brazil": in_brazil, "coords": REGION_COORDS.get(species_id, [])}
 
 
 def trade_only_in_brazil(species_id: int) -> bool:

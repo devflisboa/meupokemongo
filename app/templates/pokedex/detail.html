@@ -102,6 +102,35 @@
     </div>
     {% endif %}
 
+    {% set excl = exclusive_full(species.id) %}
+    {% if excl %}
+    <div class="mb-4 rounded-xl border px-3 py-2.5 flex flex-col gap-1.5
+                {{ 'border-green-200 bg-green-50' if excl.in_brazil else 'border-blue-200 bg-blue-50' }}">
+      <div class="flex items-center gap-1.5">
+        <span class="text-base leading-none">🌍</span>
+        <span class="text-xs font-bold {{ 'text-green-700' if excl.in_brazil else 'text-blue-700' }}">
+          {{ excl.region }}
+        </span>
+        {% if not excl.in_brazil %}
+        <span class="ml-auto text-[10px] font-semibold text-blue-500 bg-blue-100 px-1.5 py-0.5 rounded-full">só por troca no BR</span>
+        {% endif %}
+      </div>
+      {% if excl.coords %}
+      <div class="flex flex-wrap gap-1">
+        {% for coord in excl.coords %}
+        <button type="button"
+                class="coord-copy-btn text-[10px] font-mono bg-white/80 hover:bg-green-100 text-gray-500 hover:text-green-700
+                       border border-gray-200 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                data-coord="{{ coord[0] }},{{ coord[1] }}"
+                title="Copiar {{ coord[0] }}, {{ coord[1] }}">
+          📍 {{ "%.1f"|format(coord[0]) }}, {{ "%.1f"|format(coord[1]) }}
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
     {% if current_user.is_authenticated and default_form %}
     {% set owned = collection_entry and collection_entry.owned and collection_entry.quantity > 0 %}
     {% set for_trade = collection_entry.for_trade if collection_entry else false %}
@@ -265,4 +294,21 @@
 </div>
 {% endif %}
 
+<script>
+document.querySelectorAll('.coord-copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(btn.dataset.coord).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado!';
+      btn.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+      btn.classList.remove('bg-white/80', 'text-gray-500', 'border-gray-200');
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-300');
+        btn.classList.add('bg-white/80', 'text-gray-500', 'border-gray-200');
+      }, 1500);
+    });
+  });
+});
+</script>
 {% endblock %}
