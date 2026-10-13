@@ -189,9 +189,11 @@ def perfil():
             if not file or not file.filename:
                 flash("Nenhum arquivo selecionado.", "warning")
                 return redirect(url_for("auth.perfil"))
-            allowed = {"image/jpeg", "image/png", "image/webp"}
-            mime = file.content_type or ""
-            if mime not in allowed:
+            allowed_mime = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+            allowed_ext = {"jpg", "jpeg", "png", "webp"}
+            mime = (file.content_type or "").lower()
+            ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+            if mime not in allowed_mime and ext not in allowed_ext:
                 flash("Formato inválido. Use JPEG, PNG ou WebP.", "warning")
                 return redirect(url_for("auth.perfil"))
             raw = file.read()
@@ -212,7 +214,8 @@ def perfil():
                 current_user.avatar_mime = "image/jpeg"
                 db.session.commit()
                 flash("Foto de perfil atualizada!", "success")
-            except Exception:
+            except Exception as e:
+                current_app.logger.error("Avatar upload error: %s", e)
                 flash("Erro ao processar a imagem.", "danger")
 
         return redirect(url_for("auth.perfil"))
