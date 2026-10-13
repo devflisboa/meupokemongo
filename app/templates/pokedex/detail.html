@@ -143,9 +143,28 @@
 
       <div class="flex flex-wrap gap-2">
         <button onclick="toggleCaptureDetail(this)"
-          class="capture-btn text-sm font-bold px-4 py-2 rounded-lg transition-colors
+          class="capture-btn flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-lg transition-colors
             {{ 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' if owned else 'bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700' }}">
-          {{ '✓ Capturado' if owned else '+ Capturar' }}
+          {# Pokébola aberta — estado "não capturado" #}
+          <span class="cap-idle flex items-center gap-1.5 {{ 'hidden' if owned }}">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0" fill="none">
+              <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.8"/>
+              <line x1="1" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+            Capturar
+          </span>
+          {# Pokébola fechada — estado "capturado" #}
+          <span class="cap-owned flex items-center gap-1.5 {{ 'hidden' if not owned }}">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0">
+              <path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/>
+              <path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/>
+              <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="1" y="11" width="22" height="2" fill="currentColor"/>
+              <circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            Capturado
+          </span>
         </button>
 
         <div class="owned-controls flex gap-2 {{ '' if owned else 'hidden' }}">
@@ -188,9 +207,12 @@
           const qtyDisplay = card.querySelector('.qty-display');
           const tradeBtn = card.querySelector('.trade-btn');
 
-          if (capBtn) capBtn.textContent = data.owned ? '✓ Capturado' : '+ Capturar';
-          if (capBtn) capBtn.className = capBtn.className.replace(/bg-\S+\s?text-\S+/g, '').trim()
+          if (capBtn) {
+            capBtn.querySelector('.cap-idle')?.classList.toggle('hidden', data.owned);
+            capBtn.querySelector('.cap-owned')?.classList.toggle('hidden', !data.owned);
+            capBtn.className = capBtn.className.replace(/bg-\S+\s?text-\S+/g, '').trim()
             + (data.owned ? ' bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' : ' bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700');
+          }
           if (controls) controls.classList.toggle('hidden', !data.owned);
           if (qtyDisplay) qtyDisplay.textContent = data.quantity;
           if (tradeBtn) tradeBtn.textContent = data.for_trade ? '🔄 Para troca' : 'Troca?';
