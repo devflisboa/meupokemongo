@@ -206,6 +206,18 @@
       </div>
       {% endif %}
 
+      <!-- Badge regional exclusivo -->
+      {% set excl = exclusive_info(species.id) %}
+      {% if excl %}
+      <a href="{{ url_for('main.regionais') }}"
+         class="mt-1 flex items-center gap-0.5 text-[10px] font-bold rounded px-1.5 py-0.5
+                {{ 'bg-green-50 text-green-700' if excl[1] else 'bg-blue-50 text-blue-700' }}"
+         title="{{ excl[0] }}{% if not excl[1] %} — No Brasil, só por troca{% endif %}"
+         onclick="event.stopPropagation()">
+        🌍 <span class="truncate">{{ excl[0] }}</span>
+      </a>
+      {% endif %}
+
       <!-- Status resumido (qty + shiny) quando capturado -->
       <div class="status-row flex items-center gap-1 mt-1.5 flex-wrap {{ '' if owned else 'hidden' }}">
         <span class="qty-pill text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">×{{ qty }}</span>

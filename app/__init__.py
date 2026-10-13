@@ -61,10 +61,12 @@ def create_app(env: str | None = None) -> Flask:
 
     from .data.sprites import sprite_small, sprite_anim
     from .data.i18n import tipo, TYPE_PT
+    from .data.regional import exclusive_info
     app.add_template_filter(sprite_small, "sprite_small")
     app.add_template_filter(sprite_anim, "sprite_anim")
     app.add_template_filter(tipo, "tipo")       # {{ form.type1 | tipo }} → "Planta"
     app.jinja_env.globals["TYPE_PT"] = TYPE_PT  # mesmo dicionário para o JS (base.html)
+    app.jinja_env.globals["exclusive_info"] = exclusive_info  # exclusive_info(species_id) em qualquer template
 
     @app.context_processor
     def inject_notifications():
