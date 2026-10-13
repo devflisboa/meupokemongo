@@ -468,8 +468,10 @@
         class="mt-4 border-t border-gray-100 pt-4 space-y-2">
         <div class="flex flex-wrap gap-2">
           <button onclick="modalToggleCapture()"
-            class="modal-cap text-sm font-bold px-4 py-2 rounded-lg transition-colors ${owned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}">
-            ${owned?'✓ Capturado':'+ Capturar'}
+            class="modal-cap flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-lg transition-colors ${owned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}">
+            ${owned
+              ? `<svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0"><path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/><path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="22" height="2" fill="currentColor"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.5"/></svg>Capturado`
+              : `<svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.8"/><line x1="1" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.8"/></svg>Capturar`}
           </button>
           <div id="modal-ctl" class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 ${owned?'':'hidden'}">
             <button onclick="modalAdjustQty(-1)" class="w-7 h-7 text-gray-600 hover:text-gray-900 font-bold text-xl leading-none">−</button>
@@ -864,7 +866,12 @@
     const qtyEl = document.getElementById('modal-qty');
     const tradeBtn = c.querySelector('.modal-trade');
     const shinyBtn = c.querySelector('.modal-shiny');
-    if (capBtn) { capBtn.textContent = isOwned?'✓ Capturado':'+ Capturar'; capBtn.className=`modal-cap text-sm font-bold px-4 py-2 rounded-lg transition-colors ${isOwned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}`; }
+    if (capBtn) {
+      capBtn.innerHTML = isOwned
+        ? `<svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0"><path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/><path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="22" height="2" fill="currentColor"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.5"/></svg>Capturado`
+        : `<svg viewBox="0 0 24 24" class="w-4 h-4 flex-shrink-0" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.8"/><line x1="1" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.8"/></svg>Capturar`;
+      capBtn.className=`modal-cap flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-lg transition-colors ${isOwned?'bg-green-100 text-green-700':'bg-gray-100 text-gray-600'}`;
+    }
     if (ctl) ctl.classList.toggle('hidden', !isOwned);
     if (extra) extra.classList.toggle('hidden', !isOwned);
     if (qtyEl) qtyEl.textContent = d.quantity;

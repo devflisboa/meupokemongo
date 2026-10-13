@@ -235,9 +235,13 @@
       <div class="mt-2 space-y-1">
         <!-- Capture toggle -->
         <button onclick="toggleCapture(this)"
-          class="capture-btn w-full text-[10px] font-bold py-1 rounded-lg transition-colors
+          class="capture-btn w-full flex items-center justify-center gap-1 text-[10px] font-bold py-1 rounded-lg transition-colors
             {{ 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600' if owned else 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600' }}">
-          {{ 'Capturado' if owned else 'Capturar' }}
+          {% if owned %}
+          <svg viewBox="0 0 24 24" class="w-3 h-3 flex-shrink-0"><path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/><path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="22" height="2" fill="currentColor"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.5"/></svg>Capturado
+          {% else %}
+          <svg viewBox="0 0 24 24" class="w-3 h-3 flex-shrink-0" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.8"/><line x1="1" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.8"/></svg>Capturar
+          {% endif %}
         </button>
 
         <!-- Qty + Trade (only if owned) -->
@@ -411,13 +415,15 @@ function updateCardUI(card, owned, qty, forTrade, hasShiny, hasPerfect) {
 
   if (spriteArea) spriteArea.classList.toggle('opacity-40', !owned);
 
+  const POKE_CLOSED = `<svg viewBox="0 0 24 24" class="w-3 h-3 flex-shrink-0"><path d="M1 12 A11 11 0 0 1 23 12 Z" fill="#EF4444"/><path d="M23 12 A11 11 0 0 1 1 12 Z" fill="#f9fafb"/><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="11" width="22" height="2" fill="currentColor"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.5"/></svg>`;
+  const POKE_OPEN = `<svg viewBox="0 0 24 24" class="w-3 h-3 flex-shrink-0" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.8"/><line x1="1" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" fill="white" stroke="currentColor" stroke-width="1.8"/></svg>`;
   if (capBtn) {
     if (owned) {
-      capBtn.textContent = 'Capturado';
+      capBtn.innerHTML = POKE_CLOSED + 'Capturado';
       capBtn.className = capBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
       capBtn.classList.add('bg-green-100', 'text-green-700', 'hover:bg-red-100', 'hover:text-red-600');
     } else {
-      capBtn.textContent = 'Capturar';
+      capBtn.innerHTML = POKE_OPEN + 'Capturar';
       capBtn.className = capBtn.className.replace(/bg-\w+-\d+ text-\w+-\d+/g, '');
       capBtn.classList.add('bg-gray-100', 'text-gray-500', 'hover:bg-green-100', 'hover:text-green-600');
     }
