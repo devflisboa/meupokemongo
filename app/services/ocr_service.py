@@ -161,26 +161,26 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
         result.warnings.append("Proporção incomum — certifique-se que é um print de celular em modo retrato.")
 
     # Detecta tipo de tela pelo card branco (y=40-90%) — mais confiável que a imagem toda
-    card_text = _ocr_roi(img, 0.40, 0.90, 0.0, 1.0)
+    card_text = _ocr_roi_card(img, 0.40, 0.90, 0.0, 1.0)
     result.screen_type = _detect_screen_type(card_text)
     _log.info("OCR card_text: %r", card_text[:200])
 
-    # CP — topo da tela (y=3-12%)
+    # CP — topo da tela (y=3-12%), fundo colorido → usa pipeline com inversão
     cp_text = _ocr_roi(img, 0.03, 0.12, 0.15, 0.85)
     result.cp = _extract_cp(cp_text)
     _log.info("OCR cp_text: %r → cp=%s", cp_text.strip(), result.cp)
 
     # Nome — topo do card branco (y=37-46%); acima do peso/altura que fica em y≈48-56%
     # x=0.28-0.82 evita o joystick/navegação que fica à esquerda
-    name_text = _ocr_roi(img, 0.37, 0.46, 0.28, 0.82)
+    name_text = _ocr_roi_card(img, 0.37, 0.46, 0.28, 0.82)
     result.raw_name = _clean(name_text)
     _log.info("OCR name_text: %r → raw_name=%r", name_text.strip(), result.raw_name)
     match = _match_species(result.raw_name or "", name_index)
     if match:
         result.species_id, result.form_id, result.species_name = match
     else:
-        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈70-90%)
-        candy_text = _ocr_roi(img, 0.70, 0.90, 0.0, 1.0)
+        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈68-90%)
+        candy_text = _ocr_roi_card(img, 0.68, 0.90, 0.0, 1.0)
         candy_name = _extract_candy_species(candy_text)
         _log.info("OCR candy_text: %r → candy_name=%r", candy_text.strip(), candy_name)
         if candy_name:
@@ -192,7 +192,7 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
             result.warnings.append(f"Pokémon '{result.raw_name}' não identificado — selecione manualmente.")
 
     # HP — área abaixo do nome, acima de peso/tipo (y=44-52%)
-    hp_text = _ocr_roi(img, 0.44, 0.52, 0.20, 0.80)
+    hp_text = _ocr_roi_card(img, 0.44, 0.52, 0.20, 0.80)
     hp = _extract_hp(hp_text)
     if hp:
         result.hp_current, result.hp_max = hp
@@ -219,13 +219,30 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
 # ---------------------------------------------------------------------------
 
 def _ocr_roi(img: "Image.Image", y0: float, y1: float, x0: float, x1: float) -> str:
+    """OCR com inversão — para áreas com fundo colorido/escuro (ex.: CP no topo do jogo)."""
     w, h = img.size
     box = (int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h))
     roi = img.crop(box).convert("L")
     roi = ImageOps.invert(roi)
-    # Escala 2× para melhorar acurácia em números pequenos
     roi = roi.resize((roi.width * 2, roi.height * 2), Image.LANCZOS)
     roi = roi.point(lambda p: 255 if p > 128 else 0)
+    try:
+        return pytesseract.image_to_string(roi, lang="por+eng", config=_OCR_CFG)
+    except Exception:
+        return ""
+
+
+def _ocr_roi_card(img: "Image.Image", y0: float, y1: float, x0: float, x1: float) -> str:
+    """OCR sem inversão — para o card branco (texto escuro sobre fundo claro).
+
+    A inversão destrói texto cinza claro (label de doces, tipo) que cai abaixo
+    do threshold 128 após invert e some. Sem inversão: preto fica preto, funciona.
+    """
+    w, h = img.size
+    box = (int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h))
+    roi = img.crop(box).convert("L")
+    roi = roi.resize((roi.width * 2, roi.height * 2), Image.LANCZOS)
+    roi = roi.point(lambda p: 0 if p < 160 else 255)
     try:
         return pytesseract.image_to_string(roi, lang="por+eng", config=_OCR_CFG)
     except Exception:
