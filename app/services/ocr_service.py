@@ -161,8 +161,12 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     full_text = _ocr_roi(img, 0.0, 1.0, 0.0, 1.0)
     result.screen_type = _detect_screen_type(full_text)
 
-    # Nome
-    name_text = _ocr_roi(img, 0.05, 0.16, 0.05, 0.75)
+    # CP — topo da tela (y=3-12%)
+    cp_text = _ocr_roi(img, 0.03, 0.12, 0.15, 0.85)
+    result.cp = _extract_cp(cp_text)
+
+    # Nome — card branco (y=46-60%); PT-BR usa o nome no card, não no topo
+    name_text = _ocr_roi(img, 0.46, 0.60, 0.15, 0.85)
     result.raw_name = _clean(name_text)
     match = _match_species(result.raw_name or "", name_index)
     if match:
@@ -170,12 +174,8 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     elif result.raw_name:
         result.warnings.append(f"Pokémon '{result.raw_name}' não identificado — selecione manualmente.")
 
-    # CP
-    cp_text = _ocr_roi(img, 0.05, 0.22, 0.10, 0.90)
-    result.cp = _extract_cp(cp_text)
-
-    # HP (tela principal)
-    hp_text = _ocr_roi(img, 0.55, 0.72, 0.05, 0.95)
+    # HP — abaixo do nome (y=55-67%)
+    hp_text = _ocr_roi(img, 0.55, 0.67, 0.15, 0.85)
     hp = _extract_hp(hp_text)
     if hp:
         result.hp_current, result.hp_max = hp
@@ -222,15 +222,18 @@ def _clean(text: str) -> str:
 
 def _detect_screen_type(text: str) -> str:
     t = text.lower()
-    if any(k in t for k in ["ataque", "defesa", " ps", "attack", "defense", "stamina"]):
+    # Tela de avaliação — palavras exclusivas do modo appraisal
+    if any(k in t for k in ["ataque", "defesa", "stamina", "attack", "defense"]):
         return "appraisal"
-    if any(k in t for k in ["cp ", "pv ", "hp "]):
+    # Tela principal — PT-BR usa "pc" (PC 1010) e "peso"/"fortalecer"
+    if any(k in t for k in ["cp ", "pv ", "hp ", "pc ", "peso", "fortalecer", "evoluir", "power up"]):
         return "main"
     return "unknown"
 
 
 def _extract_cp(text: str) -> int | None:
-    m = re.search(r"\bCP\s*(\d{2,4})\b", text, re.IGNORECASE)
+    # PT-BR usa "PC" (Pontos de Combate); EN usa "CP"
+    m = re.search(r"\b(?:CP|PC)\s*(\d{2,4})\b", text, re.IGNORECASE)
     if m:
         return int(m.group(1))
     # fallback: número isolado de 3-4 dígitos

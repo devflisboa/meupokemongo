@@ -125,7 +125,7 @@ def adb_upload():
 
     return jsonify(
         ok=True,
-        name=r.matched_name or r.raw_name or "?",
+        name=r.species_name or r.raw_name or "?",
         cp=r.cp,
         confidence=round(r.confidence, 3),
         iv_pct=r.iv_pct,
