@@ -1,3 +1,4 @@
+import logging
 import os
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -8,6 +9,8 @@ from .extensions import db, migrate, login_manager, csrf, limiter
 def create_app(env: str | None = None) -> Flask:
     env = env or os.environ.get("FLASK_ENV", "development")
     cfg = config_map.get(env, config_map["development"])()
+
+    logging.basicConfig(level=logging.INFO)
 
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object(cfg)

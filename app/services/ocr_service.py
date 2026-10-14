@@ -6,12 +6,15 @@ Desacoplado do Flask: recebe name_index do chamador e retorna ScanResult.
 from __future__ import annotations
 
 import io
+import logging
 import os
 import re
 import difflib
 import colorsys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 try:
     import pytesseract
@@ -160,22 +163,26 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     # Detecta tipo de tela pelo card branco (y=40-90%) — mais confiável que a imagem toda
     card_text = _ocr_roi(img, 0.40, 0.90, 0.0, 1.0)
     result.screen_type = _detect_screen_type(card_text)
+    _log.info("OCR card_text: %r", card_text[:200])
 
     # CP — topo da tela (y=3-12%)
     cp_text = _ocr_roi(img, 0.03, 0.12, 0.15, 0.85)
     result.cp = _extract_cp(cp_text)
+    _log.info("OCR cp_text: %r → cp=%s", cp_text.strip(), result.cp)
 
     # Nome — topo do card branco (y=37-46%); acima do peso/altura que fica em y≈48-56%
     # x=0.28-0.82 evita o joystick/navegação que fica à esquerda
     name_text = _ocr_roi(img, 0.37, 0.46, 0.28, 0.82)
     result.raw_name = _clean(name_text)
+    _log.info("OCR name_text: %r → raw_name=%r", name_text.strip(), result.raw_name)
     match = _match_species(result.raw_name or "", name_index)
     if match:
         result.species_id, result.form_id, result.species_name = match
     else:
-        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈68-82%)
-        candy_text = _ocr_roi(img, 0.68, 0.82, 0.10, 0.90)
+        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈70-90%)
+        candy_text = _ocr_roi(img, 0.70, 0.90, 0.0, 1.0)
         candy_name = _extract_candy_species(candy_text)
+        _log.info("OCR candy_text: %r → candy_name=%r", candy_text.strip(), candy_name)
         if candy_name:
             match = _match_species(candy_name, name_index)
             if match:
