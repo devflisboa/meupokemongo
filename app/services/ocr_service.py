@@ -321,10 +321,34 @@ def _detect_shiny(img: "Image.Image") -> bool:
 
 
 def _extract_candy_species(text: str) -> str | None:
-    """Extrai o nome da espécie de 'DOCES DE ELECTRIKE' ou 'DOCES GG DE ELECTRIKE'."""
-    m = re.search(r"doces\s+(?:gg\s+)?de\s+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú\s\-]+)", text, re.IGNORECASE)
+    """Extrai o nome da espécie do texto de doces do Pokémon GO PT-BR.
+
+    Lida com dois layouts do OCR:
+    - Mesma linha:  'DOCES GG DE ELECTRIKE'
+    - Duas colunas: 'DOCES DE  DOCES GG DE\\nMORELULL  MORELULL'
+                    (labels na linha 1, nomes na linha 2)
+    """
+    # Padrão A: espécie na mesma linha — para no primeiro \n ou dígito
+    m = re.search(
+        r"doces\s+(?:gg\s+)?de\s+([A-ZÀ-Úa-zà-ú][^\n\r\d]*?)(?:\s*[\n\r]|$)",
+        text, re.IGNORECASE,
+    )
     if m:
-        return m.group(1).strip()
+        candidate = m.group(1).strip()
+        # Rejeita se capturou outro "DOCES" (layout 2 colunas → espécie na próxima linha)
+        if len(candidate) >= 3 and not re.search(r"\bdoces\b", candidate, re.IGNORECASE):
+            return candidate
+
+    # Padrão B: layout de 2 colunas — espécie na linha abaixo do label
+    m = re.search(
+        r"doces\s+(?:gg\s+)?de\s*[\n\r]+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú \.\-]*)",
+        text, re.IGNORECASE,
+    )
+    if m:
+        candidate = m.group(1).strip().split()[0]  # primeira palavra em caso de ambiguidade
+        if len(candidate) >= 3:
+            return candidate
+
     return None
 
 
