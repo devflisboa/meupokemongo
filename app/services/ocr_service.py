@@ -179,10 +179,15 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     if match:
         result.species_id, result.form_id, result.species_name = match
     else:
-        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈68-90%)
-        candy_text = _ocr_roi_card(img, 0.68, 0.90, 0.0, 1.0)
-        candy_name = _extract_candy_species(candy_text)
-        _log.info("OCR candy_text: %r → candy_name=%r", candy_text.strip(), candy_name)
+        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]"
+        # Varre faixas verticais em busca do texto de doces
+        candy_name = None
+        for y0c, y1c in [(0.58, 0.72), (0.68, 0.82), (0.72, 0.90)]:
+            candy_text = _ocr_roi_candy(img, y0c, y1c)
+            _log.info("OCR candy y=(%.2f,%.2f): %r", y0c, y1c, candy_text.strip()[:120])
+            candy_name = _extract_candy_species(candy_text)
+            if candy_name:
+                break
         if candy_name:
             match = _match_species(candy_name, name_index)
             if match:
@@ -235,16 +240,27 @@ def _ocr_roi(img: "Image.Image", y0: float, y1: float, x0: float, x1: float) -> 
 def _ocr_roi_card(img: "Image.Image", y0: float, y1: float, x0: float, x1: float) -> str:
     """OCR sem inversão — para o card branco (texto escuro sobre fundo claro).
 
-    A inversão destrói texto cinza claro (label de doces, tipo) que cai abaixo
-    do threshold 128 após invert e some. Sem inversão: preto fica preto, funciona.
+    Sem binarização manual: Tesseract aplica Otsu internamente, que lida melhor
+    com texto de múltiplos tons de cinza (labels claros como 'DOCES DE').
     """
     w, h = img.size
     box = (int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h))
     roi = img.crop(box).convert("L")
     roi = roi.resize((roi.width * 2, roi.height * 2), Image.LANCZOS)
-    roi = roi.point(lambda p: 0 if p < 160 else 255)
     try:
         return pytesseract.image_to_string(roi, lang="por+eng", config=_OCR_CFG)
+    except Exception:
+        return ""
+
+
+def _ocr_roi_candy(img: "Image.Image", y0: float, y1: float) -> str:
+    """OCR especializado para a linha de doces — PSM 11 (sparse text) sem threshold."""
+    w, h = img.size
+    box = (0, int(y0 * h), w, int(y1 * h))
+    roi = img.crop(box).convert("L")
+    roi = roi.resize((roi.width * 2, roi.height * 2), Image.LANCZOS)
+    try:
+        return pytesseract.image_to_string(roi, lang="por+eng", config="--psm 11 --oem 3")
     except Exception:
         return ""
 
