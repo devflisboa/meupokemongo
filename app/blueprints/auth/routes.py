@@ -1,5 +1,5 @@
 from io import BytesIO
-from flask import render_template, redirect, url_for, flash, request, abort, make_response
+from flask import render_template, redirect, url_for, flash, request, abort, make_response, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from . import bp
 from ...extensions import db, limiter
