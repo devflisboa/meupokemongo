@@ -62,6 +62,7 @@ class ScanResult:
     confidence: float = 0.0
     warnings: list[str] = field(default_factory=list)
     thumbnail_url: str | None = None
+    full_url: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -81,6 +82,7 @@ class ScanResult:
             "confidence": self.confidence,
             "warnings": self.warnings,
             "thumbnail_url": self.thumbnail_url,
+            "full_url": self.full_url,
         }
 
 
@@ -124,10 +126,24 @@ def process_images(
         if thumb_dir:
             try:
                 img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                img.thumbnail((200, 200))
+
+                # Thumbnail 200×200 para o card de revisão
+                thumb = img.copy()
+                thumb.thumbnail((200, 200))
                 thumb_path = thumb_dir / f"thumb_{i}.jpg"
-                img.save(thumb_path, "JPEG", quality=70)
+                thumb.save(thumb_path, "JPEG", quality=70)
                 result.thumbnail_url = f"/static/scan_temp/{thumb_dir.name}/thumb_{i}.jpg"
+
+                # Imagem full para o modal de validação (max 900px de largura)
+                full = img.copy()
+                if full.width > 900:
+                    full = full.resize(
+                        (900, int(full.height * 900 / full.width)),
+                        Image.LANCZOS,
+                    )
+                full_path = thumb_dir / f"full_{i}.jpg"
+                full.save(full_path, "JPEG", quality=85)
+                result.full_url = f"/static/scan_temp/{thumb_dir.name}/full_{i}.jpg"
             except Exception:
                 pass
         results.append(result)

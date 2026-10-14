@@ -45,8 +45,17 @@
       {# Cabeçalho do card #}
       <div class="flex items-start gap-3">
         {% if r.thumbnail_url %}
-        <img src="{{ r.thumbnail_url }}" alt="Print {{ idx + 1 }}"
-             class="w-16 h-16 object-cover rounded-xl flex-shrink-0 border border-gray-200"/>
+        <button type="button" onclick="openFull('{{ r.full_url or r.thumbnail_url }}')"
+                class="flex-shrink-0 focus:outline-none group relative">
+          <img src="{{ r.thumbnail_url }}" alt="Print {{ idx + 1 }}"
+               class="w-16 h-16 object-cover rounded-xl border border-gray-200 group-hover:opacity-80 transition"/>
+          <span class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+            <svg class="w-6 h-6 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-3-3v6m-3-3h6"/>
+            </svg>
+          </span>
+        </button>
         {% else %}
         <div class="w-16 h-16 rounded-xl bg-gray-200 flex items-center justify-center flex-shrink-0">
           <svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +205,29 @@
 
 </div>
 
+{# Modal fullscreen para visualizar o print completo #}
+<div id="img-modal" class="fixed inset-0 z-50 hidden bg-black/90 flex items-center justify-center p-2"
+     onclick="closeModal()">
+  <button type="button" onclick="closeModal()"
+          class="absolute top-3 right-4 text-white text-3xl font-bold leading-none z-10">&times;</button>
+  <img id="img-modal-src" src="" alt="Print completo"
+       class="max-w-full max-h-full rounded-lg object-contain shadow-xl"
+       onclick="event.stopPropagation()"/>
+</div>
+
 <script>
+function openFull(url) {
+  if (!url) return;
+  document.getElementById('img-modal-src').src = url;
+  document.getElementById('img-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('img-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
 function toggleCard(cb, idx) {
   const fields = document.getElementById('fields-' + idx);
   if (fields) fields.style.opacity = cb.checked ? '0.3' : '1';
