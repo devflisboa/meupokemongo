@@ -31,11 +31,8 @@ class Config:
     TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_ADMIN_CHAT_ID = os.environ.get("TELEGRAM_ADMIN_CHAT_ID", "")
 
-    # Pasta local com os arquivos .mp4 dos episódios do anime
-    ANIME_VIDEO_FOLDER = os.environ.get(
-        "ANIME_VIDEO_FOLDER",
-        r"C:\Users\felipe.lisboa\Downloads\Telegram Desktop"
-    )
+    # Pasta local com os arquivos .mp4 dos episódios do anime (desativado por padrão)
+    ANIME_VIDEO_FOLDER = os.environ.get("ANIME_VIDEO_FOLDER", "")
 
     # Limite global folgado: cada toggle/±/modal é uma requisição; catalogar gera centenas.
     # Rotas sensíveis (login/registro) têm limite próprio e rígido.
