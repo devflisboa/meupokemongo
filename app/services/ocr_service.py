@@ -157,16 +157,17 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     if ratio > 0.65:
         result.warnings.append("Proporção incomum — certifique-se que é um print de celular em modo retrato.")
 
-    # Detecta tipo de tela pelo texto completo
-    full_text = _ocr_roi(img, 0.0, 1.0, 0.0, 1.0)
-    result.screen_type = _detect_screen_type(full_text)
+    # Detecta tipo de tela pelo card branco (y=40-90%) — mais confiável que a imagem toda
+    card_text = _ocr_roi(img, 0.40, 0.90, 0.0, 1.0)
+    result.screen_type = _detect_screen_type(card_text)
 
     # CP — topo da tela (y=3-12%)
     cp_text = _ocr_roi(img, 0.03, 0.12, 0.15, 0.85)
     result.cp = _extract_cp(cp_text)
 
-    # Nome — card branco (y=46-60%); PT-BR usa o nome no card, não no topo
-    name_text = _ocr_roi(img, 0.46, 0.60, 0.15, 0.85)
+    # Nome — topo do card branco (y=37-46%); acima do peso/altura que fica em y≈48-56%
+    # x=0.28-0.82 evita o joystick/navegação que fica à esquerda
+    name_text = _ocr_roi(img, 0.37, 0.46, 0.28, 0.82)
     result.raw_name = _clean(name_text)
     match = _match_species(result.raw_name or "", name_index)
     if match:
@@ -174,8 +175,8 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     elif result.raw_name:
         result.warnings.append(f"Pokémon '{result.raw_name}' não identificado — selecione manualmente.")
 
-    # HP — abaixo do nome (y=55-67%)
-    hp_text = _ocr_roi(img, 0.55, 0.67, 0.15, 0.85)
+    # HP — área abaixo do nome, acima de peso/tipo (y=44-52%)
+    hp_text = _ocr_roi(img, 0.44, 0.52, 0.20, 0.80)
     hp = _extract_hp(hp_text)
     if hp:
         result.hp_current, result.hp_max = hp
@@ -189,10 +190,9 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
         if result.iv_pct is None:
             result.warnings.append("IVs não lidos com precisão — preencha manualmente.")
 
-    # Shiny (heurística por pixel dourado)
-    result.is_shiny = _detect_shiny(img)
-    if result.is_shiny:
-        result.warnings.append("Shiny detectado — confirme abaixo.")
+    # Shiny: desativado (estrela de favorito ⭐ tem cor dourada idêntica e gera falso positivo)
+    # Marque manualmente na tela de confirmação se o Pokémon for brilhante.
+    result.is_shiny = False
 
     result.confidence = _calc_confidence(result)
     return result
