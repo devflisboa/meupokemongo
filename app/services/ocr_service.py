@@ -172,8 +172,17 @@ def _process_single(img_bytes: bytes, name_index: dict) -> ScanResult:
     match = _match_species(result.raw_name or "", name_index)
     if match:
         result.species_id, result.form_id, result.species_name = match
-    elif result.raw_name:
-        result.warnings.append(f"Pokémon '{result.raw_name}' não identificado — selecione manualmente.")
+    else:
+        # Fallback: "DOCES DE [ESPÉCIE]" ou "DOCES GG DE [ESPÉCIE]" (y≈68-82%)
+        candy_text = _ocr_roi(img, 0.68, 0.82, 0.10, 0.90)
+        candy_name = _extract_candy_species(candy_text)
+        if candy_name:
+            match = _match_species(candy_name, name_index)
+            if match:
+                result.species_id, result.form_id, result.species_name = match
+                result.warnings.append(f"Identificado via doces ('{candy_name}') — confirme o Pokémon.")
+        if not result.species_id and result.raw_name:
+            result.warnings.append(f"Pokémon '{result.raw_name}' não identificado — selecione manualmente.")
 
     # HP — área abaixo do nome, acima de peso/tipo (y=44-52%)
     hp_text = _ocr_roi(img, 0.44, 0.52, 0.20, 0.80)
@@ -269,6 +278,14 @@ def _detect_shiny(img: "Image.Image") -> bool:
         return count > 20
     except Exception:
         return False
+
+
+def _extract_candy_species(text: str) -> str | None:
+    """Extrai o nome da espécie de 'DOCES DE ELECTRIKE' ou 'DOCES GG DE ELECTRIKE'."""
+    m = re.search(r"doces\s+(?:gg\s+)?de\s+([A-ZÀ-Úa-zà-ú][A-ZÀ-Úa-zà-ú\s\-]+)", text, re.IGNORECASE)
+    if m:
+        return m.group(1).strip()
+    return None
 
 
 def _match_species(raw: str, index: dict) -> tuple[int, int | None, str] | None:
