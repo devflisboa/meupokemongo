@@ -166,6 +166,12 @@
             </svg>
             Scan
           </a>
+          <a href="{{ url_for('pvp.guia') }}"
+             class="px-4 py-1.5 rounded-full transition-colors
+               {% if request.blueprint == 'pvp' %}bg-white text-[#1B2A4A] font-bold
+               {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
+            <span aria-hidden="true">⚔️</span> PVP
+          </a>
           <a href="{{ url_for('anime.index') }}"
              class="px-4 py-1.5 rounded-full transition-colors
                {% if request.blueprint == 'anime' %}bg-white text-[#1B2A4A] font-bold
@@ -997,7 +1003,7 @@
   {# ── Bottom Nav global (mobile, autenticado) — páginas com nav própria sobrescrevem o bloco ── #}
   {% block bottom_nav %}
   {% if current_user.is_authenticated %}
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#1B2A4A] border-t border-[#152238] grid grid-cols-6 sm:hidden">
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#1B2A4A] border-t border-[#152238] grid grid-cols-7 sm:hidden">
     <a href="{{ url_for('main.index') }}"
       {% if request.endpoint == 'main.index' %}aria-current="page"{% endif %}
       class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
@@ -1048,6 +1054,16 @@
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>
       <span>Treinadores</span>
+    </a>
+    <a href="{{ url_for('pvp.guia') }}" id="bnav-pvp"
+      {% if request.blueprint == 'pvp' %}aria-current="page"{% endif %}
+      class="flex flex-col items-center py-2 gap-0.5 text-[10px] font-bold transition-colors
+        {% if request.blueprint == 'pvp' %}text-white border-t-2 border-[#CC0000]{% else %}text-white/50 border-t-2 border-transparent{% endif %}">
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+      </svg>
+      <span>PVP</span>
     </a>
     <a href="{{ url_for('scan.index') }}" id="bnav-scan"
       {% if request.blueprint == 'scan' %}aria-current="page"{% endif %}

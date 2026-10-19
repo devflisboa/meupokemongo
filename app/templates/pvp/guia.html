@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Guia PVP{% endblock %}
+{% block description %}Guia completo de Batalhas PVP no Pokémon GO — times, moves, legacy e ranks por liga.{% endblock %}
+
+{% block content %}
+
+{# ── Paleta de cores por liga (Tailwind não aceita classes dinâmicas) ─────── #}
+{% set PALETTE = {
+  "great":  {"tab_active": "bg-blue-600 text-white",   "tab_hover": "hover:bg-blue-50 text-blue-700",
+             "header": "from-blue-600 to-blue-800",     "ring": "ring-blue-400",
+             "badge": "bg-blue-100 text-blue-800",      "border": "border-blue-100"},
+  "ultra":  {"tab_active": "bg-purple-600 text-white", "tab_hover": "hover:bg-purple-50 text-purple-700",
+             "header": "from-purple-600 to-purple-900", "ring": "ring-purple-400",
+             "badge": "bg-purple-100 text-purple-800",  "border": "border-purple-100"},
+  "master": {"tab_active": "bg-amber-500 text-white",  "tab_hover": "hover:bg-amber-50 text-amber-700",
+             "header": "from-amber-500 to-amber-700",   "ring": "ring-amber-400",
+             "badge": "bg-amber-100 text-amber-800",    "border": "border-amber-100"},
+  "little": {"tab_active": "bg-pink-500 text-white",   "tab_hover": "hover:bg-pink-50 text-pink-700",
+             "header": "from-pink-500 to-pink-700",     "ring": "ring-pink-400",
+             "badge": "bg-pink-100 text-pink-800",      "border": "border-pink-100"},
+} %}
+
+{% set pal = PALETTE[active_key] %}
+
+{# ── Cabeçalho da liga ─────────────────────────────────────────────────────── #}
+<div class="bg-gradient-to-r {{ pal.header }} rounded-2xl px-5 py-4 mb-4 text-white shadow-md">
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">{{ active.icon }}</span>
+        <h1 class="text-xl font-black tracking-tight">{{ active.name }}</h1>
+        {% if active.cp_limit %}
+        <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">até {{ active.cp_limit }} PC</span>
+        {% else %}
+        <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">Sem limite de PC</span>
+        {% endif %}
+      </div>
+      <p class="text-xs text-white/70 mt-1">
+        {{ active.meta | selectattr("tier","equalto","S") | list | length }} Tier S ·
+        {{ active.meta | selectattr("tier","equalto","A") | list | length }} Tier A ·
+        {{ active.meta | selectattr("tier","equalto","B") | list | length }} Tier B
+      </p>
+    </div>
+    {% if current_user.is_authenticated %}
+    <div class="text-right text-xs text-white/80">
+      {% set owned_count = active.meta | selectattr("owned") | list | length %}
+      <div class="text-2xl font-black">{{ owned_count }}/{{ active.meta | length }}</div>
+      <div>na sua coleção</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Abas de liga ─────────────────────────────────────────────────────────── #}
+<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+  {% for key, data in leagues.items() %}
+  {% set p = PALETTE[key] %}
+  <a href="{{ url_for('pvp.guia', liga=key) }}"
+     class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all
+            {% if key == active_key %}{{ p.tab_active }} shadow{% else %}bg-white border border-gray-200 {{ p.tab_hover }}{% endif %}">
+    {{ data.icon }} {{ data.name }}
+  </a>
+  {% endfor %}
+</div>
+
+{# ── Legenda ──────────────────────────────────────────────────────────────── #}
+<div class="flex flex-wrap gap-3 mb-4 text-xs text-gray-500">
+  <span class="flex items-center gap-1"><span class="w-5 h-5 rounded flex items-center justify-center bg-yellow-400 text-yellow-900 font-black text-[10px]">S</span> Tier S — imprescindível</span>
+  <span class="flex items-center gap-1"><span class="w-5 h-5 rounded flex items-center justify-center bg-blue-500 text-white font-black text-[10px]">A</span> Tier A — muito bom</span>
+  <span class="flex items-center gap-1"><span class="w-5 h-5 rounded flex items-center justify-center bg-gray-400 text-white font-black text-[10px]">B</span> Tier B — situacional</span>
+  <span class="flex items-center gap-1"><span class="text-base">⭐</span> Move Legacy (Elite TM)</span>
+  {% if current_user.is_authenticated %}
+  <span class="flex items-center gap-1"><span class="text-base">✅</span> Você tem</span>
+  <span class="flex items-center gap-1"><span class="text-base">💯</span> 100% IV</span>
+  {% endif %}
+</div>
+
+{# ── Grade de cards ───────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+  {% for poke in active.meta %}
+  {% set is_galarian = poke.name == "stunfisk-galarian" %}
+
+  <div class="bg-white rounded-2xl border {{ pal.border }} shadow-sm overflow-hidden
+              flex flex-col transition-all hover:shadow-md hover:-translate-y-0.5
+              {% if current_user.is_authenticated and poke.owned %}ring-2 {{ pal.ring }}{% endif %}">
+
+    {# Topo colorido com sprite #}
+    <div class="relative bg-gradient-to-b from-gray-50 to-gray-100 pt-3 pb-1 flex flex-col items-center">
+
+      {# Badge de tier #}
+      <span class="absolute top-2 left-2 w-6 h-6 rounded flex items-center justify-center text-[11px] font-black {{ poke.tier_color }}">
+        {{ poke.tier }}
+      </span>
+
+      {# Badges do usuário #}
+      {% if current_user.is_authenticated %}
+      <span class="absolute top-2 right-2 flex gap-1">
+        {% if poke.has_perfect %}<span title="Você tem 100% IV">💯</span>{% endif %}
+        {% if poke.owned %}<span title="Você tem este Pokémon">✅</span>{% endif %}
+      </span>
+      {% endif %}
+
+      {# Sprite #}
+      <img src="{{ poke.sprite_url }}"
+           data-art="{{ poke.sprite_url }}"
+           onerror="spriteFallback(this)"
+           alt="{{ poke.name_pt }}"
+           class="w-20 h-20 object-contain sprite-sm"
+           loading="lazy">
+
+      {# Nome e número #}
+      <div class="text-center mt-1 px-2">
+        <div class="text-xs font-black text-gray-800 leading-tight">{{ poke.name_pt }}</div>
+        <div class="text-[10px] text-gray-400">#{{ "%04d" % poke.pokemon_id }}</div>
+      </div>
+
+      {# Tipos #}
+      <div class="flex gap-1 mt-1 mb-2">
+        {% for t in poke.types %}
+        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full
+          {% if t == 'fire' %}bg-orange-100 text-orange-700
+          {% elif t == 'water' %}bg-blue-100 text-blue-700
+          {% elif t == 'grass' %}bg-green-100 text-green-700
+          {% elif t == 'electric' %}bg-yellow-100 text-yellow-700
+          {% elif t == 'ice' %}bg-cyan-100 text-cyan-700
+          {% elif t == 'fighting' %}bg-red-100 text-red-700
+          {% elif t == 'poison' %}bg-purple-100 text-purple-700
+          {% elif t == 'ground' %}bg-amber-100 text-amber-700
+          {% elif t == 'flying' %}bg-sky-100 text-sky-700
+          {% elif t == 'psychic' %}bg-pink-100 text-pink-700
+          {% elif t == 'bug' %}bg-lime-100 text-lime-700
+          {% elif t == 'rock' %}bg-stone-100 text-stone-700
+          {% elif t == 'ghost' %}bg-violet-100 text-violet-700
+          {% elif t == 'dragon' %}bg-indigo-100 text-indigo-700
+          {% elif t == 'dark' %}bg-gray-700 text-gray-100
+          {% elif t == 'steel' %}bg-slate-100 text-slate-700
+          {% elif t == 'fairy' %}bg-rose-100 text-rose-700
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ t | tipo }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Corpo — moves #}
+    <div class="px-3 py-2 flex-1 flex flex-col gap-1.5 text-[11px]">
+
+      {# Fast move #}
+      <div class="flex items-start gap-1">
+        <span class="text-gray-400 font-bold w-8 flex-shrink-0">Rápido</span>
+        <span class="font-semibold text-gray-800">
+          {{ poke.fast }}
+          {% if poke.fast in poke.legacy %}<span title="Move Legacy — Elite TM">⭐</span>{% endif %}
+        </span>
+      </div>
+
+      {# Charged moves #}
+      <div class="flex items-start gap-1">
+        <span class="text-gray-400 font-bold w-8 flex-shrink-0">Carga</span>
+        <div class="flex flex-col gap-0.5">
+          {% for move in poke.charged %}
+          <span class="font-semibold text-gray-800">
+            {{ move }}
+            {% if move in poke.legacy %}<span title="Move Legacy — Elite TM">⭐</span>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Aviso de legacy #}
+      {% if poke.legacy %}
+      <div class="mt-auto pt-1.5 border-t border-gray-100">
+        <div class="text-[10px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 leading-snug">
+          ⭐ <span class="font-bold">{{ poke.legacy | join(", ") }}</span><br>
+          {{ poke.legacy_note }}
+        </div>
+      </div>
+      {% endif %}
+
+      {# Nota opcional #}
+      {% if poke.note and not poke.legacy %}
+      <div class="mt-auto pt-1.5 border-t border-gray-100">
+        <p class="text-[10px] text-gray-500 leading-snug">{{ poke.note }}</p>
+      </div>
+      {% endif %}
+
+    </div>{# /corpo #}
+  </div>{# /card #}
+
+  {% endfor %}
+</div>{# /grade #}
+
+{# ── Nota sobre IVs para PVP ─────────────────────────────────────────────── #}
+<div class="mt-6 bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-900">
+  <p class="font-bold mb-1">💡 IVs para PVP: o que realmente importa</p>
+  {% if active_key == "master" %}
+  <p>Na Liga Mestre <strong>100% IV (15/15/15) é o ideal</strong> — não há limite de PC, então quanto mais forte melhor.</p>
+  {% else %}
+  <p>
+    Na {{ active.name }}, IVs <strong>baixos de Ataque</strong> costumam ser melhores — permitem mais nível antes de atingir o limite de {{ active.cp_limit }} PC,
+    ganhando mais PS e Defesa. Um Pokémon com <strong>0/15/15</strong> geralmente supera o 15/15/15 no PVP.
+    Use <a href="https://pvpoke.com" target="_blank" rel="noopener" class="underline font-bold">pvpoke.com</a> para calcular o Rank exato de cada exemplar.
+  </p>
+  {% endif %}
+</div>
+
+{% endblock %}

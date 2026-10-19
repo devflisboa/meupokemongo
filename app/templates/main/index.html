@@ -69,6 +69,19 @@
   </div>
 </section>
 
+{# ═════════════════════════ PVP BANNER ═════════════════════════ #}
+<a href="{{ url_for('pvp.guia') }}"
+   class="flex items-center gap-4 bg-gradient-to-r from-[#1B2A4A] to-[#0f1f38]
+          rounded-2xl px-5 py-4 shadow-md hover:shadow-lg hover:-translate-y-0.5
+          transition-all active:scale-[.98] group">
+  <div class="flex-shrink-0 w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl">⚔️</div>
+  <div class="flex-1 min-w-0">
+    <div class="text-white font-black text-base leading-tight">Guia PVP</div>
+    <div class="text-white/60 text-xs mt-0.5">Grande Liga · Ultra Liga · Copinha · moves legacy</div>
+  </div>
+  <div class="text-white/50 group-hover:text-white text-lg transition-colors flex-shrink-0">→</div>
+</a>
+
 {# ═════════════════════════ 2. CENTRAL DE TROCAS ═════════════════════════ #}
 <section id="home-trocas" aria-label="Central de Trocas">
   <div class="flex items-end justify-between mb-3">
