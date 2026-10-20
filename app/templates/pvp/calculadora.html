@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Calculadora PVP{% endblock %}
+{% block description %}Calcule o Rank PVP das suas IVs no Pokémon GO — Grande Liga, Ultra Liga, Copinha.{% endblock %}
+
+{% block content %}
+
+<div class="bg-gradient-to-r from-indigo-700 to-purple-800 rounded-2xl px-5 py-4 mb-5 text-white shadow-md">
+  <div class="flex items-center gap-3">
+    <span class="text-3xl">🧮</span>
+    <div>
+      <h1 class="text-xl font-black tracking-tight">Calculadora de Rank PVP</h1>
+      <p class="text-xs text-white/70 mt-0.5">Informe o Pokémon e as IVs para ver o Rank em cada liga</p>
+    </div>
+  </div>
+</div>
+
+{# ── Abas de navegação PVP ────────────────────────────────────────────────── #}
+<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+  <a href="{{ url_for('pvp.guia') }}"
+     class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold
+            bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 transition-all">
+    📖 Guia
+  </a>
+  <span class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold
+               bg-indigo-600 text-white shadow">
+    🧮 Calculadora
+  </span>
+</div>
+
+{# ── Formulário ───────────────────────────────────────────────────────────── #}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+
+    {# Seletor de Pokémon #}
+    <div class="sm:col-span-2">
+      <label class="block text-xs font-bold text-gray-500 mb-1">Pokémon</label>
+      <div class="relative">
+        <select id="pokemon-select"
+                class="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl
+                       px-4 py-2.5 pr-8 text-sm font-semibold text-gray-800
+                       focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
+          <option value="">— Escolha um Pokémon —</option>
+          {% for p in pokemon_list %}
+          <option value="{{ p.species_id }}"
+                  data-atk="{{ p.base_atk }}"
+                  data-def="{{ p.base_def }}"
+                  data-sta="{{ p.base_sta }}"
+                  data-sprite="{{ p.sprite_url }}">
+            #{{ "%04d"|format(p.species_id) }} {{ p.name_pt }}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">▼</div>
+      </div>
+    </div>
+
+    {# IV Ataque #}
+    <div>
+      <label class="block text-xs font-bold text-gray-500 mb-1">
+        IV Ataque <span id="atk-val" class="text-indigo-600">0</span>
+      </label>
+      <input type="range" id="iv-atk" min="0" max="15" value="0"
+             class="w-full accent-indigo-500 cursor-pointer"
+             oninput="document.getElementById('atk-val').textContent=this.value; calcRank()">
+    </div>
+
+    {# IV Defesa #}
+    <div>
+      <label class="block text-xs font-bold text-gray-500 mb-1">
+        IV Defesa <span id="def-val" class="text-indigo-600">15</span>
+      </label>
+      <input type="range" id="iv-def" min="0" max="15" value="15"
+             class="w-full accent-indigo-500 cursor-pointer"
+             oninput="document.getElementById('def-val').textContent=this.value; calcRank()">
+    </div>
+
+    {# IV Stamina #}
+    <div>
+      <label class="block text-xs font-bold text-gray-500 mb-1">
+        IV Stamina / PS <span id="sta-val" class="text-indigo-600">14</span>
+      </label>
+      <input type="range" id="iv-sta" min="0" max="15" value="14"
+             class="w-full accent-indigo-500 cursor-pointer"
+             oninput="document.getElementById('sta-val').textContent=this.value; calcRank()">
+    </div>
+
+    {# Preview do Pokémon selecionado #}
+    <div class="flex items-center justify-center sm:justify-end">
+      <div id="pokemon-preview" class="hidden flex-col items-center">
+        <img id="preview-sprite" src="" alt="" class="w-20 h-20 object-contain">
+        <div id="preview-stats" class="text-[10px] text-gray-400 text-center mt-1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  {# Presets comuns #}
+  <div class="flex flex-wrap gap-2 mb-4">
+    <span class="text-xs font-bold text-gray-400 self-center">Presets:</span>
+    <button onclick="setIVs(15,15,15)" class="text-xs bg-yellow-100 text-yellow-800 font-bold px-2 py-1 rounded-lg hover:bg-yellow-200 transition">100% (15/15/15)</button>
+    <button onclick="setIVs(0,15,15)"  class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-1 rounded-lg hover:bg-indigo-200 transition">PVP ideal (0/15/15)</button>
+    <button onclick="setIVs(0,14,15)"  class="text-xs bg-purple-100 text-purple-800 font-bold px-2 py-1 rounded-lg hover:bg-purple-200 transition">0/14/15</button>
+    <button onclick="setIVs(1,15,14)"  class="text-xs bg-pink-100 text-pink-800 font-bold px-2 py-1 rounded-lg hover:bg-pink-200 transition">1/15/14</button>
+  </div>
+
+</div>
+
+{# ── Resultados ───────────────────────────────────────────────────────────── #}
+<div id="results-area" class="hidden">
+
+  <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5"></div>
+
+  {# Dica contextual #}
+  <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-900">
+    <p class="font-bold mb-1">💡 O que é o Rank PVP?</p>
+    <p>O <strong>Rank 1</strong> é a combinação de IVs com o maior "Stat Product" dentro do limite de CP da liga.
+       IVs baixos de Ataque permitem subir mais de nível antes de atingir o limite,
+       aumentando PS e Defesa — por isso 0/15/15 costuma ser o ideal na Grande e Ultra Liga.
+       Na Liga Mestre (sem limite) o 15/15/15 é sempre melhor.</p>
+  </div>
+</div>
+
+{# ── Estado vazio ─────────────────────────────────────────────────────────── #}
+<div id="empty-state" class="text-center py-16 text-gray-400">
+  <div class="text-5xl mb-3">🎯</div>
+  <div class="text-sm font-semibold">Selecione um Pokémon e ajuste as IVs</div>
+  <div class="text-xs mt-1">Os resultados aparecerão aqui</div>
+</div>
+
+<script>
+const LEAGUE_META = {
+  {% for key, data in leagues.items() %}
+  "{{ key }}": { "name": "{{ data.name }}", "cp_limit": {{ data.cp_limit or 'null' }}, "icon": "{{ data.icon }}" },
+  {% endfor %}
+};
+
+const RANK_COLORS = [
+  [1,   "bg-yellow-400 text-yellow-900 ring-2 ring-yellow-300"],
+  [5,   "bg-emerald-500 text-white"],
+  [10,  "bg-blue-500 text-white"],
+  [25,  "bg-purple-500 text-white"],
+  [50,  "bg-gray-500 text-white"],
+  [100, "bg-gray-400 text-white"],
+  [Infinity, "bg-gray-200 text-gray-600"],
+];
+
+function rankBadgeClass(rank) {
+  for (const [threshold, cls] of RANK_COLORS) {
+    if (rank <= threshold) return cls;
+  }
+  return "bg-gray-200 text-gray-600";
+}
+
+function rankLabel(rank) {
+  if (rank === 1) return "🏆 Rank #1";
+  if (rank <= 5)  return `⭐ Top 5 — #${rank}`;
+  if (rank <= 10) return `Top 10 — #${rank}`;
+  if (rank <= 25) return `Top 25 — #${rank}`;
+  return `#${rank}`;
+}
+
+function setIVs(atk, def, sta) {
+  document.getElementById("iv-atk").value = atk;
+  document.getElementById("iv-def").value = def;
+  document.getElementById("iv-sta").value = sta;
+  document.getElementById("atk-val").textContent = atk;
+  document.getElementById("def-val").textContent = def;
+  document.getElementById("sta-val").textContent = sta;
+  calcRank();
+}
+
+let _debounce = null;
+function calcRank() {
+  clearTimeout(_debounce);
+  _debounce = setTimeout(_doCalcRank, 250);
+}
+
+function _doCalcRank() {
+  const sid = document.getElementById("pokemon-select").value;
+  if (!sid) return;
+
+  const ivAtk = document.getElementById("iv-atk").value;
+  const ivDef = document.getElementById("iv-def").value;
+  const ivSta = document.getElementById("iv-sta").value;
+
+  const url = `/pvp/api/rank?species_id=${sid}&iv_atk=${ivAtk}&iv_def=${ivDef}&iv_sta=${ivSta}`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => renderResults(data))
+    .catch(() => {});
+}
+
+function renderResults(data) {
+  if (data.error) return;
+
+  document.getElementById("empty-state").classList.add("hidden");
+  document.getElementById("results-area").classList.remove("hidden");
+
+  const grid = document.getElementById("results-grid");
+  grid.innerHTML = "";
+
+  const leagues = Object.entries(data.results);
+  if (leagues.length === 0) {
+    grid.innerHTML = '<p class="text-sm text-gray-400 col-span-full text-center py-8">Este Pokémon não está no meta de nenhuma liga cadastrada.</p>';
+    return;
+  }
+
+  for (const [leagueKey, r] of leagues) {
+    const meta = LEAGUE_META[leagueKey] || {};
+    const badgeCls = rankBadgeClass(r.rank);
+    const label = rankLabel(r.rank);
+    const pctBar = Math.round(r.sp_pct || 0);
+
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col gap-2";
+    card.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-lg">${meta.icon || "🏟️"}</span>
+        <div>
+          <div class="text-xs font-black text-gray-700">${meta.name}</div>
+          <div class="text-[10px] text-gray-400">${meta.cp_limit ? `até ${meta.cp_limit} PC` : "Sem limite"}</div>
+        </div>
+      </div>
+
+      <div class="rounded-xl px-3 py-2 text-center font-black text-sm ${badgeCls}">
+        ${label}
+      </div>
+
+      <div class="text-xs text-gray-500 space-y-0.5">
+        <div class="flex justify-between"><span>Nível</span><span class="font-bold text-gray-800">${r.level}</span></div>
+        <div class="flex justify-between"><span>CP</span><span class="font-bold text-gray-800">${r.cp}</span></div>
+        <div class="flex justify-between"><span>Stat Product</span><span class="font-bold text-gray-800">${r.sp_pct}%</span></div>
+      </div>
+
+      <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+        <div class="h-1.5 rounded-full bg-indigo-500 transition-all duration-500" style="width: ${pctBar}%"></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+// Ao trocar o Pokémon, atualiza preview e recalcula
+document.getElementById("pokemon-select").addEventListener("change", function() {
+  const opt = this.options[this.selectedIndex];
+  const preview = document.getElementById("pokemon-preview");
+  if (!this.value) {
+    preview.classList.add("hidden");
+    preview.classList.remove("flex");
+    return;
+  }
+  document.getElementById("preview-sprite").src = opt.dataset.sprite;
+  document.getElementById("preview-stats").textContent =
+    `ATK ${opt.dataset.atk} / DEF ${opt.dataset.def} / STA ${opt.dataset.sta}`;
+  preview.classList.remove("hidden");
+  preview.classList.add("flex");
+  calcRank();
+});
+</script>
+
+{% endblock %}
