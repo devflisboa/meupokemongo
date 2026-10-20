@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Simulador PVP{% endblock %}
+{% block description %}Simule batalhas PVP 1v1 no Pokémon GO — Grande Liga, Ultra Liga e mais.{% endblock %}
+
+{% block content %}
+
+<div class="bg-gradient-to-r from-red-700 to-rose-800 rounded-2xl px-5 py-4 mb-5 text-white shadow-md">
+  <div class="flex items-center gap-3">
+    <span class="text-3xl">⚔️</span>
+    <div>
+      <h1 class="text-xl font-black tracking-tight">Simulador PVP</h1>
+      <p class="text-xs text-white/70 mt-0.5">Simulação 1v1 simplificada — escolha moves e escudos</p>
+    </div>
+  </div>
+</div>
+
+{% include "pvp/_nav.html" %}
+
+{# ── Liga ─────────────────────────────────────────────────────────────────── #}
+<div class="flex gap-2 mb-4 overflow-x-auto pb-1 text-sm">
+  <span class="self-center text-xs font-bold text-gray-500">Liga:</span>
+  {% for key, data in leagues.items() %}
+  <button onclick="setLeague('{{ key }}')" id="lg-btn-{{ key }}"
+          class="lg-btn flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full font-bold
+                 transition-all bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+    {{ data.icon }} {{ data.name }}
+  </button>
+  {% endfor %}
+</div>
+
+{# ── Dois painéis de combatentes ──────────────────────────────────────────── #}
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+  {% for side in ["a", "b"] %}
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div class="text-xs font-black text-gray-500 mb-2">Pokémon {{ "A" if side == "a" else "B" }}</div>
+
+    {# Preview do sprite #}
+    <div class="flex items-center gap-3 mb-3">
+      <img id="sprite-{{ side }}" src="" alt=""
+           class="w-16 h-16 object-contain opacity-0 transition-opacity">
+      <div id="name-{{ side }}" class="text-sm font-black text-gray-700 hidden"></div>
+    </div>
+
+    {# Seletor de Pokémon #}
+    <div class="mb-2">
+      <label class="text-[10px] font-bold text-gray-400 mb-0.5 block">Pokémon</label>
+      <select id="poke-{{ side }}" onchange="onPokeChange('{{ side }}')"
+              class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400 bg-gray-50">
+        <option value="">— Escolha —</option>
+      </select>
+    </div>
+
+    {# IVs com presets #}
+    <div class="mb-2">
+      <div class="flex items-center justify-between mb-0.5">
+        <label class="text-[10px] font-bold text-gray-400">IVs</label>
+        <div class="flex gap-1">
+          <button onclick="setIVs('{{ side }}',15,15,15)" class="text-[9px] bg-yellow-100 text-yellow-700 font-bold px-1.5 py-0.5 rounded">100%</button>
+          <button onclick="setIVs('{{ side }}',0,15,15)"  class="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">PVP</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5">
+        <input id="iv-atk-{{ side }}" type="number" min="0" max="15" value="15" placeholder="ATK"
+               class="border border-gray-200 rounded-lg text-center text-xs px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400">
+        <input id="iv-def-{{ side }}" type="number" min="0" max="15" value="15" placeholder="DEF"
+               class="border border-gray-200 rounded-lg text-center text-xs px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400">
+        <input id="iv-sta-{{ side }}" type="number" min="0" max="15" value="15" placeholder="PS"
+               class="border border-gray-200 rounded-lg text-center text-xs px-1 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400">
+      </div>
+    </div>
+
+    {# Move Rápido #}
+    <div class="mb-2">
+      <label class="text-[10px] font-bold text-gray-400 mb-0.5 block">Move Rápido</label>
+      <select id="fast-{{ side }}"
+              class="w-full text-xs border border-gray-200 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400 bg-gray-50">
+        {% for m in fast_moves %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+      </select>
+    </div>
+
+    {# Move Carregado #}
+    <div class="mb-2">
+      <label class="text-[10px] font-bold text-gray-400 mb-0.5 block">Move Carregado</label>
+      <select id="charged-{{ side }}"
+              class="w-full text-xs border border-gray-200 rounded-xl px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-red-400 bg-gray-50">
+        {% for m in charged_moves %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+      </select>
+    </div>
+
+    {# Escudos #}
+    <div>
+      <label class="text-[10px] font-bold text-gray-400 mb-0.5 block">Escudos</label>
+      <div class="flex gap-2">
+        {% for n in [0, 1, 2] %}
+        <label class="flex items-center gap-1 text-xs cursor-pointer">
+          <input type="radio" name="shields-{{ side }}" value="{{ n }}" {% if n == 2 %}checked{% endif %}
+                 class="accent-red-500">
+          {{ n }}🛡️
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Botão batalhar ───────────────────────────────────────────────────────── #}
+<button onclick="runBattle()"
+        class="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700
+               text-white font-black py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[.98] mb-4">
+  ⚔️ Batalhar!
+</button>
+
+{# ── Resultado ────────────────────────────────────────────────────────────── #}
+<div id="result-area" class="hidden bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+
+  <div id="winner-banner" class="text-center mb-4">
+    <div id="winner-text" class="text-2xl font-black"></div>
+    <div id="winner-sub"  class="text-xs text-gray-500 mt-0.5"></div>
+  </div>
+
+  {# Barras de HP #}
+  <div class="space-y-3 mb-4">
+    {% for side in ["a", "b"] %}
+    <div>
+      <div class="flex justify-between text-xs font-bold text-gray-600 mb-1">
+        <span id="hp-name-{{ side }}">Pokémon {{ "A" if side == "a" else "B" }}</span>
+        <span id="hp-val-{{ side }}">—</span>
+      </div>
+      <div class="w-full bg-gray-100 rounded-full h-3">
+        <div id="hp-bar-{{ side }}"
+             class="h-3 rounded-full transition-all duration-700 bg-green-500"
+             style="width:100%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Stats da batalha #}
+  <div id="battle-stats" class="grid grid-cols-3 gap-3 text-center text-xs">
+    <div class="bg-gray-50 rounded-xl p-2">
+      <div class="text-gray-400 font-bold text-[10px]">Turnos</div>
+      <div id="stat-turns" class="font-black text-gray-800">—</div>
+    </div>
+    <div class="bg-gray-50 rounded-xl p-2">
+      <div class="text-gray-400 font-bold text-[10px]">Escudos A usados</div>
+      <div id="stat-sha" class="font-black text-gray-800">—</div>
+    </div>
+    <div class="bg-gray-50 rounded-xl p-2">
+      <div class="text-gray-400 font-bold text-[10px]">Escudos B usados</div>
+      <div id="stat-shb" class="font-black text-gray-800">—</div>
+    </div>
+  </div>
+
+  <p class="text-[10px] text-gray-400 mt-3 text-center">
+    Simulação simplificada — não reflete exatamente a mecânica de turnos do GO.
+  </p>
+</div>
+
+<script>
+const ALL_META = JSON.parse({{ meta_json | tojson }});
+const LG_COLORS = {great:"bg-blue-600",ultra:"bg-purple-600",master:"bg-amber-500",little:"bg-pink-500"};
+let currentLeague = "great";
+
+function setLeague(key) {
+  currentLeague = key;
+  document.querySelectorAll(".lg-btn").forEach(b => {
+    b.classList.remove(...Object.values(LG_COLORS),"text-white","shadow");
+    b.classList.add("bg-white","border","border-gray-200","text-gray-700");
+  });
+  const btn = document.getElementById("lg-btn-" + key);
+  if (btn) {
+    btn.classList.remove("bg-white","border","border-gray-200","text-gray-700");
+    btn.classList.add(LG_COLORS[key]||"bg-indigo-600","text-white","shadow");
+  }
+  populateSelects();
+}
+
+function populateSelects() {
+  const meta = ALL_META.filter(p => p.league_key === currentLeague);
+  for (const side of ["a","b"]) {
+    const sel = document.getElementById("poke-" + side);
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Escolha —</option>' +
+      meta.map(p => `<option value="${p.species_id}">${p.name_pt}</option>`).join("");
+    if (prev) sel.value = prev;
+    onPokeChange(side);
+  }
+}
+
+function onPokeChange(side) {
+  const sid = parseInt(document.getElementById("poke-" + side).value);
+  const poke = ALL_META.find(p => p.species_id === sid && p.league_key === currentLeague);
+  const sprite = document.getElementById("sprite-" + side);
+  const nameEl = document.getElementById("name-" + side);
+  if (!poke) {
+    sprite.style.opacity = 0; nameEl.classList.add("hidden"); return;
+  }
+  sprite.src = poke.sprite_url;
+  sprite.style.opacity = 1;
+  nameEl.textContent = poke.name_pt;
+  nameEl.classList.remove("hidden");
+  // Preenche moves recomendados
+  const fastSel    = document.getElementById("fast-" + side);
+  const chargedSel = document.getElementById("charged-" + side);
+  if (poke.fast)             fastSel.value    = poke.fast;
+  if (poke.charged?.[0])     chargedSel.value = poke.charged[0];
+}
+
+function setIVs(side, atk, def, sta) {
+  document.getElementById("iv-atk-" + side).value = atk;
+  document.getElementById("iv-def-" + side).value = def;
+  document.getElementById("iv-sta-" + side).value = sta;
+}
+
+function getPkmPayload(side) {
+  const sid = parseInt(document.getElementById("poke-" + side).value);
+  const poke = ALL_META.find(p => p.species_id === sid && p.league_key === currentLeague);
+  if (!poke) return null;
+  const CP_LIMITS = { {% for k, d in leagues.items() %}"{{ k }}": {{ d.cp_limit or "null" }},{% endfor %} };
+  return {
+    base_atk: poke.base_atk, base_def: poke.base_def, base_sta: poke.base_sta,
+    iv_atk: parseInt(document.getElementById("iv-atk-"+side).value)||0,
+    iv_def: parseInt(document.getElementById("iv-def-"+side).value)||0,
+    iv_sta: parseInt(document.getElementById("iv-sta-"+side).value)||0,
+    types: poke.types,
+    fast_move:    document.getElementById("fast-"+side).value,
+    charged_move: document.getElementById("charged-"+side).value,
+    cp_limit: CP_LIMITS[currentLeague] ?? null,
+  };
+}
+
+function getShields(side) {
+  return parseInt(document.querySelector(`[name="shields-${side}"]:checked`)?.value ?? 2);
+}
+
+async function runBattle() {
+  const pkm_a = getPkmPayload("a");
+  const pkm_b = getPkmPayload("b");
+  if (!pkm_a || !pkm_b) {
+    alert("Selecione um Pokémon para cada lado."); return;
+  }
+  const payload = { pkm_a, pkm_b, shields_a: getShields("a"), shields_b: getShields("b") };
+  const btn = document.querySelector("[onclick='runBattle()']");
+  btn.disabled = true; btn.textContent = "Simulando…";
+  try {
+    const res = await fetch("/pvp/api/simular", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    renderResult(data, pkm_a, pkm_b);
+  } catch (e) {
+    alert("Erro na simulação. Tente novamente.");
+  } finally {
+    btn.disabled = false; btn.textContent = "⚔️ Batalhar!";
+  }
+}
+
+function renderResult(r, pkm_a, pkm_b) {
+  const aName = document.getElementById("name-a").textContent || "Pokémon A";
+  const bName = document.getElementById("name-b").textContent || "Pokémon B";
+
+  const area = document.getElementById("result-area");
+  area.classList.remove("hidden");
+  area.scrollIntoView({behavior:"smooth", block:"nearest"});
+
+  const wText = document.getElementById("winner-text");
+  const wSub  = document.getElementById("winner-sub");
+  if (r.winner === "a") {
+    wText.textContent = `🏆 ${aName} vence!`;
+    wSub.textContent = `${bName} foi derrotado em ${r.turns} turnos`;
+  } else if (r.winner === "b") {
+    wText.textContent = `🏆 ${bName} vence!`;
+    wSub.textContent = `${aName} foi derrotado em ${r.turns} turnos`;
+  } else {
+    wText.textContent = "🤝 Empate!";
+    wSub.textContent = `Batalha encerrada em ${r.turns} turnos`;
+  }
+
+  // HP bars
+  function setBar(side, hp, maxHp, name) {
+    const pct = maxHp > 0 ? Math.max(0, hp / maxHp * 100) : 0;
+    document.getElementById("hp-name-" + side).textContent = name;
+    document.getElementById("hp-val-" + side).textContent = `${Math.max(0,hp)} / ${maxHp} PS`;
+    const bar = document.getElementById("hp-bar-" + side);
+    bar.style.width = pct + "%";
+    bar.className = "h-3 rounded-full transition-all duration-700 " +
+      (pct > 50 ? "bg-green-500" : pct > 25 ? "bg-yellow-400" : "bg-red-500");
+  }
+  setBar("a", r.hp_a, r.hp_a_max, aName);
+  setBar("b", r.hp_b, r.hp_b_max, bName);
+
+  document.getElementById("stat-turns").textContent = r.turns;
+  document.getElementById("stat-sha").textContent   = r.shields_a_used + " 🛡️";
+  document.getElementById("stat-shb").textContent   = r.shields_b_used + " 🛡️";
+}
+
+// Init
+setLeague("great");
+</script>
+{% endblock %}

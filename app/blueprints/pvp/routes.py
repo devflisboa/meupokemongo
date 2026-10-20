@@ -1,11 +1,17 @@
+import json
+import math
 from flask import render_template, request, jsonify
-from flask_login import current_user
+from flask_login import current_user, login_required
+from sqlalchemy import and_
+
 from . import bp
 from ...extensions import db
 from ...models.pokemon import Form
 from ...models.collection import UserCollection
+from ...models.individual import UserPokemon
 from ...data.pvp_meta import LEAGUES, TIER_ORDER, TIER_COLOR, LEAGUE_COLORS
-from ...services.pvp_service import rank_of
+from ...services.pvp_service import rank_of, best_level_for_cp_limit, LEVEL_CPM
+from ...data.pvp_moves import FAST_MOVES, CHARGED_MOVES, simulate_battle
 
 
 def _form_name_from_slug(pokemon_name: str) -> str:
@@ -178,3 +184,223 @@ def api_rank():
         "iv_atk": iv_atk, "iv_def": iv_def, "iv_sta": iv_sta,
         "results": results,
     })
+
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+
+def _real_sid(entry: dict) -> int:
+    return entry.get("_species_id_real") or entry["species_id"]
+
+
+def _species_to_meta() -> dict[int, list[tuple[str, dict]]]:
+    """Monta mapa species_id → [(league_key, entry)] para todos os meta válidos."""
+    result: dict[int, list] = {}
+    for lk, ld in LEAGUES.items():
+        for e in ld["meta"]:
+            sid = _real_sid(e)
+            if not e.get("base_atk") or sid == 9999:
+                continue
+            for lg in e.get("leagues", []):
+                if lg == lk:
+                    result.setdefault(sid, []).append((lk, e))
+    return result
+
+
+# ── Nível 3 — Minha Coleção PVP ──────────────────────────────────────────────
+
+@bp.route("/minha-colecao")
+@login_required
+def minha_colecao():
+    s2m = _species_to_meta()
+    meta_sids = set(s2m.keys())
+
+    pairs = (
+        db.session.query(UserPokemon, Form)
+        .join(Form, UserPokemon.form_id == Form.id)
+        .filter(
+            UserPokemon.user_id == current_user.id,
+            Form.species_id.in_(meta_sids),
+        )
+        .order_by(UserPokemon.cp.desc())
+        .all()
+    )
+
+    results_by_league: dict[str, list] = {k: [] for k in LEAGUES}
+
+    for poke, form in pairs:
+        sid = form.species_id
+        for league_key, entry in s2m.get(sid, []):
+            row = {
+                "poke_id": poke.id,
+                "nickname": poke.nickname,
+                "name_pt": entry["name_pt"],
+                "sprite_url": f"/img/t/{sid}.webp",
+                "tier": entry["tier"],
+                "tier_color": TIER_COLOR.get(entry["tier"], "bg-gray-400 text-white"),
+                "cp": poke.cp,
+                "iv_atk": poke.atk_iv,
+                "iv_def": poke.def_iv,
+                "iv_sta": poke.sta_iv,
+                "iv_pct": poke.iv_pct,
+                "quick_move": poke.quick_move or "",
+                "charge_move": poke.charge_move or "",
+                "charge_move2": poke.charge_move2 or "",
+                "meta_fast": entry["fast"],
+                "meta_charged": entry["charged"],
+                "legacy": entry.get("legacy", []),
+                "has_meta_fast": (poke.quick_move or "") == entry["fast"],
+                "has_meta_charged": bool(
+                    {poke.charge_move, poke.charge_move2} & set(entry["charged"])
+                ),
+                "rank": None, "sp_pct": None, "pvp_level": None, "pvp_cp": None,
+            }
+            if poke.atk_iv is not None and poke.def_iv is not None and poke.sta_iv is not None:
+                r = rank_of(
+                    entry["base_atk"], entry["base_def"], entry["base_sta"],
+                    poke.atk_iv, poke.def_iv, poke.sta_iv,
+                    LEAGUES[league_key]["cp_limit"],
+                )
+                row.update({"rank": r.get("rank"), "sp_pct": r.get("sp_pct"),
+                             "pvp_level": r.get("level"), "pvp_cp": r.get("cp")})
+            results_by_league[league_key].append(row)
+
+    for k in results_by_league:
+        results_by_league[k].sort(key=lambda x: x.get("rank") or 9999)
+
+    return render_template("pvp/minha_colecao.html",
+                           results_by_league=results_by_league, leagues=LEAGUES)
+
+
+# ── Nível 4 — Time Builder ────────────────────────────────────────────────────
+
+@bp.route("/time-builder")
+def time_builder():
+    meta_by_league: dict[str, dict] = {}
+    for lk, ld in LEAGUES.items():
+        entries = []
+        for e in ld["meta"]:
+            sid = _real_sid(e)
+            entries.append({
+                "species_id": sid,
+                "name_pt": e["name_pt"],
+                "types": e["types"],
+                "tier": e["tier"],
+                "fast": e["fast"],
+                "charged": e["charged"],
+                "legacy": e.get("legacy", []),
+                "sprite_url": f"/img/t/{sid}.webp",
+            })
+        meta_by_league[lk] = {
+            "name": ld["name"], "icon": ld["icon"], "cp_limit": ld["cp_limit"],
+            "meta": entries,
+        }
+    return render_template("pvp/time_builder.html",
+                           meta_json=json.dumps(meta_by_league, ensure_ascii=False),
+                           leagues=LEAGUES)
+
+
+# ── Nível 5 — Simulador ───────────────────────────────────────────────────────
+
+@bp.route("/simulador")
+def simulador():
+    all_meta: list[dict] = []
+    seen: set[tuple] = set()
+    for lk, ld in LEAGUES.items():
+        for e in ld["meta"]:
+            sid = _real_sid(e)
+            key = (sid, lk)
+            if key in seen or not e.get("base_atk"):
+                continue
+            seen.add(key)
+            all_meta.append({
+                "species_id": sid,
+                "name_pt": e["name_pt"],
+                "types": e["types"],
+                "base_atk": e["base_atk"],
+                "base_def": e["base_def"],
+                "base_sta": e["base_sta"],
+                "fast": e["fast"],
+                "charged": e["charged"],
+                "league_key": lk,
+                "league_name": ld["name"],
+                "sprite_url": f"/img/t/{sid}.webp",
+            })
+    all_meta.sort(key=lambda x: x["name_pt"])
+    return render_template("pvp/simulador.html",
+                           meta_json=json.dumps(all_meta, ensure_ascii=False),
+                           fast_moves=sorted(FAST_MOVES.keys()),
+                           charged_moves=sorted(CHARGED_MOVES.keys()),
+                           leagues=LEAGUES)
+
+
+@bp.route("/api/simular", methods=["POST"])
+def api_simular():
+    data = request.get_json(silent=True) or {}
+
+    def build_pkm(key: str) -> dict | None:
+        p = data.get(key, {})
+        try:
+            ba = int(p["base_atk"]); bd = int(p["base_def"]); bs = int(p["base_sta"])
+            ia = int(p.get("iv_atk", 15)); id_ = int(p.get("iv_def", 15)); is_ = int(p.get("iv_sta", 15))
+            cp_limit = int(p["cp_limit"]) if p.get("cp_limit") else None
+        except (KeyError, TypeError, ValueError):
+            return None
+        lv   = best_level_for_cp_limit(ba, bd, bs, ia, id_, is_, cp_limit)
+        cpm  = LEVEL_CPM[lv]
+        return {
+            "atk_eff": (ba + ia) * cpm,
+            "def_eff": (bd + id_) * cpm,
+            "hp_max":  max(10, int((bs + is_) * cpm)),
+            "types":       p.get("types", ["normal"]),
+            "fast_move":   p.get("fast_move", ""),
+            "charged_move": p.get("charged_move", ""),
+        }
+
+    pkm_a = build_pkm("pkm_a")
+    pkm_b = build_pkm("pkm_b")
+    if not pkm_a or not pkm_b:
+        return jsonify({"error": "dados inválidos"}), 400
+
+    shields_a = max(0, min(2, int(data.get("shields_a", 2))))
+    shields_b = max(0, min(2, int(data.get("shields_b", 2))))
+    result = simulate_battle(pkm_a, pkm_b, shields_a, shields_b)
+    return jsonify(result)
+
+
+# ── API: sinal PVP para o Scan ────────────────────────────────────────────────
+
+@bp.route("/api/scan-check")
+def api_scan_check():
+    try:
+        sid = int(request.args.get("species_id", 0))
+    except (TypeError, ValueError):
+        return jsonify({"is_meta": False})
+
+    iv_atk = request.args.get("iv_atk", type=int)
+    iv_def = request.args.get("iv_def", type=int)
+    iv_sta = request.args.get("iv_sta", type=int)
+
+    matches = []
+    seen_leagues: set[str] = set()
+    for lk, ld in LEAGUES.items():
+        for e in ld["meta"]:
+            if _real_sid(e) != sid or lk not in e.get("leagues", []):
+                continue
+            if lk in seen_leagues:
+                continue
+            seen_leagues.add(lk)
+            row: dict = {
+                "league_key": lk, "league_name": ld["name"], "icon": ld["icon"],
+                "tier": e["tier"], "fast": e["fast"], "charged": e["charged"],
+                "legacy": e.get("legacy", []),
+                "rank": None, "sp_pct": None, "level": None, "pvp_cp": None,
+            }
+            if (iv_atk is not None and iv_def is not None and iv_sta is not None
+                    and e.get("base_atk")):
+                r = rank_of(e["base_atk"], e["base_def"], e["base_sta"],
+                            iv_atk, iv_def, iv_sta, ld["cp_limit"])
+                row.update({"rank": r.get("rank"), "sp_pct": r.get("sp_pct"),
+                            "level": r.get("level"), "pvp_cp": r.get("cp")})
+            matches.append(row)
+
+    return jsonify({"is_meta": bool(matches), "leagues": matches})

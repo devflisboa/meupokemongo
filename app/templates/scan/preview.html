@@ -173,6 +173,8 @@
           <p class="text-[10px] text-gray-500 mt-1" id="iv-pct-{{ idx }}">
             {% if r.iv_pct is not none %}= {{ r.iv_pct }}%{% endif %}
           </p>
+          {# Sinal PVP — preenchido via /pvp/api/scan-check #}
+          <div id="pvp-signal-{{ idx }}" class="mt-1.5"></div>
         </div>
 
         {# Shiny #}
@@ -247,6 +249,51 @@ function calcIV(idx) {
   } else {
     pct.textContent = '';
   }
+  checkPVP(idx);
 }
+
+// ── Sinal PVP no Scan ──────────────────────────────────────────────────────
+const _pvpDebounce = {};
+function checkPVP(idx) {
+  clearTimeout(_pvpDebounce[idx]);
+  _pvpDebounce[idx] = setTimeout(() => _doPVPCheck(idx), 350);
+}
+function _doPVPCheck(idx) {
+  const sidEl = document.querySelector(`[name=species_id_${idx}]`);
+  if (!sidEl || !sidEl.value) return;
+  const atk = document.querySelector(`[name=atk_iv_${idx}]`)?.value;
+  const def = document.querySelector(`[name=def_iv_${idx}]`)?.value;
+  const sta = document.querySelector(`[name=sta_iv_${idx}]`)?.value;
+  let url = `/pvp/api/scan-check?species_id=${sidEl.value}`;
+  if (atk !== '' && def !== '' && sta !== '') url += `&iv_atk=${atk}&iv_def=${def}&iv_sta=${sta}`;
+  fetch(url).then(r => r.json()).then(d => _renderPVPSignal(d, idx)).catch(() => {});
+}
+function _renderPVPSignal(data, idx) {
+  const el = document.getElementById('pvp-signal-' + idx);
+  if (!el || !data.is_meta) { if (el) el.innerHTML = ''; return; }
+  const RANK_CLS = r => !r ? 'bg-gray-100 text-gray-500' :
+    r<=1  ? 'bg-yellow-400 text-yellow-900' :
+    r<=5  ? 'bg-emerald-500 text-white' :
+    r<=10 ? 'bg-blue-500 text-white' :
+    r<=25 ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600';
+  el.innerHTML = '<div class="flex flex-wrap gap-1">' +
+    data.leagues.map(lg => {
+      const rankInfo = lg.rank ? ` — #${lg.rank}` : '';
+      const spInfo   = lg.sp_pct ? ` · ${lg.sp_pct}%` : '';
+      const legacy   = lg.legacy?.length ? ' ⭐' : '';
+      return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${RANK_CLS(lg.rank)}">
+        ${lg.icon} ${lg.league_name} T${lg.tier}${rankInfo}${spInfo}${legacy}
+      </span>`;
+    }).join('') + '</div>';
+}
+// Inicia sinal para os cards já com espécie preenchida
+document.querySelectorAll('[name^="species_id_"]').forEach(el => {
+  el.addEventListener('change', () => {
+    const idx = parseInt(el.name.replace('species_id_', ''));
+    checkPVP(idx);
+  });
+  const idx = parseInt(el.name.replace('species_id_', ''));
+  if (el.value) checkPVP(idx);
+});
 </script>
 {% endblock %}

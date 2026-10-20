@@ -1,0 +1,25 @@
+{# Barra de navegação compartilhada entre todas as páginas PVP #}
+<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+  {% set PVP_NAV = [
+    ("pvp.guia",          "📖", "Guia"),
+    ("pvp.calculadora",   "🧮", "Calculadora"),
+    ("pvp.minha_colecao", "🎯", "Minha Coleção"),
+    ("pvp.time_builder",  "🛡️", "Times"),
+    ("pvp.simulador",     "⚔️", "Simulador"),
+  ] %}
+  {% for ep, icon, name in PVP_NAV %}
+    {% if ep == "pvp.minha_colecao" and not current_user.is_authenticated %}
+    <span class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold
+                 bg-gray-100 text-gray-400 cursor-not-allowed" title="Faça login">
+      {{ icon }} {{ name }}
+    </span>
+    {% else %}
+    <a href="{{ url_for(ep) }}"
+       class="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all
+              {% if request.endpoint == ep %}bg-indigo-600 text-white shadow
+              {% else %}bg-white border border-gray-200 hover:bg-gray-50 text-gray-700{% endif %}">
+      {{ icon }} {{ name }}
+    </a>
+    {% endif %}
+  {% endfor %}
+</div>

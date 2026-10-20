@@ -10,6 +10,7 @@ O Rank 1 é o maior stat product que ainda cabe no limite de CP da liga.
 """
 
 import math
+from functools import lru_cache
 
 # CPM por nível (nível 1 até 50 inclusive, step 0.5)
 _CPM: list[float] = [
@@ -142,6 +143,7 @@ def best_level_for_cp_limit(base_atk: int, base_def: int, base_sta: int,
     return best
 
 
+@lru_cache(maxsize=256)
 def rank_ivs(base_atk: int, base_def: int, base_sta: int,
              cp_limit: int | None) -> list[dict]:
     """

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}Minha Coleção PVP{% endblock %}
+{% block description %}Seus Pokémon meta para PVP no Pokémon GO — rank de IVs por liga.{% endblock %}
+
+{% block content %}
+
+<div class="bg-gradient-to-r from-indigo-700 to-purple-800 rounded-2xl px-5 py-4 mb-5 text-white shadow-md">
+  <div class="flex items-center gap-3">
+    <span class="text-3xl">🎯</span>
+    <div>
+      <h1 class="text-xl font-black tracking-tight">Minha Coleção PVP</h1>
+      <p class="text-xs text-white/70 mt-0.5">Pokémon meta que você tem — com rank de IVs calculado</p>
+    </div>
+  </div>
+</div>
+
+{% include "pvp/_nav.html" %}
+
+{# ── Tabs de liga ─────────────────────────────────────────────────────────── #}
+{% set PALETTE = {
+  "great":  {"tab":"bg-blue-600 text-white",   "header":"from-blue-600 to-blue-800",   "badge":"bg-blue-100 text-blue-800"},
+  "ultra":  {"tab":"bg-purple-600 text-white", "header":"from-purple-600 to-purple-900","badge":"bg-purple-100 text-purple-800"},
+  "master": {"tab":"bg-amber-500 text-white",  "header":"from-amber-500 to-amber-700", "badge":"bg-amber-100 text-amber-800"},
+  "little": {"tab":"bg-pink-500 text-white",   "header":"from-pink-500 to-pink-700",   "badge":"bg-pink-100 text-pink-800"},
+} %}
+
+<div id="tab-buttons" class="flex gap-2 mb-4 overflow-x-auto pb-1">
+  {% for key, data in leagues.items() %}
+  {% set count = results_by_league[key] | length %}
+  <button onclick="switchTab('{{ key }}')" id="tab-btn-{{ key }}"
+          class="tab-btn flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold transition-all
+                 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700">
+    {{ data.icon }} {{ data.name }}
+    <span class="text-[10px] bg-black/10 rounded-full px-1.5">{{ count }}</span>
+  </button>
+  {% endfor %}
+</div>
+
+{% for league_key, league_data in leagues.items() %}
+{% set pal = PALETTE[league_key] %}
+{% set pokemons = results_by_league[league_key] %}
+<div id="tab-{{ league_key }}" class="tab-panel hidden">
+
+  {% if not pokemons %}
+  <div class="text-center py-16 text-gray-400">
+    <div class="text-5xl mb-3">{{ league_data.icon }}</div>
+    <div class="text-sm font-semibold">Você não tem Pokémon meta para a {{ league_data.name }}</div>
+    <p class="text-xs mt-1 max-w-xs mx-auto">
+      Importe sua coleção via <a href="{{ url_for('import_.index') }}" class="underline text-indigo-500">PokeGenie</a>
+      ou use o <a href="{{ url_for('scan.index') }}" class="underline text-indigo-500">Scan</a> para cadastrar.
+    </p>
+  </div>
+  {% else %}
+  <div class="space-y-3">
+    {% for p in pokemons %}
+    {# ── Card de cada Pokémon ─────────────────────────────────────────────── #}
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col sm:flex-row gap-0">
+
+      {# Bloco esquerdo: sprite + nome + tier #}
+      <div class="flex items-center gap-3 px-4 py-3 bg-gradient-to-b from-gray-50 to-white sm:w-44 sm:flex-col sm:justify-center sm:gap-2">
+        <img src="{{ p.sprite_url }}" alt="{{ p.name_pt }}"
+             onerror="spriteFallback(this)"
+             class="w-14 h-14 sm:w-20 sm:h-20 object-contain sprite-sm flex-shrink-0">
+        <div class="sm:text-center">
+          <div class="text-sm font-black text-gray-800 leading-tight">
+            {{ p.name_pt }}
+            {% if p.nickname %}<span class="text-xs font-normal text-gray-400">"{{ p.nickname }}"</span>{% endif %}
+          </div>
+          <div class="flex sm:justify-center gap-1 mt-0.5">
+            <span class="text-[10px] font-black w-5 h-5 rounded flex items-center justify-center {{ p.tier_color }}">{{ p.tier }}</span>
+            {% if p.cp %}<span class="text-[10px] text-gray-500">{{ p.cp }} PC</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# Bloco central: IVs e rank #}
+      <div class="flex-1 px-4 py-3 border-t sm:border-t-0 sm:border-l border-gray-100">
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+
+          {# IVs #}
+          <div>
+            <div class="text-gray-400 font-bold text-[10px] mb-0.5">IVs</div>
+            {% if p.iv_atk is not none %}
+            <div class="font-mono font-bold text-gray-800">
+              {{ p.iv_atk }}/{{ p.iv_def }}/{{ p.iv_sta }}
+              <span class="font-sans font-normal text-gray-400 ml-1">{{ "%.1f"|format(p.iv_pct or 0) }}%</span>
+            </div>
+            {% else %}
+            <div class="text-gray-400 italic">não cadastrado</div>
+            {% endif %}
+          </div>
+
+          {# Rank #}
+          <div>
+            <div class="text-gray-400 font-bold text-[10px] mb-0.5">Rank PVP</div>
+            {% if p.rank %}
+              {% if p.rank == 1 %}
+                <span class="font-black text-yellow-600">🏆 Rank #1</span>
+              {% elif p.rank <= 5 %}
+                <span class="font-black text-emerald-600">⭐ Top 5 (#{{ p.rank }})</span>
+              {% elif p.rank <= 10 %}
+                <span class="font-bold text-blue-600">#{{ p.rank }}</span>
+              {% elif p.rank <= 25 %}
+                <span class="font-bold text-purple-600">#{{ p.rank }}</span>
+              {% elif p.rank <= 100 %}
+                <span class="font-bold text-gray-600">#{{ p.rank }}</span>
+              {% else %}
+                <span class="text-gray-400">#{{ p.rank }}</span>
+              {% endif %}
+              {% if p.sp_pct %}
+              <span class="text-gray-400 ml-1">{{ p.sp_pct }}% SP</span>
+              {% endif %}
+            {% elif p.iv_atk is none %}
+              <span class="text-gray-400 italic text-[10px]">sem IVs</span>
+            {% else %}
+              <span class="text-gray-400 text-[10px]">calculando…</span>
+            {% endif %}
+          </div>
+
+          {# Nível PVP #}
+          {% if p.pvp_level %}
+          <div>
+            <div class="text-gray-400 font-bold text-[10px] mb-0.5">Nível PVP</div>
+            <span class="font-bold text-gray-700">Nv {{ p.pvp_level }} → {{ p.pvp_cp }} PC</span>
+          </div>
+          {% endif %}
+
+          {# SP% bar #}
+          {% if p.sp_pct %}
+          <div class="col-span-2">
+            <div class="w-full bg-gray-100 rounded-full h-1.5">
+              <div class="h-1.5 rounded-full bg-indigo-400 transition-all"
+                   style="width: {{ p.sp_pct }}%"></div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Moves #}
+        <div class="mt-2 pt-2 border-t border-gray-100 text-[11px] space-y-0.5">
+          <div class="flex items-center gap-1">
+            <span class="text-gray-400 w-12">Rápido</span>
+            <span class="{% if p.has_meta_fast %}text-gray-800 font-semibold{% else %}text-amber-600{% endif %}">
+              {{ p.quick_move or "—" }}
+              {% if not p.has_meta_fast and p.quick_move %}
+              <span class="text-[9px] text-amber-600 ml-0.5">(meta: {{ p.meta_fast }})</span>
+              {% endif %}
+              {% if p.quick_move in p.legacy %}<span>⭐</span>{% endif %}
+            </span>
+          </div>
+          <div class="flex items-start gap-1">
+            <span class="text-gray-400 w-12">Carga</span>
+            <div>
+              {% if p.charge_move %}
+              <div class="{% if p.charge_move in p.meta_charged %}text-gray-800 font-semibold{% else %}text-amber-600{% endif %}">
+                {{ p.charge_move }}{% if p.charge_move in p.legacy %} ⭐{% endif %}
+              </div>
+              {% endif %}
+              {% if p.charge_move2 %}
+              <div class="{% if p.charge_move2 in p.meta_charged %}text-gray-800 font-semibold{% else %}text-gray-500{% endif %}">
+                {{ p.charge_move2 }}{% if p.charge_move2 in p.legacy %} ⭐{% endif %}
+              </div>
+              {% endif %}
+              {% if not p.charge_move %}
+              <span class="text-gray-400">—</span>
+              {% endif %}
+              {% if not p.has_meta_charged %}
+              <div class="text-[9px] text-amber-600 mt-0.5">meta: {{ p.meta_charged | join(" / ") }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {# Legacy alert #}
+        {% if p.legacy %}
+        <div class="mt-1.5 text-[10px] bg-amber-50 text-amber-800 rounded-lg px-2 py-1">
+          ⭐ {{ p.legacy | join(", ") }} — Elite TM necessário
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<script>
+const ACTIVE_CLS = { great:"bg-blue-600", ultra:"bg-purple-600", master:"bg-amber-500", little:"bg-pink-500" };
+let currentTab = "";
+
+function switchTab(key) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.add("hidden"));
+  document.querySelectorAll(".tab-btn").forEach(b => {
+    b.classList.remove(...Object.values(ACTIVE_CLS), "text-white", "shadow");
+    b.classList.add("bg-white", "border", "border-gray-200", "text-gray-700");
+  });
+  const panel = document.getElementById("tab-" + key);
+  const btn   = document.getElementById("tab-btn-" + key);
+  if (panel) panel.classList.remove("hidden");
+  if (btn) {
+    btn.classList.remove("bg-white", "border", "border-gray-200", "text-gray-700");
+    btn.classList.add(ACTIVE_CLS[key] || "bg-indigo-600", "text-white", "shadow");
+  }
+  currentTab = key;
+}
+
+// Abre a primeira liga com Pokémon, senão a primeira
+const ORDER = ["great", "ultra", "master", "little"];
+const counts = { {% for k, v in results_by_league.items() %}"{{ k }}": {{ v | length }},{% endfor %} };
+const first = ORDER.find(k => counts[k] > 0) || ORDER[0];
+switchTab(first);
+</script>
+{% endblock %}

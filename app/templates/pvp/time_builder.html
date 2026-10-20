@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}Time Builder PVP{% endblock %}
+{% block description %}Monte seu time PVP no Pokémon GO — cobertura de tipos e análise de fraquezas.{% endblock %}
+
+{% block content %}
+
+<div class="bg-gradient-to-r from-slate-700 to-indigo-800 rounded-2xl px-5 py-4 mb-5 text-white shadow-md">
+  <div class="flex items-center gap-3">
+    <span class="text-3xl">🛡️</span>
+    <div>
+      <h1 class="text-xl font-black tracking-tight">Time Builder PVP</h1>
+      <p class="text-xs text-white/70 mt-0.5">Monte 3 Pokémon, analise cobertura e salve seu time</p>
+    </div>
+  </div>
+</div>
+
+{% include "pvp/_nav.html" %}
+
+{# ── Seletor de liga ──────────────────────────────────────────────────────── #}
+<div class="flex gap-2 mb-4 overflow-x-auto pb-1">
+  {% for key, data in leagues.items() %}
+  <button onclick="setLeague('{{ key }}')" id="lg-btn-{{ key }}"
+          class="lg-btn flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold
+                 transition-all bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+    {{ data.icon }} {{ data.name }}
+  </button>
+  {% endfor %}
+</div>
+
+{# ── Slots do time ────────────────────────────────────────────────────────── #}
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
+  <div class="flex items-center justify-between mb-3">
+    <span class="text-sm font-black text-gray-700">Meu Time</span>
+    <div class="flex gap-2">
+      <button onclick="clearTeam()" class="text-xs text-red-500 hover:text-red-700 font-bold">Limpar</button>
+      <button onclick="saveTeam()" class="text-xs bg-indigo-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-indigo-700">Salvar</button>
+    </div>
+  </div>
+  <div class="grid grid-cols-3 gap-3" id="team-slots">
+    {% for i in range(3) %}
+    <div id="slot-{{ i }}" onclick="openPicker({{ i }})"
+         class="border-2 border-dashed border-gray-200 rounded-2xl h-28 flex flex-col items-center
+                justify-center gap-1 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all
+                text-gray-400 text-xs font-semibold">
+      <span class="text-2xl opacity-40">➕</span>
+      <span>Slot {{ i + 1 }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Análise de cobertura ─────────────────────────────────────────────────── #}
+<div id="coverage-panel" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 hidden">
+  <div class="text-sm font-black text-gray-700 mb-3">📊 Análise de Cobertura</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <div class="text-xs font-bold text-gray-500 mb-2">✅ Tipos cobertos (SE ofensivo)</div>
+      <div id="offense-coverage" class="flex flex-wrap gap-1"></div>
+    </div>
+    <div>
+      <div class="text-xs font-bold text-gray-500 mb-2">⚠️ Fraquezas defensivas do time</div>
+      <div id="defense-weakness" class="flex flex-wrap gap-1"></div>
+    </div>
+  </div>
+</div>
+
+{# ── Times salvos ─────────────────────────────────────────────────────────── #}
+<div id="saved-teams-panel" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 hidden">
+  <div class="text-sm font-black text-gray-700 mb-3">💾 Times Salvos</div>
+  <div id="saved-teams-list" class="space-y-2"></div>
+</div>
+
+{# ── Modal seletor de Pokémon ─────────────────────────────────────────────── #}
+<div id="picker-modal" class="fixed inset-0 z-50 hidden bg-black/60 flex items-end sm:items-center justify-center p-2">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <span class="font-black text-gray-800 text-sm">Escolha um Pokémon</span>
+      <button onclick="closePicker()" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="p-3 border-b border-gray-100">
+      <input id="picker-search" type="text" placeholder="Buscar Pokémon…"
+             oninput="filterPicker(this.value)"
+             class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+    </div>
+    <div id="picker-grid" class="overflow-y-auto flex-1 p-3 grid grid-cols-3 gap-2"></div>
+  </div>
+</div>
+
+<script>
+const META = JSON.parse({{ meta_json | tojson }});
+
+// Tabela de efetividade GO (atacante → {defensor: mult})
+const TC = {
+  normal:   {rock:0.625, ghost:0.390625, steel:0.625},
+  fire:     {fire:0.625,water:0.625,grass:1.6,ice:1.6,bug:1.6,rock:0.625,dragon:0.625,steel:1.6},
+  water:    {fire:1.6,water:0.625,grass:0.625,ground:1.6,rock:1.6,dragon:0.625},
+  electric: {water:1.6,electric:0.625,grass:0.625,ground:0.390625,flying:1.6,dragon:0.625},
+  grass:    {fire:0.625,water:1.6,grass:0.625,poison:0.625,ground:1.6,flying:0.625,bug:0.625,rock:1.6,dragon:0.625,steel:0.625},
+  ice:      {water:0.625,grass:1.6,ice:0.625,ground:1.6,flying:1.6,dragon:1.6,steel:0.625},
+  fighting: {normal:1.6,ice:1.6,poison:0.625,flying:0.625,psychic:0.625,bug:0.625,rock:1.6,ghost:0.390625,dark:1.6,steel:1.6,fairy:0.625},
+  poison:   {grass:1.6,poison:0.625,ground:0.625,rock:0.625,ghost:0.625,steel:0.390625,fairy:1.6},
+  ground:   {fire:1.6,electric:1.6,grass:0.625,poison:1.6,flying:0.390625,bug:0.625,rock:1.6,steel:1.6},
+  flying:   {electric:0.625,grass:1.6,fighting:1.6,bug:1.6,rock:0.625,steel:0.625},
+  psychic:  {fighting:1.6,poison:1.6,psychic:0.625,dark:0.390625,steel:0.625},
+  bug:      {fire:0.625,grass:1.6,fighting:0.625,flying:0.625,ghost:0.625,psychic:1.6,dark:1.6,steel:0.625,fairy:0.625},
+  rock:     {fire:1.6,ice:1.6,fighting:0.625,ground:0.625,flying:1.6,bug:1.6,steel:0.625},
+  ghost:    {normal:0.390625,ghost:1.6,psychic:1.6,dark:0.625},
+  dragon:   {dragon:1.6,steel:0.625,fairy:0.390625},
+  dark:     {fighting:0.625,ghost:1.6,psychic:1.6,dark:0.625,fairy:0.625},
+  steel:    {fire:0.625,water:0.625,electric:0.625,ice:1.6,rock:1.6,steel:0.625,fairy:1.6},
+  fairy:    {fire:0.625,fighting:1.6,poison:0.625,dragon:1.6,dark:1.6,steel:0.625},
+};
+const ALL_TYPES = Object.keys(TC);
+
+// Mapa inverso: tipo_defensor → quais ataques são SE
+const DEF_WEAK = {};
+for (const [atk, map] of Object.entries(TC)) {
+  for (const [def, mult] of Object.entries(map)) {
+    if (mult > 1.0) {
+      DEF_WEAK[def] = DEF_WEAK[def] || {};
+      DEF_WEAK[def][atk] = mult;
+    }
+  }
+}
+
+const TYPE_PT = {
+  normal:"Normal",fire:"Fogo",water:"Água",electric:"Elétrico",grass:"Planta",
+  ice:"Gelo",fighting:"Lutador",poison:"Venenoso",ground:"Terrestre",
+  flying:"Voador",psychic:"Psíquico",bug:"Inseto",rock:"Pedra",ghost:"Fantasma",
+  dragon:"Dragão",dark:"Sombrio",steel:"Aço",fairy:"Fada"
+};
+
+const TYPE_COLORS = {
+  fire:"bg-orange-100 text-orange-700",water:"bg-blue-100 text-blue-700",
+  grass:"bg-green-100 text-green-700",electric:"bg-yellow-100 text-yellow-700",
+  ice:"bg-cyan-100 text-cyan-700",fighting:"bg-red-100 text-red-700",
+  poison:"bg-purple-100 text-purple-700",ground:"bg-amber-100 text-amber-700",
+  flying:"bg-sky-100 text-sky-700",psychic:"bg-pink-100 text-pink-700",
+  bug:"bg-lime-100 text-lime-700",rock:"bg-stone-100 text-stone-700",
+  ghost:"bg-violet-100 text-violet-700",dragon:"bg-indigo-100 text-indigo-700",
+  dark:"bg-gray-700 text-gray-100",steel:"bg-slate-100 text-slate-700",
+  fairy:"bg-rose-100 text-rose-700",normal:"bg-gray-100 text-gray-600",
+};
+
+let currentLeague = "great";
+let team = [null, null, null];
+let pickerSlot = 0;
+
+function setLeague(key) {
+  currentLeague = key;
+  document.querySelectorAll(".lg-btn").forEach(b => {
+    b.classList.remove("bg-blue-600","bg-purple-600","bg-amber-500","bg-pink-500","text-white","shadow");
+    b.classList.add("bg-white","border","border-gray-200","text-gray-700");
+  });
+  const ACT = {great:"bg-blue-600",ultra:"bg-purple-600",master:"bg-amber-500",little:"bg-pink-500"};
+  const btn = document.getElementById("lg-btn-" + key);
+  if (btn) {
+    btn.classList.remove("bg-white","border","border-gray-200","text-gray-700");
+    btn.classList.add(ACT[key]||"bg-indigo-600","text-white","shadow");
+  }
+  clearTeam();
+  loadSavedTeams();
+}
+
+function openPicker(slot) {
+  pickerSlot = slot;
+  document.getElementById("picker-search").value = "";
+  renderPickerGrid(META[currentLeague]?.meta || []);
+  document.getElementById("picker-modal").classList.remove("hidden");
+}
+function closePicker() {
+  document.getElementById("picker-modal").classList.add("hidden");
+}
+function filterPicker(q) {
+  const lq = q.toLowerCase();
+  const list = (META[currentLeague]?.meta || []).filter(p =>
+    p.name_pt.toLowerCase().includes(lq)
+  );
+  renderPickerGrid(list);
+}
+function renderPickerGrid(list) {
+  const grid = document.getElementById("picker-grid");
+  grid.innerHTML = list.map(p => `
+    <button onclick="pickPokemon(${p.species_id})" title="${p.name_pt}"
+            class="flex flex-col items-center gap-1 rounded-xl p-2
+                   hover:bg-indigo-50 border border-gray-100 hover:border-indigo-200 transition-all">
+      <img src="${p.sprite_url}" class="w-14 h-14 object-contain" onerror="this.style.opacity=0.3">
+      <span class="text-[10px] font-bold text-gray-700 leading-tight text-center">${p.name_pt}</span>
+      <span class="text-[9px] ${p.tier==='S'?'text-yellow-600':p.tier==='A'?'text-blue-600':'text-gray-400'} font-black">Tier ${p.tier}</span>
+    </button>
+  `).join("");
+}
+function pickPokemon(sid) {
+  const poke = (META[currentLeague]?.meta || []).find(p => p.species_id === sid);
+  if (!poke) return;
+  team[pickerSlot] = poke;
+  closePicker();
+  renderTeam();
+  updateCoverage();
+}
+function removeFromTeam(slot) {
+  team[slot] = null;
+  renderTeam();
+  updateCoverage();
+}
+function clearTeam() {
+  team = [null, null, null];
+  renderTeam();
+  updateCoverage();
+}
+function renderTeam() {
+  for (let i = 0; i < 3; i++) {
+    const p = team[i];
+    const el = document.getElementById("slot-" + i);
+    if (!p) {
+      el.innerHTML = `<span class="text-2xl opacity-40">➕</span><span>Slot ${i+1}</span>`;
+      el.className = "border-2 border-dashed border-gray-200 rounded-2xl h-28 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all text-gray-400 text-xs font-semibold";
+      el.onclick = () => openPicker(i);
+    } else {
+      el.innerHTML = `
+        <div class="relative w-full h-full flex flex-col items-center justify-center gap-0.5 p-2">
+          <button onclick="event.stopPropagation();removeFromTeam(${i})"
+                  class="absolute top-1 right-1 text-gray-300 hover:text-red-400 text-lg leading-none font-bold">&times;</button>
+          <img src="${p.sprite_url}" class="w-12 h-12 object-contain" onerror="this.style.opacity=0.3">
+          <div class="text-[10px] font-black text-gray-800 text-center leading-tight">${p.name_pt}</div>
+          <div class="flex gap-0.5">
+            ${p.types.map(t => `<span class="text-[8px] px-1 rounded-full ${TYPE_COLORS[t]||'bg-gray-100'}">${TYPE_PT[t]||t}</span>`).join("")}
+          </div>
+        </div>`;
+      el.className = "border-2 border-indigo-200 bg-indigo-50 rounded-2xl h-28 flex flex-col items-center justify-center cursor-default transition-all";
+      el.onclick = null;
+    }
+  }
+}
+function updateCoverage() {
+  const filled = team.filter(Boolean);
+  const panel = document.getElementById("coverage-panel");
+  if (filled.length === 0) { panel.classList.add("hidden"); return; }
+  panel.classList.remove("hidden");
+
+  // Ofensivo: quais tipos o time pode cobrir SE
+  const coveredTypes = new Set();
+  for (const p of filled) {
+    const moves = [p.fast, ...(p.charged || [])];
+    for (const mv of moves) {
+      for (const [defType, mult] of Object.entries(TC[mv?.toLowerCase()] || {})) {
+        if (mult > 1.0) coveredTypes.add(defType);
+      }
+    }
+  }
+  // Simplificado: usar tipos dos moves como proxy do tipo do ataque
+  // Na prática precisaríamos do banco de move → tipo, mas usamos os tipos dos Pokémon como aproximação
+  // Fallback: marcar tipos cobertos pelos TIPOS dos Pokémon no time
+  for (const p of filled) {
+    for (const t of (p.types || [])) {
+      for (const [defType, mult] of Object.entries(TC[t] || {})) {
+        if (mult > 1.0) coveredTypes.add(defType);
+      }
+    }
+  }
+
+  const offEl = document.getElementById("offense-coverage");
+  offEl.innerHTML = ALL_TYPES.map(t => {
+    const covered = coveredTypes.has(t);
+    return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${covered ? (TYPE_COLORS[t]||'bg-gray-100') : 'bg-gray-100 text-gray-300'}">${TYPE_PT[t]||t}</span>`;
+  }).join("");
+
+  // Defensivo: fraquezas do time
+  const weakCount = {};
+  for (const p of filled) {
+    for (const atkType of ALL_TYPES) {
+      let mult = 1.0;
+      for (const defType of (p.types || [])) {
+        mult *= (TC[atkType]?.[defType] || 1.0);
+      }
+      if (mult > 1.0) weakCount[atkType] = (weakCount[atkType] || 0) + 1;
+    }
+  }
+  const defEl = document.getElementById("defense-weakness");
+  defEl.innerHTML = ALL_TYPES.map(t => {
+    const cnt = weakCount[t] || 0;
+    if (cnt === 0) return "";
+    const intensity = cnt >= 2 ? "border-2 border-red-400" : "";
+    return `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${TYPE_COLORS[t]||'bg-gray-100'} ${intensity}" title="${cnt} Pokémon fraco a ${TYPE_PT[t]}">${TYPE_PT[t]||t}${cnt>1?' ×'+cnt:''}</span>`;
+  }).join("");
+}
+
+function saveTeam() {
+  const filled = team.filter(Boolean);
+  if (filled.length < 1) { alert("Adicione pelo menos 1 Pokémon ao time."); return; }
+  const name = prompt("Nome do time:", `Time ${currentLeague.charAt(0).toUpperCase()+currentLeague.slice(1)} ${Date.now()}`);
+  if (!name) return;
+  const key = `pvp_teams_${currentLeague}`;
+  const teams = JSON.parse(localStorage.getItem(key) || "[]");
+  teams.unshift({ name, pokemon: team.map(p => p ? {species_id:p.species_id, name_pt:p.name_pt, sprite_url:p.sprite_url, types:p.types} : null), savedAt: Date.now() });
+  localStorage.setItem(key, JSON.stringify(teams.slice(0, 10)));
+  loadSavedTeams();
+}
+function loadSavedTeams() {
+  const key = `pvp_teams_${currentLeague}`;
+  const teams = JSON.parse(localStorage.getItem(key) || "[]");
+  const panel = document.getElementById("saved-teams-panel");
+  const list  = document.getElementById("saved-teams-list");
+  if (!teams.length) { panel.classList.add("hidden"); return; }
+  panel.classList.remove("hidden");
+  list.innerHTML = teams.map((t, i) => `
+    <div class="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
+      <div class="flex gap-1 flex-shrink-0">
+        ${(t.pokemon||[]).filter(Boolean).map(p =>
+          `<img src="${p.sprite_url}" class="w-8 h-8 object-contain" title="${p.name_pt}">`
+        ).join("")}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-bold text-gray-800 truncate">${t.name}</div>
+        <div class="text-[10px] text-gray-400">${(t.pokemon||[]).filter(Boolean).map(p=>p.name_pt).join(", ")}</div>
+      </div>
+      <div class="flex gap-1.5">
+        <button onclick="loadTeam(${i})" class="text-[10px] text-indigo-600 font-bold hover:underline">Carregar</button>
+        <button onclick="deleteTeam(${i})" class="text-[10px] text-red-400 font-bold hover:underline">×</button>
+      </div>
+    </div>
+  `).join("");
+}
+function loadTeam(idx) {
+  const key = `pvp_teams_${currentLeague}`;
+  const teams = JSON.parse(localStorage.getItem(key) || "[]");
+  const saved = teams[idx];
+  if (!saved) return;
+  team = (saved.pokemon || [null,null,null]).map(sp => {
+    if (!sp) return null;
+    return (META[currentLeague]?.meta || []).find(m => m.species_id === sp.species_id) || sp;
+  });
+  renderTeam();
+  updateCoverage();
+}
+function deleteTeam(idx) {
+  const key = `pvp_teams_${currentLeague}`;
+  const teams = JSON.parse(localStorage.getItem(key) || "[]");
+  teams.splice(idx, 1);
+  localStorage.setItem(key, JSON.stringify(teams));
+  loadSavedTeams();
+}
+
+// Inicializa
+setLeague("great");
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePicker(); });
+</script>
+{% endblock %}
