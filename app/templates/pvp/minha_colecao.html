@@ -110,7 +110,7 @@
               {% if p.sp_pct %}
               <span class="text-gray-400 ml-1">{{ p.sp_pct }}% SP</span>
               {% endif %}
-            {% elif p.iv_atk is none %}
+            {% elif p.iv_atk is none or p.iv_def is none or p.iv_sta is none %}
               <span class="text-gray-400 italic text-[10px]">sem IVs</span>
             {% else %}
               <span class="text-gray-400 text-[10px]">calculando…</span>

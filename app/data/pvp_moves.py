@@ -53,7 +53,6 @@ CHARGED_MOVES: dict[str, dict] = {
     "Earthquake":      {"power": 120, "energy": 65, "type": "ground"},
     "Energy Ball":     {"power": 90,  "energy": 55, "type": "grass"},
     "Fire Blast":      {"power": 140, "energy": 80, "type": "fire"},
-    "Fire Blast":      {"power": 140, "energy": 80, "type": "fire"},
     "Flame Charge":    {"power": 65,  "energy": 50, "type": "fire"},
     "Flamethrower":    {"power": 90,  "energy": 55, "type": "fire"},
     "Flash Cannon":    {"power": 100, "energy": 70, "type": "steel"},

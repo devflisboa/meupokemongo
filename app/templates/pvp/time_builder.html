@@ -238,19 +238,8 @@ function updateCoverage() {
   if (filled.length === 0) { panel.classList.add("hidden"); return; }
   panel.classList.remove("hidden");
 
-  // Ofensivo: quais tipos o time pode cobrir SE
+  // Ofensivo: tipos cobertos com STAB (pelos tipos do Pokémon no time)
   const coveredTypes = new Set();
-  for (const p of filled) {
-    const moves = [p.fast, ...(p.charged || [])];
-    for (const mv of moves) {
-      for (const [defType, mult] of Object.entries(TC[mv?.toLowerCase()] || {})) {
-        if (mult > 1.0) coveredTypes.add(defType);
-      }
-    }
-  }
-  // Simplificado: usar tipos dos moves como proxy do tipo do ataque
-  // Na prática precisaríamos do banco de move → tipo, mas usamos os tipos dos Pokémon como aproximação
-  // Fallback: marcar tipos cobertos pelos TIPOS dos Pokémon no time
   for (const p of filled) {
     for (const t of (p.types || [])) {
       for (const [defType, mult] of Object.entries(TC[t] || {})) {

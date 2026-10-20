@@ -105,7 +105,7 @@
 </div>
 
 {# ── Botão batalhar ───────────────────────────────────────────────────────── #}
-<button onclick="runBattle()"
+<button id="battle-btn" onclick="runBattle()"
         class="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700
                text-white font-black py-3 rounded-2xl text-sm shadow-md transition-all active:scale-[.98] mb-4">
   ⚔️ Batalhar!
@@ -241,7 +241,7 @@ async function runBattle() {
     alert("Selecione um Pokémon para cada lado."); return;
   }
   const payload = { pkm_a, pkm_b, shields_a: getShields("a"), shields_b: getShields("b") };
-  const btn = document.querySelector("[onclick='runBattle()']");
+  const btn = document.getElementById("battle-btn");
   btn.disabled = true; btn.textContent = "Simulando…";
   try {
     const res = await fetch("/pvp/api/simular", {

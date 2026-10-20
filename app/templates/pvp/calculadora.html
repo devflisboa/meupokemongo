@@ -142,6 +142,7 @@ function rankBadgeClass(rank) {
 }
 
 function rankLabel(rank) {
+  if (!rank) return "—";
   if (rank === 1) return "🏆 Rank #1";
   if (rank <= 5)  return `⭐ Top 5 — #${rank}`;
   if (rank <= 10) return `Top 10 — #${rank}`;

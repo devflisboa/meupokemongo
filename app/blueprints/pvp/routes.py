@@ -120,7 +120,7 @@ def calculadora():
     seen_ids: set[int] = set()
     for league_data in LEAGUES.values():
         for entry in league_data["meta"]:
-            sid = entry["species_id"]
+            sid = _real_sid(entry)
             if sid not in seen_ids and entry.get("base_atk"):
                 seen_ids.add(sid)
                 all_pokemon.append({
@@ -155,7 +155,7 @@ def api_rank():
     entry = None
     for league_data in LEAGUES.values():
         for e in league_data["meta"]:
-            if e["species_id"] == sid and e.get("base_atk"):
+            if _real_sid(e) == sid and e.get("base_atk"):
                 entry = e
                 break
         if entry:
