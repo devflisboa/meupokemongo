@@ -1,0 +1,1388 @@
+[
+  {
+    "key": "brotim",
+    "nome": "Brotim",
+    "tipo": "Planta",
+    "estagio": 1,
+    "linha": "brotim",
+    "habitat": "vila-semente",
+    "ataque": 1,
+    "pp": 15,
+    "captura": [
+      2,
+      5
+    ]
+  },
+  {
+    "key": "brotim-2",
+    "nome": "Brotim II",
+    "tipo": "Planta",
+    "estagio": 2,
+    "linha": "brotim",
+    "habitat": "vila-semente",
+    "ataque": 2,
+    "pp": 30,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "brotim-3",
+    "nome": "Brotim III",
+    "tipo": "Planta",
+    "estagio": 3,
+    "linha": "brotim",
+    "habitat": "vila-semente",
+    "ataque": 3,
+    "pp": 45,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "pardalito",
+    "nome": "Pardalito",
+    "tipo": "Vento",
+    "estagio": 1,
+    "linha": "pardalito",
+    "habitat": "bosque-ambar",
+    "ataque": 1,
+    "pp": 15,
+    "captura": [
+      1,
+      4
+    ]
+  },
+  {
+    "key": "pardalito-2",
+    "nome": "Pardalito II",
+    "tipo": "Vento",
+    "estagio": 2,
+    "linha": "pardalito",
+    "habitat": "bosque-ambar",
+    "ataque": 2,
+    "pp": 30,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "pardalito-3",
+    "nome": "Pardalito III",
+    "tipo": "Vento",
+    "estagio": 3,
+    "linha": "pardalito",
+    "habitat": "bosque-ambar",
+    "ataque": 3,
+    "pp": 45,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "bicudo",
+    "nome": "Bicudo",
+    "tipo": "Vento",
+    "estagio": 1,
+    "linha": "bicudo",
+    "habitat": "bosque-ambar",
+    "ataque": 1,
+    "pp": 15,
+    "captura": [
+      3,
+      6
+    ]
+  },
+  {
+    "key": "bicudo-2",
+    "nome": "Bicudo II",
+    "tipo": "Vento",
+    "estagio": 2,
+    "linha": "bicudo",
+    "habitat": "bosque-ambar",
+    "ataque": 2,
+    "pp": 30,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "bicudo-3",
+    "nome": "Bicudo III",
+    "tipo": "Vento",
+    "estagio": 3,
+    "linha": "bicudo",
+    "habitat": "bosque-ambar",
+    "ataque": 3,
+    "pp": 45,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "musguinho",
+    "nome": "Musguinho",
+    "tipo": "Planta",
+    "estagio": 1,
+    "linha": "musguinho",
+    "habitat": "bosque-ambar",
+    "ataque": 1,
+    "pp": 15,
+    "captura": [
+      1,
+      6
+    ]
+  },
+  {
+    "key": "musguinho-2",
+    "nome": "Musguinho II",
+    "tipo": "Planta",
+    "estagio": 2,
+    "linha": "musguinho",
+    "habitat": "bosque-ambar",
+    "ataque": 2,
+    "pp": 30,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "musguinho-3",
+    "nome": "Musguinho III",
+    "tipo": "Planta",
+    "estagio": 3,
+    "linha": "musguinho",
+    "habitat": "bosque-ambar",
+    "ataque": 3,
+    "pp": 45,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "formigao",
+    "nome": "Formigão",
+    "tipo": "Inseto",
+    "estagio": 1,
+    "linha": "formigao",
+    "habitat": "bosque-ambar",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      2,
+      4
+    ]
+  },
+  {
+    "key": "formigao-2",
+    "nome": "Formigão II",
+    "tipo": "Inseto",
+    "estagio": 2,
+    "linha": "formigao",
+    "habitat": "bosque-ambar",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "formigao-3",
+    "nome": "Formigão III",
+    "tipo": "Inseto",
+    "estagio": 3,
+    "linha": "formigao",
+    "habitat": "bosque-ambar",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "seixo",
+    "nome": "Seixo",
+    "tipo": "Rocha",
+    "estagio": 1,
+    "linha": "seixo",
+    "habitat": "pedreira-cinza",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      3,
+      5
+    ]
+  },
+  {
+    "key": "seixo-2",
+    "nome": "Seixo II",
+    "tipo": "Rocha",
+    "estagio": 2,
+    "linha": "seixo",
+    "habitat": "pedreira-cinza",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "seixo-3",
+    "nome": "Seixo III",
+    "tipo": "Rocha",
+    "estagio": 3,
+    "linha": "seixo",
+    "habitat": "pedreira-cinza",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "cascalhao",
+    "nome": "Cascalhão",
+    "tipo": "Rocha",
+    "estagio": 1,
+    "linha": "cascalhao",
+    "habitat": "pedreira-cinza",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      1,
+      5
+    ]
+  },
+  {
+    "key": "cascalhao-2",
+    "nome": "Cascalhão II",
+    "tipo": "Rocha",
+    "estagio": 2,
+    "linha": "cascalhao",
+    "habitat": "pedreira-cinza",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "cascalhao-3",
+    "nome": "Cascalhão III",
+    "tipo": "Rocha",
+    "estagio": 3,
+    "linha": "cascalhao",
+    "habitat": "pedreira-cinza",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "tatui",
+    "nome": "Tatuí",
+    "tipo": "Terra",
+    "estagio": 1,
+    "linha": "tatui",
+    "habitat": "pedreira-cinza",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      4,
+      6
+    ]
+  },
+  {
+    "key": "tatui-2",
+    "nome": "Tatuí II",
+    "tipo": "Terra",
+    "estagio": 2,
+    "linha": "tatui",
+    "habitat": "pedreira-cinza",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "tatui-3",
+    "nome": "Tatuí III",
+    "tipo": "Terra",
+    "estagio": 3,
+    "linha": "tatui",
+    "habitat": "pedreira-cinza",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "breu",
+    "nome": "Breu",
+    "tipo": "Sombra",
+    "estagio": 1,
+    "linha": "breu",
+    "habitat": "pedreira-cinza",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      2,
+      6
+    ]
+  },
+  {
+    "key": "breu-2",
+    "nome": "Breu II",
+    "tipo": "Sombra",
+    "estagio": 2,
+    "linha": "breu",
+    "habitat": "pedreira-cinza",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "breu-3",
+    "nome": "Breu III",
+    "tipo": "Sombra",
+    "estagio": 3,
+    "linha": "breu",
+    "habitat": "pedreira-cinza",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "bolhudo",
+    "nome": "Bolhudo",
+    "tipo": "Água",
+    "estagio": 1,
+    "linha": "bolhudo",
+    "habitat": "lagoa-clara",
+    "ataque": 2,
+    "pp": 20,
+    "captura": [
+      1,
+      3
+    ]
+  },
+  {
+    "key": "bolhudo-2",
+    "nome": "Bolhudo II",
+    "tipo": "Água",
+    "estagio": 2,
+    "linha": "bolhudo",
+    "habitat": "lagoa-clara",
+    "ataque": 3,
+    "pp": 40,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "bolhudo-3",
+    "nome": "Bolhudo III",
+    "tipo": "Água",
+    "estagio": 3,
+    "linha": "bolhudo",
+    "habitat": "lagoa-clara",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "garcelha",
+    "nome": "Garcelha",
+    "tipo": "Água",
+    "estagio": 1,
+    "linha": "garcelha",
+    "habitat": "lagoa-clara",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      3,
+      4
+    ]
+  },
+  {
+    "key": "garcelha-2",
+    "nome": "Garcelha II",
+    "tipo": "Água",
+    "estagio": 2,
+    "linha": "garcelha",
+    "habitat": "lagoa-clara",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "garcelha-3",
+    "nome": "Garcelha III",
+    "tipo": "Água",
+    "estagio": 3,
+    "linha": "garcelha",
+    "habitat": "lagoa-clara",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "concha",
+    "nome": "Concha",
+    "tipo": "Água",
+    "estagio": 1,
+    "linha": "concha",
+    "habitat": "lagoa-clara",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      5,
+      6
+    ]
+  },
+  {
+    "key": "concha-2",
+    "nome": "Concha II",
+    "tipo": "Água",
+    "estagio": 2,
+    "linha": "concha",
+    "habitat": "lagoa-clara",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "concha-3",
+    "nome": "Concha III",
+    "tipo": "Água",
+    "estagio": 3,
+    "linha": "concha",
+    "habitat": "lagoa-clara",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lambarim",
+    "nome": "Lambarim",
+    "tipo": "Água",
+    "estagio": 1,
+    "linha": "lambarim",
+    "habitat": "lagoa-clara",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      2,
+      3
+    ]
+  },
+  {
+    "key": "lambarim-2",
+    "nome": "Lambarim II",
+    "tipo": "Água",
+    "estagio": 2,
+    "linha": "lambarim",
+    "habitat": "lagoa-clara",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lambarim-3",
+    "nome": "Lambarim III",
+    "tipo": "Água",
+    "estagio": 3,
+    "linha": "lambarim",
+    "habitat": "lagoa-clara",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "faiscao",
+    "nome": "Faiscão",
+    "tipo": "Elétrico",
+    "estagio": 1,
+    "linha": "faiscao",
+    "habitat": "porto-faisca",
+    "ataque": 3,
+    "pp": 25,
+    "captura": [
+      3,
+      5
+    ]
+  },
+  {
+    "key": "faiscao-2",
+    "nome": "Faiscão II",
+    "tipo": "Elétrico",
+    "estagio": 2,
+    "linha": "faiscao",
+    "habitat": "porto-faisca",
+    "ataque": 4,
+    "pp": 50,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "faiscao-3",
+    "nome": "Faiscão III",
+    "tipo": "Elétrico",
+    "estagio": 3,
+    "linha": "faiscao",
+    "habitat": "porto-faisca",
+    "ataque": 5,
+    "pp": 75,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "pilha",
+    "nome": "Pilha",
+    "tipo": "Elétrico",
+    "estagio": 1,
+    "linha": "pilha",
+    "habitat": "porto-faisca",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      1,
+      2
+    ]
+  },
+  {
+    "key": "pilha-2",
+    "nome": "Pilha II",
+    "tipo": "Elétrico",
+    "estagio": 2,
+    "linha": "pilha",
+    "habitat": "porto-faisca",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "pilha-3",
+    "nome": "Pilha III",
+    "tipo": "Elétrico",
+    "estagio": 3,
+    "linha": "pilha",
+    "habitat": "porto-faisca",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "trovisco",
+    "nome": "Trovisco",
+    "tipo": "Elétrico",
+    "estagio": 1,
+    "linha": "trovisco",
+    "habitat": "porto-faisca",
+    "ataque": 3,
+    "pp": 25,
+    "captura": [
+      4,
+      5
+    ]
+  },
+  {
+    "key": "trovisco-2",
+    "nome": "Trovisco II",
+    "tipo": "Elétrico",
+    "estagio": 2,
+    "linha": "trovisco",
+    "habitat": "porto-faisca",
+    "ataque": 4,
+    "pp": 50,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "trovisco-3",
+    "nome": "Trovisco III",
+    "tipo": "Elétrico",
+    "estagio": 3,
+    "linha": "trovisco",
+    "habitat": "porto-faisca",
+    "ataque": 5,
+    "pp": 75,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "mimosa",
+    "nome": "Mimosa",
+    "tipo": "Planta",
+    "estagio": 1,
+    "linha": "mimosa",
+    "habitat": "jardim-suspenso",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      1,
+      4
+    ]
+  },
+  {
+    "key": "mimosa-2",
+    "nome": "Mimosa II",
+    "tipo": "Planta",
+    "estagio": 2,
+    "linha": "mimosa",
+    "habitat": "jardim-suspenso",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "mimosa-3",
+    "nome": "Mimosa III",
+    "tipo": "Planta",
+    "estagio": 3,
+    "linha": "mimosa",
+    "habitat": "jardim-suspenso",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "cipo",
+    "nome": "Cipó",
+    "tipo": "Planta",
+    "estagio": 1,
+    "linha": "cipo",
+    "habitat": "jardim-suspenso",
+    "ataque": 3,
+    "pp": 25,
+    "captura": [
+      2,
+      5
+    ]
+  },
+  {
+    "key": "cipo-2",
+    "nome": "Cipó II",
+    "tipo": "Planta",
+    "estagio": 2,
+    "linha": "cipo",
+    "habitat": "jardim-suspenso",
+    "ataque": 4,
+    "pp": 50,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "cipo-3",
+    "nome": "Cipó III",
+    "tipo": "Planta",
+    "estagio": 3,
+    "linha": "cipo",
+    "habitat": "jardim-suspenso",
+    "ataque": 5,
+    "pp": 75,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "plumito",
+    "nome": "Plumito",
+    "tipo": "Vento",
+    "estagio": 1,
+    "linha": "plumito",
+    "habitat": "jardim-suspenso",
+    "ataque": 2,
+    "pp": 25,
+    "captura": [
+      3,
+      6
+    ]
+  },
+  {
+    "key": "plumito-2",
+    "nome": "Plumito II",
+    "tipo": "Vento",
+    "estagio": 2,
+    "linha": "plumito",
+    "habitat": "jardim-suspenso",
+    "ataque": 3,
+    "pp": 50,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "plumito-3",
+    "nome": "Plumito III",
+    "tipo": "Vento",
+    "estagio": 3,
+    "linha": "plumito",
+    "habitat": "jardim-suspenso",
+    "ataque": 4,
+    "pp": 75,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "sonhim",
+    "nome": "Sonhim",
+    "tipo": "Mente",
+    "estagio": 1,
+    "linha": "sonhim",
+    "habitat": "jardim-suspenso",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      1,
+      6
+    ]
+  },
+  {
+    "key": "sonhim-2",
+    "nome": "Sonhim II",
+    "tipo": "Mente",
+    "estagio": 2,
+    "linha": "sonhim",
+    "habitat": "jardim-suspenso",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "sonhim-3",
+    "nome": "Sonhim III",
+    "tipo": "Mente",
+    "estagio": 3,
+    "linha": "sonhim",
+    "habitat": "jardim-suspenso",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "sapao",
+    "nome": "Sapão",
+    "tipo": "Água",
+    "estagio": 1,
+    "linha": "sapao",
+    "habitat": "pantano-turvo",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      2,
+      4
+    ]
+  },
+  {
+    "key": "sapao-2",
+    "nome": "Sapão II",
+    "tipo": "Água",
+    "estagio": 2,
+    "linha": "sapao",
+    "habitat": "pantano-turvo",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "sapao-3",
+    "nome": "Sapão III",
+    "tipo": "Água",
+    "estagio": 3,
+    "linha": "sapao",
+    "habitat": "pantano-turvo",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lodim",
+    "nome": "Lodim",
+    "tipo": "Sombra",
+    "estagio": 1,
+    "linha": "lodim",
+    "habitat": "pantano-turvo",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      3,
+      5
+    ]
+  },
+  {
+    "key": "lodim-2",
+    "nome": "Lodim II",
+    "tipo": "Sombra",
+    "estagio": 2,
+    "linha": "lodim",
+    "habitat": "pantano-turvo",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lodim-3",
+    "nome": "Lodim III",
+    "tipo": "Sombra",
+    "estagio": 3,
+    "linha": "lodim",
+    "habitat": "pantano-turvo",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "fumace",
+    "nome": "Fumacê",
+    "tipo": "Sombra",
+    "estagio": 1,
+    "linha": "fumace",
+    "habitat": "pantano-turvo",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      4,
+      6
+    ]
+  },
+  {
+    "key": "fumace-2",
+    "nome": "Fumacê II",
+    "tipo": "Sombra",
+    "estagio": 2,
+    "linha": "fumace",
+    "habitat": "pantano-turvo",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "fumace-3",
+    "nome": "Fumacê III",
+    "tipo": "Sombra",
+    "estagio": 3,
+    "linha": "fumace",
+    "habitat": "pantano-turvo",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "noctua",
+    "nome": "Noctua",
+    "tipo": "Inseto",
+    "estagio": 1,
+    "linha": "noctua",
+    "habitat": "pantano-turvo",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      1,
+      5
+    ]
+  },
+  {
+    "key": "noctua-2",
+    "nome": "Noctua II",
+    "tipo": "Inseto",
+    "estagio": 2,
+    "linha": "noctua",
+    "habitat": "pantano-turvo",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "noctua-3",
+    "nome": "Noctua III",
+    "tipo": "Inseto",
+    "estagio": 3,
+    "linha": "noctua",
+    "habitat": "pantano-turvo",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "miragem",
+    "nome": "Miragem",
+    "tipo": "Mente",
+    "estagio": 1,
+    "linha": "miragem",
+    "habitat": "cidade-mirante",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      2,
+      6
+    ]
+  },
+  {
+    "key": "miragem-2",
+    "nome": "Miragem II",
+    "tipo": "Mente",
+    "estagio": 2,
+    "linha": "miragem",
+    "habitat": "cidade-mirante",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "miragem-3",
+    "nome": "Miragem III",
+    "tipo": "Mente",
+    "estagio": 3,
+    "linha": "miragem",
+    "habitat": "cidade-mirante",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "corujao",
+    "nome": "Corujão",
+    "tipo": "Mente",
+    "estagio": 1,
+    "linha": "corujao",
+    "habitat": "cidade-mirante",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      1,
+      3
+    ]
+  },
+  {
+    "key": "corujao-2",
+    "nome": "Corujão II",
+    "tipo": "Mente",
+    "estagio": 2,
+    "linha": "corujao",
+    "habitat": "cidade-mirante",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "corujao-3",
+    "nome": "Corujão III",
+    "tipo": "Mente",
+    "estagio": 3,
+    "linha": "corujao",
+    "habitat": "cidade-mirante",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "eco",
+    "nome": "Eco",
+    "tipo": "Mente",
+    "estagio": 1,
+    "linha": "eco",
+    "habitat": "cidade-mirante",
+    "ataque": 3,
+    "pp": 30,
+    "captura": [
+      4,
+      5
+    ]
+  },
+  {
+    "key": "eco-2",
+    "nome": "Eco II",
+    "tipo": "Mente",
+    "estagio": 2,
+    "linha": "eco",
+    "habitat": "cidade-mirante",
+    "ataque": 4,
+    "pp": 60,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "eco-3",
+    "nome": "Eco III",
+    "tipo": "Mente",
+    "estagio": 3,
+    "linha": "eco",
+    "habitat": "cidade-mirante",
+    "ataque": 5,
+    "pp": 90,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "brutao",
+    "nome": "Brutão",
+    "tipo": "Luta",
+    "estagio": 1,
+    "linha": "brutao",
+    "habitat": "cidade-mirante",
+    "ataque": 4,
+    "pp": 35,
+    "captura": [
+      2,
+      3
+    ]
+  },
+  {
+    "key": "brutao-2",
+    "nome": "Brutão II",
+    "tipo": "Luta",
+    "estagio": 2,
+    "linha": "brutao",
+    "habitat": "cidade-mirante",
+    "ataque": 5,
+    "pp": 70,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "brutao-3",
+    "nome": "Brutão III",
+    "tipo": "Luta",
+    "estagio": 3,
+    "linha": "brutao",
+    "habitat": "cidade-mirante",
+    "ataque": 5,
+    "pp": 105,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "brasinha",
+    "nome": "Brasinha",
+    "tipo": "Fogo",
+    "estagio": 1,
+    "linha": "brasinha",
+    "habitat": "ilha-brasa",
+    "ataque": 3,
+    "pp": 35,
+    "captura": [
+      5,
+      6
+    ]
+  },
+  {
+    "key": "brasinha-2",
+    "nome": "Brasinha II",
+    "tipo": "Fogo",
+    "estagio": 2,
+    "linha": "brasinha",
+    "habitat": "ilha-brasa",
+    "ataque": 4,
+    "pp": 70,
+    "captura": [
+      5
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "brasinha-3",
+    "nome": "Brasinha III",
+    "tipo": "Fogo",
+    "estagio": 3,
+    "linha": "brasinha",
+    "habitat": "ilha-brasa",
+    "ataque": 5,
+    "pp": 105,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lavor",
+    "nome": "Lavor",
+    "tipo": "Fogo",
+    "estagio": 1,
+    "linha": "lavor",
+    "habitat": "ilha-brasa",
+    "ataque": 4,
+    "pp": 35,
+    "captura": [
+      1,
+      2
+    ]
+  },
+  {
+    "key": "lavor-2",
+    "nome": "Lavor II",
+    "tipo": "Fogo",
+    "estagio": 2,
+    "linha": "lavor",
+    "habitat": "ilha-brasa",
+    "ataque": 5,
+    "pp": 70,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "lavor-3",
+    "nome": "Lavor III",
+    "tipo": "Fogo",
+    "estagio": 3,
+    "linha": "lavor",
+    "habitat": "ilha-brasa",
+    "ataque": 5,
+    "pp": 105,
+    "captura": [
+      2
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "fornalha",
+    "nome": "Fornalha",
+    "tipo": "Fogo",
+    "estagio": 1,
+    "linha": "fornalha",
+    "habitat": "ilha-brasa",
+    "ataque": 4,
+    "pp": 35,
+    "captura": [
+      3,
+      4
+    ]
+  },
+  {
+    "key": "fornalha-2",
+    "nome": "Fornalha II",
+    "tipo": "Fogo",
+    "estagio": 2,
+    "linha": "fornalha",
+    "habitat": "ilha-brasa",
+    "ataque": 5,
+    "pp": 70,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "fornalha-3",
+    "nome": "Fornalha III",
+    "tipo": "Fogo",
+    "estagio": 3,
+    "linha": "fornalha",
+    "habitat": "ilha-brasa",
+    "ataque": 5,
+    "pp": 105,
+    "captura": [
+      4
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "aurelio",
+    "nome": "Aurélio",
+    "tipo": "Luz",
+    "estagio": 1,
+    "linha": "aurelio",
+    "habitat": "pico-coroa",
+    "ataque": 4,
+    "pp": 40,
+    "captura": [
+      1,
+      6
+    ]
+  },
+  {
+    "key": "aurelio-2",
+    "nome": "Aurélio II",
+    "tipo": "Luz",
+    "estagio": 2,
+    "linha": "aurelio",
+    "habitat": "pico-coroa",
+    "ataque": 5,
+    "pp": 80,
+    "captura": [
+      1
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "aurelio-3",
+    "nome": "Aurélio III",
+    "tipo": "Luz",
+    "estagio": 3,
+    "linha": "aurelio",
+    "habitat": "pico-coroa",
+    "ataque": 5,
+    "pp": 120,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "coroado",
+    "nome": "Coroado",
+    "tipo": "Luz",
+    "estagio": 1,
+    "linha": "coroado",
+    "habitat": "pico-coroa",
+    "ataque": 4,
+    "pp": 40,
+    "captura": [
+      3,
+      6
+    ]
+  },
+  {
+    "key": "coroado-2",
+    "nome": "Coroado II",
+    "tipo": "Luz",
+    "estagio": 2,
+    "linha": "coroado",
+    "habitat": "pico-coroa",
+    "ataque": 5,
+    "pp": 80,
+    "captura": [
+      3
+    ],
+    "provisorio": true
+  },
+  {
+    "key": "coroado-3",
+    "nome": "Coroado III",
+    "tipo": "Luz",
+    "estagio": 3,
+    "linha": "coroado",
+    "habitat": "pico-coroa",
+    "ataque": 5,
+    "pp": 120,
+    "captura": [
+      6
+    ],
+    "provisorio": true
+  }
+]

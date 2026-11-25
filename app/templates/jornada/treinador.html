@@ -1,0 +1,93 @@
+{% extends "jornada/_layout.html" %}
+{% from "jornada/_macros.html" import avatar %}
+{% block jn_title %}{{ card.username }} — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}TREINADOR{% endblock %}
+
+{% block jn_content %}
+<section class="jn-card p-4 text-center">
+  <div class="inline-block p-1 rounded-full" style="background: linear-gradient(135deg, #FFE48A, #E8B931)">{{ avatar(card, 112) }}</div>
+  <h1 class="text-2xl font-extrabold text-[#1B2A4A] mt-2">{% if card.campeao %}👑 {% endif %}{{ card.username }}</h1>
+  {% if card.online %}
+  <span class="inline-flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 rounded-full px-3 py-1 mt-1">● Online</span>
+  {% elif card.ultima_atividade %}
+  <span class="inline-block text-sm text-gray-500 mt-1">Última jogada {{ card.ultima_atividade }}</span>
+  {% endif %}
+
+  <div class="rounded-2xl bg-[#F1F6FC] p-4 mt-4 text-left">
+    <p class="text-sm text-gray-500">{% if card.campeao %}Está no:{% else %}Parou em:{% endif %}</p>
+    <p class="font-extrabold text-[#1B2A4A] text-lg">{{ card.local_emoji }} {{ card.local }} · Fase {{ card.fase }}</p>
+    {% if card.campeao %}<p class="text-sm font-bold text-[#B8860B]">Conquistou em {{ card.titulo_em }}</p>{% endif %}
+    <div class="flex justify-between text-sm mt-4"><span>Progresso até o Hall da Fama</span><b class="text-[#2B7BD6]">{{ card.local_indice }}/{{ card.locais_total }}</b></div>
+    <span class="block h-3 rounded-full bg-white mt-1"><span class="block h-3 rounded-full" style="width: {{ ((card.local_indice / card.locais_total) * 100)|round|int }}%; background: linear-gradient(90deg, #14B8A6, #2B7BD6)"></span></span>
+  </div>
+
+  <div class="grid grid-cols-3 gap-2 mt-4">
+    <div class="rounded-2xl bg-[#F1F6FC] p-2"><p class="text-xs font-bold text-gray-500">⚡ Power Points</p><p class="text-2xl font-extrabold text-[#5B3FD6]">{{ card.pp }}</p></div>
+    <div class="rounded-2xl bg-[#F1F6FC] p-2"><p class="text-xs font-bold text-gray-500">🌿 Criaturas</p><p class="text-2xl font-extrabold text-[#0E8F86]">{{ card.capturadas }}/{{ card.criaturas_total }}</p></div>
+    <div class="rounded-2xl bg-[#F1F6FC] p-2"><p class="text-xs font-bold text-gray-500">🔥 Sequência</p><p class="text-2xl font-extrabold text-[#E4572E]">{{ card.sequencia_dias }} {{ 'dia' if card.sequencia_dias == 1 else 'dias' }}</p></div>
+  </div>
+  <p class="text-sm text-gray-500 mt-2">Volta {{ card.volta }} · 🏅 {{ card.insignias|length }}/{{ card.ginasios_total }} insígnias</p>
+  {% if card.insignias %}
+  <div class="flex flex-wrap justify-center gap-2 mt-2">
+    {% for g in card.insignias %}<span class="text-xs font-bold bg-[#FFF3C4] text-[#8B6508] rounded-full px-3 py-1" title="{{ g.nome }}">🏅 {{ g.lider }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <h2 class="text-xl font-extrabold text-[#1B2A4A] mt-8 mb-4">🏆 Time de {{ card.username }}</h2>
+  {% if card.time %}
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+    {% for c in card.time %}
+    <div class="rounded-2xl p-2 {{ 'opacity-40' if c.desmaiada }}" style="background: {{ c.cor }}33">
+      <div class="text-4xl">{{ c.emoji }}</div>
+      <p class="text-xs font-extrabold truncate" style="color: #1B2A4A">{{ c.nome }}</p>
+      <p class="text-[10px] text-gray-600">Atk {{ c.ataque }}{% if c.desmaiada %} · 💤{% endif %}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-500">Ainda sem criaturas no time.</p>
+  {% endif %}
+
+  {% if not card.eu %}
+  <div class="grid grid-cols-2 gap-2 mt-8">
+    <button id="tr-desafiar" class="rounded-2xl py-3 font-extrabold text-white bg-[#F0624D] disabled:opacity-35"
+            {% if not card.pode_desafiar %}disabled title="{{ card.motivo_desafio }}"{% endif %}>⚔️ Desafiar</button>
+    <a href="{{ url_for('jornada.jogar') }}" class="rounded-2xl py-3 font-extrabold text-white bg-[#2B7BD6]">🎲 Ir para o jogo</a>
+  </div>
+  {% if not card.pode_desafiar %}<p class="text-xs text-gray-500 mt-2">{{ card.motivo_desafio }}</p>{% endif %}
+  {% else %}
+  <div class="grid grid-cols-2 gap-2 mt-8">
+    <a href="{{ url_for('jornada.time') }}" class="rounded-2xl py-3 font-extrabold text-white bg-[#2B7BD6]">🐾 Ver time</a>
+    <a href="{{ url_for('jornada.descobertas') }}" class="rounded-2xl py-3 font-extrabold text-[#1B2A4A] bg-[#FFF3C4]">📖 Descobertas</a>
+  </div>
+  {% endif %}
+</section>
+
+{% if not card.eu and card.pode_desafiar %}
+<script>
+(() => {
+  const E = {{ eu|tojson }};
+  const ALVO = {{ card.username|tojson }};
+  const {esc, sheet, fecharSheet, criatura, toast} = JN;
+  document.getElementById('tr-desafiar').onclick = () => {
+    let cr = null;
+    const saud = [...E.time, ...E.reserva].filter(c => !c.desmaiada);
+    const el = sheet(`<h2 class="text-xl font-extrabold text-[#1B2A4A]">⚔️ Desafiar ${esc(ALVO)}</h2>
+      <p class="text-sm text-gray-500 mb-4">Escolha sua criatura. ${esc(ALVO)} responde quando entrar (até 24 h).</p>
+      <div class="grid grid-cols-2 gap-2">${saud.map(c => `<button class="flex items-center gap-2 rounded-2xl border-2 border-gray-100 p-2" data-cr="${c.id}">${criatura(c)}</button>`).join('')}</div>
+      ${E.itens.isca ? '<label class="flex items-center gap-2 mt-4 text-sm font-bold"><input type="checkbox" id="tr-isca"> Usar 🪱 Isca (+1)</label>' : ''}
+      <button id="tr-ir" class="w-full mt-4 bg-[#F0624D] text-white font-extrabold rounded-2xl py-3 disabled:opacity-40" disabled>Enviar desafio</button>`);
+    el.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
+      el.querySelectorAll('[data-cr]').forEach(x => x.classList.replace('border-[#F0624D]', 'border-gray-100'));
+      b.classList.replace('border-gray-100', 'border-[#F0624D]'); cr = +b.dataset.cr; el.querySelector('#tr-ir').disabled = false;
+    });
+    el.querySelector('#tr-ir').onclick = async () => {
+      const j = await JN.post({{ url_for('jornada.api_pvp_desafiar')|tojson }}, {alvo: ALVO, criatura: cr, isca: !!el.querySelector('#tr-isca')?.checked});
+      fecharSheet();
+      if (j.ok) { toast(`⚔️ Desafio enviado para ${esc(ALVO)}!`); document.getElementById('tr-desafiar').disabled = true; }
+    };
+  };
+})();
+</script>
+{% endif %}
+{% endblock %}

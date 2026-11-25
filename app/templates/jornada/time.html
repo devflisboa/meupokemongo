@@ -1,0 +1,69 @@
+{% extends "jornada/_layout.html" %}
+{% block jn_title %}Meu time — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}🐾 MEU TIME{% endblock %}
+
+{% block jn_content %}
+<section class="jn-card p-4">
+  <div class="flex items-center justify-between gap-2">
+    <h1 class="text-2xl font-extrabold text-[#1B2A4A]">Time (<span id="tm-n"></span>/6)</h1>
+    <a href="{{ url_for('jornada.descobertas') }}" class="text-sm font-bold bg-[#FFF3C4] text-[#8B6508] rounded-2xl px-3 py-2">📖 Descobertas</a>
+  </div>
+  <p id="tm-msg" class="text-sm text-gray-500 mt-1 mb-4">O time luta nos ginásios, nas batalhas e no Desafio do Pico. Para entrar no Hall da Fama você precisa de 6.</p>
+  <div id="tm-time" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+</section>
+
+<section class="jn-card p-4 mt-4">
+  <h2 class="text-xl font-extrabold text-[#1B2A4A] mb-4">Reserva</h2>
+  <div id="tm-reserva" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+</section>
+
+<script>
+(() => {
+  let E = {{ eu|tojson }};
+  const $ = id => document.getElementById(id);
+  const {esc, toast} = JN;
+
+  async function post(url, body) {
+    const j = await JN.post(url, body);
+    if (j.ok) { E = j.estado; render(); }
+    return j;
+  }
+  const salvar = ids => post({{ url_for('jornada.api_time')|tojson }}, {ids});
+
+  function card(c, noTime) {
+    const d = document.createElement('div');
+    d.className = 'rounded-2xl p-2 border-2 ' + (c.desmaiada ? 'opacity-50 border-gray-200' : 'border-transparent');
+    d.style.background = c.cor + '22';
+    d.innerHTML = `<div class="flex items-center gap-2">
+        <span class="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0" style="background:${esc(c.cor)}">${esc(c.emoji)}</span>
+        <div class="min-w-0"><p class="font-extrabold text-sm truncate text-[#1B2A4A]">${noTime ? c.slot + '. ' : ''}${esc(c.nome)}</p>
+        <p class="text-xs text-gray-600">${esc(c.tipo)} · Est. ${c.estagio} · Atk ${c.ataque}${c.desmaiada ? ' · 💤 desmaiada' : ''}</p></div></div>`;
+    const acoes = document.createElement('div'); acoes.className = 'flex flex-wrap gap-2 mt-2';
+    const ids = E.time.map(x => x.id);
+    const btn = (txt, fn) => { const b = document.createElement('button');
+      b.className = 'text-xs font-bold bg-white rounded-xl px-2 py-1'; b.textContent = txt; b.onclick = fn; acoes.appendChild(b); };
+    if (noTime) {
+      btn('↓ Reserva', () => salvar(ids.filter(i => i !== c.id)));
+      const i = ids.indexOf(c.id);
+      if (i > 0) btn('↑ Subir', () => { const n = [...ids]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; salvar(n); });
+    } else if (ids.length < 6) {
+      btn('↑ Para o time', () => salvar([...ids, c.id]));
+    }
+    if (c.desmaiada && E.itens.tonico) btn('🧪 Tônico', () => post({{ url_for('jornada.api_item')|tojson }}, {item: 'tonico', criatura: c.id})
+      .then(j => j.ok && toast(`🧪 ${esc(c.nome)} recuperada!`)));
+    d.appendChild(acoes);
+    return d;
+  }
+
+  function render() {
+    $('tm-n').textContent = E.time.length;
+    const t = $('tm-time'), r = $('tm-reserva'); t.innerHTML = ''; r.innerHTML = '';
+    E.time.forEach(c => t.appendChild(card(c, true)));
+    E.reserva.forEach(c => r.appendChild(card(c, false)));
+    if (!E.time.length) t.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Nenhuma criatura ainda. Capture no tabuleiro!</p>';
+    if (!E.reserva.length) r.innerHTML = '<p class="text-sm text-gray-500 col-span-full">Reserva vazia.</p>';
+  }
+  render();
+})();
+</script>
+{% endblock %}

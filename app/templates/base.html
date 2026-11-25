@@ -172,6 +172,12 @@
                {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
             <span aria-hidden="true">⚔️</span> PVP
           </a>
+          <a href="{{ url_for('jornada.index') }}" id="menu-jornada"
+             class="px-4 py-1.5 rounded-full transition-colors
+               {% if request.blueprint == 'jornada' %}bg-white text-[#1B2A4A] font-bold
+               {% else %}text-gray-300 hover:text-white hover:bg-white/10{% endif %}">
+            <span aria-hidden="true">🧭</span> Jornada
+          </a>
           <a href="{{ url_for('anime.index') }}"
              class="px-4 py-1.5 rounded-full transition-colors
                {% if request.blueprint == 'anime' %}bg-white text-[#1B2A4A] font-bold
@@ -183,6 +189,12 @@
 
         <!-- Direita: Bell · Gear · Avatar -->
         <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          {# Jornada no celular: a bottom nav já tem 7 abas, então vira ícone no topo #}
+          <a href="{{ url_for('jornada.index') }}" id="mnav-jornada" title="Jornada" aria-label="Jornada — jogo de tabuleiro"
+            class="md:hidden p-2 rounded-full transition-colors text-lg leading-none
+              {% if request.blueprint == 'jornada' %}bg-white/20{% else %}hover:bg-white/10{% endif %}">
+            <span aria-hidden="true">🧭</span>
+          </a>
           {% if current_user.is_authenticated %}
           <!-- Notificações (só logado — deslogado não há o que notificar) -->
           <a href="{{ url_for('trades.index') }}" title="Oportunidades de troca"

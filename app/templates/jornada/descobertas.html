@@ -1,0 +1,35 @@
+{% extends "jornada/_layout.html" %}
+{% block jn_title %}Descobertas — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}📖 DESCOBERTAS{% endblock %}
+
+{% block jn_content %}
+<section class="jn-card p-4">
+  <h1 class="text-2xl font-extrabold text-[#1B2A4A]">📖 Catálogo de descobertas</h1>
+  <p class="text-sm text-gray-500 mt-1">Cada criatura é revelada para todos quando alguém do servidor a encontra pela primeira vez.</p>
+  <div class="flex flex-wrap gap-2 mt-4 text-sm font-bold">
+    <span class="bg-[#F1F6FC] rounded-full px-3 py-1">Reveladas {{ cat.reveladas }}/{{ cat.total }}</span>
+    <span class="bg-[#DCFCE7] text-green-800 rounded-full px-3 py-1">Suas {{ cat.minhas }}</span>
+  </div>
+
+  {% for estagio in [1, 2, 3] %}
+  <h2 class="font-extrabold text-[#1B2A4A] mt-8 mb-2">Estágio {{ estagio }}{% if estagio > 1 %} <span class="text-xs text-gray-500">· aparece a partir da {{ estagio }}ª volta</span>{% endif %}</h2>
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+    {% for c in cat.lista if c.estagio == estagio %}
+    {% if c.revelada %}
+    <div class="rounded-2xl p-2 text-center {{ 'ring-2 ring-green-500' if c.tenho }}" style="background: {{ c.cor }}33" title="Descoberta por {{ c.por }} em {{ c.em }}">
+      <div class="text-3xl">{{ c.emoji }}</div>
+      <p class="text-xs font-extrabold truncate text-[#1B2A4A]">{{ c.nome }}</p>
+      <p class="text-[10px] text-gray-600 truncate">por {{ c.por }}</p>
+    </div>
+    {% else %}
+    <div class="rounded-2xl p-2 text-center bg-gray-100">
+      <div class="text-3xl grayscale opacity-30">❔</div>
+      <p class="text-xs font-extrabold text-gray-400">???</p>
+      <p class="text-[10px] text-gray-400">não descoberta</p>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

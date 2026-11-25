@@ -1,0 +1,113 @@
+{
+  "nome": "Trilha dos Domadores",
+  "conteudo_provisorio": true,
+  "energia": {
+    "por_dia": 6,
+    "maximo": 12
+  },
+  "inicio": {
+    "energia": 6,
+    "itens": {
+      "isca": 2
+    }
+  },
+  "regras": {
+    "cidade_itens": 2,
+    "ginasio_pp": 40,
+    "ginasio_itens": 1,
+    "sem_criatura_pp": 10,
+    "sequencia_premio_dias": 7,
+    "sequencia_premio_item": "rede",
+    "numeros_captura": "estágio 1 = 2 números; estágios 2 e 3 = 1 número (definido em criaturas.json)"
+  },
+  "tipos": {
+    "Planta": {
+      "cor": "#4CAF50",
+      "emoji": "🌱"
+    },
+    "Vento": {
+      "cor": "#81D4FA",
+      "emoji": "🌬️"
+    },
+    "Inseto": {
+      "cor": "#9CCC65",
+      "emoji": "🐞"
+    },
+    "Rocha": {
+      "cor": "#A1887F",
+      "emoji": "🪨"
+    },
+    "Terra": {
+      "cor": "#D7A86E",
+      "emoji": "⛰️"
+    },
+    "Sombra": {
+      "cor": "#7E57C2",
+      "emoji": "🌑"
+    },
+    "Água": {
+      "cor": "#42A5F5",
+      "emoji": "💧"
+    },
+    "Elétrico": {
+      "cor": "#FDD835",
+      "emoji": "⚡"
+    },
+    "Mente": {
+      "cor": "#EC407A",
+      "emoji": "🧠"
+    },
+    "Luta": {
+      "cor": "#E57373",
+      "emoji": "✊"
+    },
+    "Fogo": {
+      "cor": "#FF7043",
+      "emoji": "🔥"
+    },
+    "Luz": {
+      "cor": "#FFD54F",
+      "emoji": "✨"
+    }
+  },
+  "casas": {
+    "inicio": {
+      "emoji": "🏁",
+      "nome": "Início"
+    },
+    "captura": {
+      "emoji": "🌿",
+      "nome": "Captura"
+    },
+    "cidade": {
+      "emoji": "🏘️",
+      "nome": "Cidade"
+    },
+    "ginasio": {
+      "emoji": "🏟️",
+      "nome": "Ginásio"
+    },
+    "evento": {
+      "emoji": "❓",
+      "nome": "Evento"
+    },
+    "bonus": {
+      "emoji": "⭐",
+      "nome": "Bônus"
+    },
+    "desafio": {
+      "emoji": "👑",
+      "nome": "Desafio"
+    },
+    "fim": {
+      "emoji": "🏛️",
+      "nome": "Hall da Fama"
+    }
+  },
+  "pvp": {
+    "pp_vitoria": 30,
+    "itens_roubados": 2,
+    "janela_horas": 24,
+    "online_minutos": 2
+  }
+}

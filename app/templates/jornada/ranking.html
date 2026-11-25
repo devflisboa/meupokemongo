@@ -1,0 +1,69 @@
+{% extends "jornada/_layout.html" %}
+{% from "jornada/_macros.html" import avatar %}
+{% block jn_title %}Ranking — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}RANKING{% endblock %}
+
+{% block jn_content %}
+<section class="jn-card p-4">
+  <h1 class="text-2xl font-extrabold text-[#1B2A4A] text-center">🏆 Ranking</h1>
+  <nav class="flex justify-center gap-2 mt-4 mb-4">
+    <a href="{{ url_for('jornada.ranking', aba='fase') }}"
+       class="rounded-2xl px-4 py-2 font-extrabold text-sm {{ 'bg-[#1B2A4A] text-white' if aba_ranking != 'global' else 'bg-gray-100 text-gray-500' }}">{{ eu.regiao }}</a>
+    <span class="rounded-2xl px-4 py-2 font-extrabold text-sm bg-gray-100 text-gray-300 cursor-not-allowed" title="Desbloqueia ao entrar no Hall da Fama">🔒 Fase 2</span>
+    <a href="{{ url_for('jornada.ranking', aba='global') }}"
+       class="rounded-2xl px-4 py-2 font-extrabold text-sm {{ 'bg-[#1B2A4A] text-white' if aba_ranking == 'global' else 'bg-gray-100 text-gray-500' }}">Global</a>
+  </nav>
+
+  {% set lista = ranking.lista %}
+  {% if not lista %}
+  <p class="text-center text-gray-500 py-8">Ninguém na trilha ainda. Seja o primeiro!</p>
+  {% endif %}
+
+  {% for r in lista %}
+  {% set pct = ((r.local_indice / r.locais_total) * 100)|round|int %}
+  {% if loop.first %}
+  <a href="{{ r.card_url }}" class="block rounded-3xl p-4 mb-4 border-2 border-[#E8B931]" style="background: linear-gradient(135deg, #FFF8D6, #FFE48A)">
+    <div class="flex items-center gap-4">
+      <span class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-extrabold text-[#8B6508] flex-shrink-0"
+            style="background: radial-gradient(circle at 35% 30%, #FFF6CF, #E8B931)">1º</span>
+      {{ avatar(r, 56) }}
+      <span class="flex-1 min-w-0">
+        <b class="block text-lg truncate">{% if r.campeao %}👑 {% endif %}{{ r.username }}</b>
+        <span class="text-sm">{{ r.local_emoji }} {{ r.local }}</span>
+      </span>
+      <span class="text-right flex-shrink-0"><b class="block text-xl">⚡ {{ r.pp }} PP</b>
+        <span class="text-xs font-bold">{{ r.local_indice }}/{{ r.locais_total }} locais</span></span>
+    </div>
+  </a>
+  {% else %}
+  <a href="{{ r.card_url }}" class="flex items-center gap-4 rounded-2xl p-2 mb-2 bg-gray-50 {{ 'ring-2 ring-[#1B2A4A]' if ranking.eu and ranking.eu.user_id == r.user_id }}">
+    <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold flex-shrink-0
+      {{ 'bg-gray-300 text-gray-700' if r.rank == 2 else ('bg-[#E3A36B] text-white' if r.rank == 3 else 'bg-gray-100 text-gray-500') }}">{{ r.rank }}º</span>
+    {{ avatar(r, 44) }}
+    <span class="flex-1 min-w-0"><b class="block truncate">{% if r.campeao %}👑 {% endif %}{{ r.username }}</b>
+      <span class="text-xs text-gray-500">{{ r.local_emoji }} {{ r.local }} · volta {{ r.volta }}</span></span>
+    <span class="w-28 flex-shrink-0 text-right">
+      <b class="block">{{ r.pp }} PP</b>
+      <span class="block h-2 rounded-full bg-gray-200 mt-1"><span class="block h-2 rounded-full bg-[#2B7BD6]" style="width: {{ pct }}%"></span></span>
+      <span class="text-[10px] text-gray-500">{{ r.local_indice }}/{{ r.locais_total }}</span>
+    </span>
+  </a>
+  {% endif %}
+  {% endfor %}
+</section>
+
+{% if ranking.eu %}
+{% set e = ranking.eu %}
+<div class="fixed left-0 right-0 bottom-20 z-30 px-4">
+  <div class="max-w-3xl mx-auto rounded-3xl p-4 border-2 border-[#1B2A4A] bg-[#E6F1FF] shadow-lg flex items-center gap-4">
+    {{ avatar(e, 48) }}
+    <div class="flex-1 min-w-0">
+      <p class="font-extrabold text-[#1B2A4A]">{% if e.rank %}Você está em {{ e.rank }}º{% else %}Você não aparece no ranking (perfil privado){% endif %}</p>
+      <p class="text-xs text-gray-600">{{ e.local_emoji }} {{ e.local }} · {{ e.pp }} PP · {{ e.local_indice }}/{{ e.locais_total }} locais</p>
+      <span class="block h-2 rounded-full bg-white mt-1"><span class="block h-2 rounded-full bg-[#2B7BD6]" style="width: {{ ((e.local_indice / e.locais_total) * 100)|round|int }}%"></span></span>
+    </div>
+  </div>
+</div>
+<div class="h-24"></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+/* Jornada (#27) — estilos compartilhados. Grid de 8 pt. */
+:root {
+  --jn-navy: #1B2A4A; --jn-navy-2: #243660; --jn-ceu: #BFE3FF; --jn-campo: #CDEFC4;
+  --jn-ouro: #E8B931; --jn-ouro-2: #FFF3C4; --jn-verde: #22C55E; --jn-card: #FFFFFF;
+}
+.jn-fundo { background: linear-gradient(180deg, var(--jn-ceu) 0%, #DFF3FF 35%, var(--jn-campo) 100%); border-radius: 24px; }
+.jn-header { background: linear-gradient(135deg, var(--jn-navy) 0%, var(--jn-navy-2) 100%); border-radius: 24px; color: #fff; }
+.jn-chip { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); border-radius: 16px; }
+.jn-card { background: var(--jn-card); border-radius: 24px; box-shadow: 0 8px 24px rgba(27,42,74,.10); }
+
+/* avatar com bolinha verde */
+.jn-av { position: relative; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px;
+         background: #E0E7FF; color: var(--jn-navy); font-weight: 800; border: 2px solid #fff; flex-shrink: 0; }
+.jn-av img { width: 100%; height: 100%; border-radius: 9999px; object-fit: cover; }
+.jn-av .jn-on { position: absolute; right: -2px; bottom: -2px; width: 33%; height: 33%; min-width: 8px; min-height: 8px;
+                background: var(--jn-verde); border: 2px solid #fff; border-radius: 9999px; }
+.jn-stack > * + * { margin-left: -8px; }
+
+/* Mapa Global */
+.jn-trilha-v { position: relative; }
+.jn-trilha-v::before { content: ""; position: absolute; left: 50%; top: 120px; bottom: 48px; border-left: 4px dotted rgba(27,42,74,.25); transform: translateX(-2px); }
+.jn-no { position: relative; display: flex; }
+.jn-no-circ { width: 72px; height: 72px; border-radius: 9999px; display: flex; align-items: center; justify-content: center;
+              font-size: 32px; background: #fff; border: 4px solid #fff; box-shadow: 0 6px 16px rgba(27,42,74,.18); }
+.jn-no.eu .jn-no-circ { border-color: var(--jn-ouro); box-shadow: 0 0 0 4px rgba(232,185,49,.35), 0 6px 16px rgba(27,42,74,.18); }
+.jn-hall { width: 136px; height: 136px; font-size: 64px; background: radial-gradient(circle at 35% 30%, #FFF6CF, var(--jn-ouro) 70%, #B8860B);
+           border-color: #FFE48A; box-shadow: 0 0 32px rgba(232,185,49,.7); }
+.jn-label { background: #fff; border-radius: 9999px; padding: 4px 12px; font-weight: 800; color: var(--jn-navy); box-shadow: 0 2px 8px rgba(27,42,74,.12); white-space: nowrap; }
+
+/* Tabuleiro serpentina */
+.jn-board { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 16px 8px; }
+.jn-cel { position: relative; aspect-ratio: 1 / 1; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+          font-size: 22px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); }
+.jn-cel .n { font-size: 10px; color: rgba(27,42,74,.55); font-weight: 700; line-height: 1; }
+.jn-cel.atual { outline: 4px solid var(--jn-ouro); outline-offset: 2px; z-index: 2; }
+.jn-cel .loc { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 9px; font-weight: 800; white-space: nowrap;
+               background: var(--jn-navy); color: #fff; border-radius: 9999px; padding: 1px 6px; z-index: 3; }
+.jn-cel .peoes { position: absolute; bottom: -6px; right: -6px; display: flex; align-items: center; }
+.jn-dado { width: 80px; height: 80px; border-radius: 20px; background: #E53935; color: #fff; font-size: 44px; font-weight: 900; flex-shrink: 0;
+           box-shadow: inset 0 -6px 0 rgba(0,0,0,.18), 0 6px 14px rgba(229,57,53,.35); }
+.jn-dado:disabled { opacity: .45; }
+.jn-dado.rolando { animation: jn-giro .12s linear infinite; }
+@keyframes jn-giro { from { transform: rotate(-10deg) scale(1.04); } to { transform: rotate(10deg) scale(.98); } }
+.jn-item { border-radius: 16px; padding: 8px 12px; font-weight: 800; font-size: 14px; background: #F1F5F9; }
+.jn-item.sel { outline: 3px solid var(--jn-navy); }
+
+/* toast e sheet */
+#jn-toast { position: fixed; top: 80px; right: 16px; left: 16px; z-index: 60; display: flex; justify-content: flex-end; pointer-events: none; }
+#jn-toast > div { pointer-events: auto; max-width: 360px; background: linear-gradient(135deg, #FFF8D6, #FFE9A8); color: #14532D;
+                  border-radius: 20px; padding: 12px 16px; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,.18); animation: jn-in .25s ease-out; }
+@keyframes jn-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.jn-sheet-bg { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 55; display: flex; align-items: flex-end; justify-content: center; }
+.jn-sheet { background: #fff; width: 100%; max-width: 640px; max-height: 80vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 16px 16px 96px; }
+@media (min-width: 640px) { .jn-sheet-bg { align-items: center; } .jn-sheet { border-radius: 24px; padding-bottom: 24px; } }
+
+/* bottom nav da Jornada */
+.jn-nav a { color: rgba(255,255,255,.55); }
+.jn-nav a[aria-current="page"] { color: #fff; }
+.jn-nav a[aria-current="page"] .jn-nav-ic { background: rgba(255,255,255,.16); }

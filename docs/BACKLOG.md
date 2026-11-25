@@ -6,7 +6,7 @@
 > **Princípio de UX:** mínimo input. Se o usuário precisa cadastrar muita coisa, ele não usa —
 > o padrão é automático (ex.: a wishlist já é tudo que falta).
 
-*Última revisão: 07/10/2026*
+*Última revisão: 25/11/2026*
 
 ---
 
@@ -52,6 +52,8 @@ Tomadas em 02/10/2026 — valem para as features abaixo.
 | 8 | [#17-B](#17-b--ocr-via-screenshot-especificado-em-13102026) | OCR via screenshot (upload print GO → catalogar) | ~2 dias | ✅ Entregue |
 | 9 | [#13](#13--binder-view-33) | Binder 3×3 + imagem compartilhável | ~1 dia | Pendente |
 | 10 | [#26](#26--expansões-pokeapi) | Expansões PokeAPI: moves, flavor text, egg groups | ~2 dias | Pendente |
+| 11 | [#27](#27--jornada-jogo-de-tabuleiro) | Jornada — jogo de tabuleiro multijogador (conteúdo original) | ~7 dias (J1–J5) | 🔄 J1–J4 concluídas (local) · J5 deploy pendente |
+| 12 | [#28](#28--jornada-criaturas-definitivas) | Jornada — criaturas e espécies definitivas (99 da Fase 1) | ~1 dia | Pendente |
 | — | #16, #19, #21 | Gênero, valor da coleção, numeração dupla | — | Parado |
 | — | #17 | Scan em lote (OCR) | 1–2 sem | Parado |
 | — | #22 | Discord + comunidade | — | Em avaliação |
@@ -229,6 +231,32 @@ Endpoint: `GET /type/{name}` → `damage_relations`
 - Campo novo: `type_chart` em JSON no banco, atualizado pelo `sync-pokemon`
 
 **Ordem recomendada:** A → B → D → C. Fase A entrega valor visual imediato; B é o mais pedido; D elimina dívida técnica; C é informativo.
+
+---
+
+### #27 — Jornada (jogo de tabuleiro)
+
+Spec completa: [SPEC-JORNADA.md](SPEC-JORNADA.md) — revisão 25/11/2026.
+
+- Tabuleiro de 73 casas, dado, captura com 2 números, itens, eventos, ginásios, PvP assíncrono
+- Mapa Global com os treinadores em cada local, ranking por fase, card do jogador
+- **Conteúdo 100% original** (criaturas, região, líderes, nome) — nada de Pokémon/marca no jogo
+- Motivo: dá ao app um hábito diário além das trocas
+- Entrega em 5 etapas (J1 motor solo → J5 deploy), cada uma testada local antes
+- **25/11/2026 — J1 concluída local:** motor, conteúdo provisório, tabelas, API, `/jornada/jogar`, `/jornada/time`, 34 testes
+- **25/11/2026 — J2, J3 e J4 concluídas local:** Mapa Global com **Hall da Fama no topo**, ranking, card, descobertas, feed, PvP assíncrono, visual dos mockups; 53 testes + E2E no Edge
+- **Falta (J5):** deploy no casakek, link no menu
+
+### #28 — Jornada: criaturas definitivas
+
+As 99 criaturas da Fase 1 hoje são provisórias: as 33 de Estágio 1 têm nome, mas as formas de
+Estágio 2 e 3 se chamam "Seixo II", "Seixo III" etc., e todas usam emoji por tipo no lugar de arte.
+
+- Nomes definitivos das formas II e III (33 + 33), mantendo tipo, ataque, PP e números de captura
+- Arte própria de cada criatura (substitui o emoji)
+- Revisar os nomes do Estágio 1
+- Só editar `app/data/jornada/fase1/criaturas.json` — o motor não muda
+- Conteúdo **original** (decisão D11 da spec)
 
 ---
 

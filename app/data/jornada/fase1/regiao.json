@@ -1,0 +1,158 @@
+{
+  "fase": 1,
+  "nome": "Vale Aurora",
+  "casa_final": 72,
+  "casa_desafio": 71,
+  "requisitos": {
+    "pp": 300,
+    "time": 6
+  },
+  "locais": [
+    {
+      "key": "vila-semente",
+      "nome": "Vila Semente",
+      "de": 0,
+      "ate": 2,
+      "emoji": "🌱"
+    },
+    {
+      "key": "bosque-ambar",
+      "nome": "Bosque Âmbar",
+      "de": 3,
+      "ate": 10,
+      "emoji": "🍂"
+    },
+    {
+      "key": "pedreira-cinza",
+      "nome": "Pedreira Cinza",
+      "de": 11,
+      "ate": 18,
+      "emoji": "🪨"
+    },
+    {
+      "key": "lagoa-clara",
+      "nome": "Lagoa Clara",
+      "de": 19,
+      "ate": 26,
+      "emoji": "💧"
+    },
+    {
+      "key": "porto-faisca",
+      "nome": "Porto Faísca",
+      "de": 27,
+      "ate": 34,
+      "emoji": "⚡"
+    },
+    {
+      "key": "jardim-suspenso",
+      "nome": "Jardim Suspenso",
+      "de": 35,
+      "ate": 42,
+      "emoji": "🌸"
+    },
+    {
+      "key": "pantano-turvo",
+      "nome": "Pântano Turvo",
+      "de": 43,
+      "ate": 50,
+      "emoji": "🌫️"
+    },
+    {
+      "key": "cidade-mirante",
+      "nome": "Cidade Mirante",
+      "de": 51,
+      "ate": 58,
+      "emoji": "🔭"
+    },
+    {
+      "key": "ilha-brasa",
+      "nome": "Ilha Brasa",
+      "de": 59,
+      "ate": 65,
+      "emoji": "🌋"
+    },
+    {
+      "key": "pico-coroa",
+      "nome": "Pico Coroa",
+      "de": 66,
+      "ate": 71,
+      "emoji": "⛰️"
+    },
+    {
+      "key": "hall-da-fama",
+      "nome": "Hall da Fama",
+      "de": 72,
+      "ate": 72,
+      "emoji": "🏛️"
+    }
+  ],
+  "ginasios": [
+    {
+      "key": "vento",
+      "nome": "Ginásio Vento",
+      "lider": "Aurora",
+      "tipo": "Vento",
+      "casa": 17,
+      "nivel": 1
+    },
+    {
+      "key": "correnteza",
+      "nome": "Ginásio Correnteza",
+      "lider": "Iago",
+      "tipo": "Água",
+      "casa": 25,
+      "nivel": 2
+    },
+    {
+      "key": "rocha",
+      "nome": "Ginásio Rocha",
+      "lider": "Dona Bento",
+      "tipo": "Rocha",
+      "casa": 33,
+      "nivel": 3
+    },
+    {
+      "key": "sombra",
+      "nome": "Ginásio Sombra",
+      "lider": "Noturno",
+      "tipo": "Sombra",
+      "casa": 41,
+      "nivel": 4
+    },
+    {
+      "key": "raiz",
+      "nome": "Ginásio Raiz",
+      "lider": "Jurema",
+      "tipo": "Planta",
+      "casa": 49,
+      "nivel": 5
+    },
+    {
+      "key": "trovao",
+      "nome": "Ginásio Trovão",
+      "lider": "Capitã Raia",
+      "tipo": "Elétrico",
+      "casa": 57,
+      "nivel": 6
+    },
+    {
+      "key": "brasa",
+      "nome": "Ginásio Brasa",
+      "lider": "Tição",
+      "tipo": "Fogo",
+      "casa": 65,
+      "nivel": 7
+    }
+  ],
+  "desafio": {
+    "nome": "Desafio do Pico",
+    "chefe": "Guardiã do Pico",
+    "nivel": 4,
+    "rodadas": 3,
+    "casa_derrota": 66
+  },
+  "hall_da_fama": {
+    "nome": "Hall da Fama",
+    "titulo": "Mestre da Trilha"
+  }
+}

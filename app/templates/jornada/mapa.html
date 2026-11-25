@@ -1,0 +1,97 @@
+{% extends "jornada/_layout.html" %}
+{% block jn_title %}Mapa Global — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}MAPA GLOBAL · {{ mapa.regiao }}{% endblock %}
+
+{% block jn_header_extra %}
+<div class="flex flex-wrap gap-2 mt-4 text-xs font-bold">
+  <span class="jn-chip px-3 py-1">🧭 <span id="mp-total">{{ mapa.total }}</span> treinadores na trilha</span>
+  {% if eu %}
+  <span class="jn-chip px-3 py-1">📍 Você: {{ eu.local }} · volta {{ eu.volta }}</span>
+  <a href="{{ url_for('jornada.jogar') }}" class="bg-[#E8B931] text-[#1B2A4A] rounded-2xl px-4 py-1">🎲 Jogar</a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block jn_content %}
+{% if not eu %}
+<div class="jn-card p-4 mb-4 flex items-center gap-4">
+  <p class="flex-1 text-sm font-bold text-[#1B2A4A]">Role o dado, capture criaturas e suba até o Hall da Fama.</p>
+  <a href="{{ url_for('auth.login', next=url_for('jornada.jogar')) }}" class="bg-[#1B2A4A] text-white font-bold rounded-2xl px-4 py-2 text-sm flex-shrink-0">Entrar e jogar</a>
+</div>
+{% endif %}
+
+<section class="jn-fundo p-4 pt-8 pb-8 overflow-hidden">
+  <div id="mp-trilha" class="jn-trilha-v flex flex-col gap-8"></div>
+</section>
+
+<script>
+(() => {
+  const EU = {{ (eu.posicao if eu else -1)|tojson }};
+  const API_MAPA = {{ url_for('jornada.api_mapa')|tojson }};
+  const HALL_URL = {{ url_for('jornada.hall')|tojson }};
+  let M = {{ mapa|tojson }};
+  const $ = id => document.getElementById(id);
+  const {esc, avatar} = JN;
+
+  function pilha(js, px) {
+    return `<span class="jn-stack inline-flex">${js.slice(0, 4).map(r => avatar(r, px)).join('')}</span>`;
+  }
+
+  function render() {
+    $('mp-total').textContent = M.total;
+    const nos = [...M.nos].reverse();       // topo primeiro: Hall da Fama
+    $('mp-trilha').innerHTML = nos.map((n, i) => {
+      const hall = i === 0;
+      const meu = EU >= n.de && EU <= n.ate;
+      const qtd = n.total ? `${n.total} ${hall ? (n.total === 1 ? 'campeão' : 'campeões') : (n.total === 1 ? 'treinador aqui' : 'treinadores aqui')}` : (hall ? 'Ninguém chegou ainda' : '');
+      const on = n.online_total ? ` · <span class="text-green-700">${n.online_total} online</span>` : '';
+      if (hall) {
+        return `<button class="jn-no flex-col items-center self-center text-center" data-no="${esc(n.key)}">
+            <span class="text-3xl leading-none -mb-2">👑</span>
+            <span class="jn-no-circ jn-hall">${esc(n.emoji)}</span>
+            <span class="jn-label text-lg mt-2" style="background:#FFF3C4">🏛️ ${esc(n.nome)}</span>
+            <span class="mt-2">${n.total ? pilha(n.jogadores, 36) : ''}</span>
+            <span class="text-xs font-bold text-[#1B2A4A] mt-1">${qtd}</span>
+          </button>`;
+      }
+      const lado = i % 2 ? 'self-start ml-2 sm:ml-16' : 'self-end mr-2 sm:mr-16';
+      return `<button class="jn-no ${meu ? 'eu' : ''} ${lado} items-center gap-2" data-no="${esc(n.key)}">
+          <span class="relative">
+            <span class="jn-no-circ">${esc(n.emoji)}</span>
+            ${n.total ? `<span class="absolute -right-3 -bottom-1">${pilha(n.jogadores, 32)}</span>` : ''}
+          </span>
+          <span class="flex flex-col items-start ml-4 text-left">
+            <span class="jn-label text-sm">${esc(n.nome)}${meu ? ' · você' : ''}</span>
+            <span class="text-[11px] font-bold text-[#1B2A4A]/70 mt-1 ml-2">${qtd}${on}</span>
+          </span>
+        </button>`;
+    }).join('');
+    $('mp-trilha').querySelectorAll('[data-no]').forEach(b => b.onclick = () => abrir(b.dataset.no));
+  }
+
+  function abrir(key) {
+    const n = M.nos.find(x => x.key === key);
+    const hall = n.key === M.nos[M.nos.length - 1].key;
+    const linhas = n.jogadores.map((r, i) => `
+      <a href="${esc(r.card_url)}" class="flex items-center gap-4 py-2 border-b last:border-0">
+        ${hall ? `<span class="w-8 text-center font-extrabold text-[#B8860B]">${i + 1}º</span>` : ''}
+        ${avatar(r, 44)}
+        <span class="flex-1 min-w-0"><b class="block truncate">${esc(r.username)}</b>
+          <span class="text-xs text-gray-500">${hall ? 'Conquistou em ' + esc(r.titulo_em) : 'Casa ' + r.posicao + ' · volta ' + r.volta}${r.online ? ' · <span class="text-green-600 font-bold">online</span>' : ''}</span></span>
+        <b class="text-[#1B2A4A]">${r.pp} PP</b>
+      </a>`).join('');
+    JN.sheet(`<h2 class="text-xl font-extrabold text-[#1B2A4A] mb-2">${esc(n.emoji)} ${esc(n.nome)}</h2>
+      <p class="text-sm text-gray-500 mb-4">${hall ? 'Quem venceu o Desafio do Pico, na ordem de conquista.' : 'Casas ' + n.de + ' a ' + n.ate}</p>
+      ${linhas || '<p class="text-sm text-gray-500">Ninguém por aqui agora.</p>'}
+      ${hall ? `<a href="${HALL_URL}" class="block text-center mt-4 font-bold text-[#1B2A4A] underline">Ver o Hall da Fama completo</a>` : ''}`);
+  }
+
+  render();
+  JN.poll(async () => {
+    const r = await fetch(API_MAPA + '?fase=' + M.fase);
+    const j = await r.json();
+    if (j.ok) { M = j.mapa; render(); }
+  }, 20000, 60000);
+})();
+</script>
+{% endblock %}

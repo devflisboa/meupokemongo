@@ -1,0 +1,40 @@
+{
+  "limite_mao": 10,
+  "itens": [
+    {
+      "key": "isca",
+      "nome": "Isca",
+      "emoji": "🪱",
+      "peso": 35,
+      "descricao": "+1 no dado de captura"
+    },
+    {
+      "key": "tonico",
+      "nome": "Tônico",
+      "emoji": "🧪",
+      "peso": 30,
+      "descricao": "Cura 1 criatura desmaiada"
+    },
+    {
+      "key": "rede",
+      "nome": "Rede",
+      "emoji": "🕸️",
+      "peso": 20,
+      "descricao": "+1 ou −1 no dado de captura"
+    },
+    {
+      "key": "elixir",
+      "nome": "Elixir",
+      "emoji": "⚗️",
+      "peso": 12,
+      "descricao": "Cura todas as desmaiadas"
+    },
+    {
+      "key": "amuleto",
+      "nome": "Amuleto",
+      "emoji": "🔮",
+      "peso": 3,
+      "descricao": "Captura garantida"
+    }
+  ]
+}

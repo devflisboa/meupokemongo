@@ -1,0 +1,416 @@
+[
+  {
+    "casa": 0,
+    "tipo": "inicio",
+    "local": "vila-semente"
+  },
+  {
+    "casa": 1,
+    "tipo": "captura",
+    "local": "vila-semente",
+    "habitat": "brotim"
+  },
+  {
+    "casa": 2,
+    "tipo": "cidade",
+    "local": "vila-semente"
+  },
+  {
+    "casa": 3,
+    "tipo": "evento",
+    "local": "bosque-ambar"
+  },
+  {
+    "casa": 4,
+    "tipo": "captura",
+    "local": "bosque-ambar",
+    "habitat": "pardalito"
+  },
+  {
+    "casa": 5,
+    "tipo": "bonus",
+    "local": "bosque-ambar",
+    "pp": 50
+  },
+  {
+    "casa": 6,
+    "tipo": "captura",
+    "local": "bosque-ambar",
+    "habitat": "bicudo"
+  },
+  {
+    "casa": 7,
+    "tipo": "cidade",
+    "local": "bosque-ambar"
+  },
+  {
+    "casa": 8,
+    "tipo": "captura",
+    "local": "bosque-ambar",
+    "habitat": "musguinho"
+  },
+  {
+    "casa": 9,
+    "tipo": "evento",
+    "local": "bosque-ambar"
+  },
+  {
+    "casa": 10,
+    "tipo": "captura",
+    "local": "bosque-ambar",
+    "habitat": "formigao"
+  },
+  {
+    "casa": 11,
+    "tipo": "cidade",
+    "local": "pedreira-cinza"
+  },
+  {
+    "casa": 12,
+    "tipo": "captura",
+    "local": "pedreira-cinza",
+    "habitat": "seixo"
+  },
+  {
+    "casa": 13,
+    "tipo": "evento",
+    "local": "pedreira-cinza"
+  },
+  {
+    "casa": 14,
+    "tipo": "captura",
+    "local": "pedreira-cinza",
+    "habitat": "cascalhao"
+  },
+  {
+    "casa": 15,
+    "tipo": "bonus",
+    "local": "pedreira-cinza",
+    "pp": 50
+  },
+  {
+    "casa": 16,
+    "tipo": "captura",
+    "local": "pedreira-cinza",
+    "habitat": "tatui"
+  },
+  {
+    "casa": 17,
+    "tipo": "ginasio",
+    "local": "pedreira-cinza",
+    "ginasio": "vento"
+  },
+  {
+    "casa": 18,
+    "tipo": "captura",
+    "local": "pedreira-cinza",
+    "habitat": "breu"
+  },
+  {
+    "casa": 19,
+    "tipo": "captura",
+    "local": "lagoa-clara",
+    "habitat": "bolhudo"
+  },
+  {
+    "casa": 20,
+    "tipo": "evento",
+    "local": "lagoa-clara"
+  },
+  {
+    "casa": 21,
+    "tipo": "cidade",
+    "local": "lagoa-clara"
+  },
+  {
+    "casa": 22,
+    "tipo": "captura",
+    "local": "lagoa-clara",
+    "habitat": "garcelha"
+  },
+  {
+    "casa": 23,
+    "tipo": "captura",
+    "local": "lagoa-clara",
+    "habitat": "concha"
+  },
+  {
+    "casa": 24,
+    "tipo": "bonus",
+    "local": "lagoa-clara",
+    "pp": 50
+  },
+  {
+    "casa": 25,
+    "tipo": "ginasio",
+    "local": "lagoa-clara",
+    "ginasio": "correnteza"
+  },
+  {
+    "casa": 26,
+    "tipo": "captura",
+    "local": "lagoa-clara",
+    "habitat": "lambarim"
+  },
+  {
+    "casa": 27,
+    "tipo": "evento",
+    "local": "porto-faisca"
+  },
+  {
+    "casa": 28,
+    "tipo": "captura",
+    "local": "porto-faisca",
+    "habitat": "faiscao"
+  },
+  {
+    "casa": 29,
+    "tipo": "cidade",
+    "local": "porto-faisca"
+  },
+  {
+    "casa": 30,
+    "tipo": "captura",
+    "local": "porto-faisca",
+    "habitat": "pilha"
+  },
+  {
+    "casa": 31,
+    "tipo": "captura",
+    "local": "porto-faisca",
+    "habitat": "trovisco"
+  },
+  {
+    "casa": 32,
+    "tipo": "evento",
+    "local": "porto-faisca"
+  },
+  {
+    "casa": 33,
+    "tipo": "ginasio",
+    "local": "porto-faisca",
+    "ginasio": "rocha"
+  },
+  {
+    "casa": 34,
+    "tipo": "bonus",
+    "local": "porto-faisca",
+    "pp": 50
+  },
+  {
+    "casa": 35,
+    "tipo": "captura",
+    "local": "jardim-suspenso",
+    "habitat": "mimosa"
+  },
+  {
+    "casa": 36,
+    "tipo": "cidade",
+    "local": "jardim-suspenso"
+  },
+  {
+    "casa": 37,
+    "tipo": "captura",
+    "local": "jardim-suspenso",
+    "habitat": "cipo"
+  },
+  {
+    "casa": 38,
+    "tipo": "evento",
+    "local": "jardim-suspenso"
+  },
+  {
+    "casa": 39,
+    "tipo": "captura",
+    "local": "jardim-suspenso",
+    "habitat": "plumito"
+  },
+  {
+    "casa": 40,
+    "tipo": "bonus",
+    "local": "jardim-suspenso",
+    "pp": 50
+  },
+  {
+    "casa": 41,
+    "tipo": "ginasio",
+    "local": "jardim-suspenso",
+    "ginasio": "sombra"
+  },
+  {
+    "casa": 42,
+    "tipo": "captura",
+    "local": "jardim-suspenso",
+    "habitat": "sonhim"
+  },
+  {
+    "casa": 43,
+    "tipo": "evento",
+    "local": "pantano-turvo"
+  },
+  {
+    "casa": 44,
+    "tipo": "captura",
+    "local": "pantano-turvo",
+    "habitat": "sapao"
+  },
+  {
+    "casa": 45,
+    "tipo": "cidade",
+    "local": "pantano-turvo"
+  },
+  {
+    "casa": 46,
+    "tipo": "captura",
+    "local": "pantano-turvo",
+    "habitat": "lodim"
+  },
+  {
+    "casa": 47,
+    "tipo": "captura",
+    "local": "pantano-turvo",
+    "habitat": "fumace"
+  },
+  {
+    "casa": 48,
+    "tipo": "bonus",
+    "local": "pantano-turvo",
+    "pp": 50
+  },
+  {
+    "casa": 49,
+    "tipo": "ginasio",
+    "local": "pantano-turvo",
+    "ginasio": "raiz"
+  },
+  {
+    "casa": 50,
+    "tipo": "captura",
+    "local": "pantano-turvo",
+    "habitat": "noctua"
+  },
+  {
+    "casa": 51,
+    "tipo": "captura",
+    "local": "cidade-mirante",
+    "habitat": "miragem"
+  },
+  {
+    "casa": 52,
+    "tipo": "evento",
+    "local": "cidade-mirante"
+  },
+  {
+    "casa": 53,
+    "tipo": "cidade",
+    "local": "cidade-mirante"
+  },
+  {
+    "casa": 54,
+    "tipo": "captura",
+    "local": "cidade-mirante",
+    "habitat": "corujao"
+  },
+  {
+    "casa": 55,
+    "tipo": "captura",
+    "local": "cidade-mirante",
+    "habitat": "eco"
+  },
+  {
+    "casa": 56,
+    "tipo": "bonus",
+    "local": "cidade-mirante",
+    "pp": 50
+  },
+  {
+    "casa": 57,
+    "tipo": "ginasio",
+    "local": "cidade-mirante",
+    "ginasio": "trovao"
+  },
+  {
+    "casa": 58,
+    "tipo": "captura",
+    "local": "cidade-mirante",
+    "habitat": "brutao"
+  },
+  {
+    "casa": 59,
+    "tipo": "evento",
+    "local": "ilha-brasa"
+  },
+  {
+    "casa": 60,
+    "tipo": "captura",
+    "local": "ilha-brasa",
+    "habitat": "brasinha"
+  },
+  {
+    "casa": 61,
+    "tipo": "cidade",
+    "local": "ilha-brasa"
+  },
+  {
+    "casa": 62,
+    "tipo": "captura",
+    "local": "ilha-brasa",
+    "habitat": "lavor"
+  },
+  {
+    "casa": 63,
+    "tipo": "captura",
+    "local": "ilha-brasa",
+    "habitat": "fornalha"
+  },
+  {
+    "casa": 64,
+    "tipo": "bonus",
+    "local": "ilha-brasa",
+    "pp": 50
+  },
+  {
+    "casa": 65,
+    "tipo": "ginasio",
+    "local": "ilha-brasa",
+    "ginasio": "brasa"
+  },
+  {
+    "casa": 66,
+    "tipo": "evento",
+    "local": "pico-coroa"
+  },
+  {
+    "casa": 67,
+    "tipo": "captura",
+    "local": "pico-coroa",
+    "habitat": "aurelio"
+  },
+  {
+    "casa": 68,
+    "tipo": "captura",
+    "local": "pico-coroa",
+    "habitat": "coroado"
+  },
+  {
+    "casa": 69,
+    "tipo": "cidade",
+    "local": "pico-coroa"
+  },
+  {
+    "casa": 70,
+    "tipo": "bonus",
+    "local": "pico-coroa",
+    "pp": 100
+  },
+  {
+    "casa": 71,
+    "tipo": "desafio",
+    "local": "pico-coroa"
+  },
+  {
+    "casa": 72,
+    "tipo": "fim",
+    "local": "hall-da-fama"
+  }
+]

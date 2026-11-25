@@ -1,0 +1,7 @@
+{# Macros da Jornada — importar com {% from "jornada/_macros.html" import avatar %} #}
+{% macro avatar(r, px=40) -%}
+<span class="jn-av" style="width:{{ px }}px;height:{{ px }}px;font-size:{{ (px * 0.42)|round|int }}px" title="{{ r.username }}">
+  {%- if r.avatar %}<img src="{{ r.avatar }}" alt="" loading="lazy">{% else %}{{ r.inicial }}{% endif -%}
+  {%- if r.online %}<span class="jn-on"></span>{% endif -%}
+</span>
+{%- endmacro %}

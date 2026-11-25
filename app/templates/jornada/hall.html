@@ -1,0 +1,48 @@
+{% extends "jornada/_layout.html" %}
+{% from "jornada/_macros.html" import avatar %}
+{% block jn_title %}Hall da Fama — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}🏛️ HALL DA FAMA{% endblock %}
+
+{% block jn_content %}
+<section class="rounded-3xl p-4 pt-8 text-center" style="background: radial-gradient(ellipse at top, #FFF6CF 0%, #FFE48A 45%, #E8B931 100%)">
+  <div class="text-6xl">🏛️</div>
+  <h1 class="text-3xl font-extrabold text-[#1B2A4A] mt-2">Hall da Fama</h1>
+  <p class="text-sm font-bold text-[#6B4E00] mt-1">Os treinadores que venceram o Desafio do Pico — na ordem de conquista.</p>
+
+  {% if campeoes %}
+  {# pódio: 2º · 1º · 3º #}
+  <div class="flex items-end justify-center gap-2 mt-8">
+    {% for idx in [1, 0, 2] %}{% if campeoes|length > idx %}{% set r = campeoes[idx] %}
+    <a href="{{ r.card_url }}" class="flex flex-col items-center w-28">
+      {% if idx == 0 %}<span class="text-3xl -mb-1">👑</span>{% endif %}
+      {{ avatar(r, 72 if idx == 0 else 56) }}
+      <b class="text-sm truncate max-w-full mt-1 text-[#1B2A4A]">{{ r.username }}</b>
+      <span class="text-[11px] text-[#6B4E00]">{{ r.titulo_em }}</span>
+      <span class="w-full rounded-t-2xl mt-1 flex items-start justify-center pt-2 font-extrabold text-2xl text-white"
+            style="height: {{ 112 if idx == 0 else (80 if idx == 1 else 56) }}px; background: {{ '#B8860B' if idx == 0 else ('#9CA3AF' if idx == 1 else '#C2773A') }}">{{ idx + 1 }}º</span>
+    </a>
+    {% endif %}{% endfor %}
+  </div>
+  {% else %}
+  <p class="mt-8 mb-8 text-[#1B2A4A] font-bold">Ninguém chegou ao topo ainda. O primeiro nome desta parede pode ser o seu!</p>
+  {% endif %}
+</section>
+
+{% if campeoes|length > 3 %}
+<section class="jn-card p-4 mt-4">
+  {% for r in campeoes[3:] %}
+  <a href="{{ r.card_url }}" class="flex items-center gap-4 py-2 border-b last:border-0">
+    <span class="w-10 text-center font-extrabold text-[#B8860B]">{{ r.ordem }}º</span>
+    {{ avatar(r, 44) }}
+    <span class="flex-1 min-w-0"><b class="block truncate">{{ r.username }}</b>
+      <span class="text-xs text-gray-500">Conquistou em {{ r.titulo_em }} · {{ r.capturadas }} criaturas</span></span>
+    <b>{{ r.pp }} PP</b>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}
+
+<div class="text-center mt-4">
+  <a href="{{ url_for('jornada.index') }}" class="inline-block bg-[#1B2A4A] text-white font-bold rounded-2xl px-4 py-2">🗺️ Voltar ao Mapa Global</a>
+</div>
+{% endblock %}

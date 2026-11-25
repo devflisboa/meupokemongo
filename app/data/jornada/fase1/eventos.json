@@ -1,0 +1,74 @@
+[
+  {
+    "key": "vento-a-favor",
+    "nome": "Vento a favor",
+    "efeito": "mover",
+    "valor": 2
+  },
+  {
+    "key": "atalho",
+    "nome": "Atalho no mato",
+    "efeito": "mover",
+    "valor": 3
+  },
+  {
+    "key": "trilha-alagada",
+    "nome": "Trilha alagada",
+    "efeito": "mover",
+    "valor": -2
+  },
+  {
+    "key": "ponte-quebrada",
+    "nome": "Ponte quebrada",
+    "efeito": "mover",
+    "valor": -3
+  },
+  {
+    "key": "achado",
+    "nome": "Achado no caminho",
+    "efeito": "pp",
+    "valor": 30
+  },
+  {
+    "key": "viajante",
+    "nome": "Ajudou um viajante",
+    "efeito": "pp",
+    "valor": 20
+  },
+  {
+    "key": "mochila-furada",
+    "nome": "Mochila furada",
+    "efeito": "pp",
+    "valor": -20
+  },
+  {
+    "key": "mercador",
+    "nome": "Mercador ambulante",
+    "efeito": "item",
+    "valor": 1
+  },
+  {
+    "key": "treino",
+    "nome": "Treino ao amanhecer",
+    "efeito": "energia",
+    "valor": 1
+  },
+  {
+    "key": "fonte-termal",
+    "nome": "Fonte termal",
+    "efeito": "curar",
+    "valor": 0
+  },
+  {
+    "key": "dia-de-sorte",
+    "nome": "Dia de sorte",
+    "efeito": "sorte",
+    "valor": 1
+  },
+  {
+    "key": "tempestade",
+    "nome": "Tempestade",
+    "efeito": "perde_item",
+    "valor": 1
+  }
+]

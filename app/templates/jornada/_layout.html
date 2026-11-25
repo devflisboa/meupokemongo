@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{# Layout comum da Jornada: header com PP/energia + barra inferior Mapa · Jogar · Ranking · Time · Perfil #}
+{% block title %}{% block jn_title %}{{ jogo.nome }}{% endblock %}{% endblock %}
+{% block description %}{{ jogo.nome }} — jogo de tabuleiro do MeuPokémonGO: role o dado, capture criaturas e chegue ao Hall da Fama.{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='jornada/jornada.css') }}">
+<script src="{{ url_for('static', filename='jornada/jornada.js') }}"></script>
+{% block jn_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto pb-32">
+  <header class="jn-header p-4 mb-4">
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('jornada.index') }}" class="flex items-center gap-2 min-w-0 flex-1" aria-label="Mapa Global">
+        {# emblema próprio: bússola sobre trilha #}
+        <svg viewBox="0 0 48 48" class="w-12 h-12 flex-shrink-0" aria-hidden="true">
+          <circle cx="24" cy="24" r="22" fill="#E8B931"/><circle cx="24" cy="24" r="17" fill="#1B2A4A"/>
+          <path d="M24 9 L28 24 L24 39 L20 24 Z" fill="#fff"/><path d="M24 9 L28 24 L20 24 Z" fill="#E53935"/>
+          <circle cx="24" cy="24" r="3" fill="#E8B931"/>
+        </svg>
+        <span class="min-w-0">
+          <span class="block text-lg sm:text-xl font-extrabold leading-tight truncate">{{ jogo.nome }}</span>
+          <span class="block text-xs font-bold text-[#E8B931]">{% block jn_sub %}A Jornada{% endblock %}</span>
+        </span>
+      </a>
+      {% if eu %}
+      <div class="flex gap-2 flex-shrink-0">
+        <span class="jn-chip px-3 py-2 text-center leading-tight" title="Rolagens de dado disponíveis hoje">
+          <span class="block text-base font-extrabold">⚡ <span data-jn="energia">{{ eu.energia }}</span></span>
+          <span class="block text-[10px] text-blue-200">energia</span>
+        </span>
+        <span class="jn-chip px-3 py-2 text-center leading-tight" title="Pontos de Poder">
+          <span class="block text-base font-extrabold"><span data-jn="pp">{{ eu.pp }}</span> PP</span>
+          <span class="block text-[10px] text-blue-200">Power Points</span>
+        </span>
+      </div>
+      {% endif %}
+    </div>
+    {% block jn_header_extra %}{% endblock %}
+  </header>
+
+  {% block jn_content %}{% endblock %}
+
+  {% if jogo.conteudo_provisorio %}
+  <p class="text-center text-[11px] text-gray-400 mt-8">Protótipo · criaturas e nomes provisórios</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+{% if current_user.is_authenticated %}
+{% set itens_nav = [
+  ('mapa', url_for('jornada.index'), '🗺️', 'Mapa'),
+  ('jogar', url_for('jornada.jogar'), '🎲', 'Jogar'),
+  ('ranking', url_for('jornada.ranking'), '🏆', 'Ranking'),
+  ('time', url_for('jornada.time'), '🐾', 'Time'),
+  ('perfil', url_for('jornada.eu'), '👤', 'Perfil'),
+] %}
+<nav class="jn-nav fixed bottom-0 left-0 right-0 z-40 bg-[#1B2A4A] border-t border-[#152238]">
+  <div class="max-w-3xl mx-auto grid grid-cols-5">
+    {% for key, href, ic, nome in itens_nav %}
+    <a href="{{ href }}" {% if aba == key %}aria-current="page"{% endif %}
+       class="flex flex-col items-center py-2 gap-1 text-[11px] font-bold">
+      <span class="jn-nav-ic text-xl leading-none rounded-xl px-4 py-1">{{ ic }}</span>{{ nome }}
+    </a>
+    {% endfor %}
+  </div>
+</nav>
+{% endif %}
+{% endblock %}

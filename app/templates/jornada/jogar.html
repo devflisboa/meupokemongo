@@ -1,0 +1,415 @@
+{% extends "jornada/_layout.html" %}
+{% block jn_title %}Jogar — {{ jogo.nome }}{% endblock %}
+{% block jn_sub %}{{ regiao.nome }} · Fase {{ eu.fase }}{% endblock %}
+
+{% block jn_header_extra %}
+<div class="flex flex-wrap gap-2 mt-4 text-xs font-bold">
+  <span class="jn-chip px-3 py-1">📍 <span id="jg-local">{{ eu.local }}</span> · <span id="jg-prog">{{ eu.local_indice }}/{{ eu.locais_total }}</span></span>
+  <span class="jn-chip px-3 py-1">🔁 Volta <span id="jg-volta">{{ eu.volta }}</span></span>
+  <span class="jn-chip px-3 py-1">🔥 <span id="jg-seq">{{ eu.sequencia_dias }}</span> dia(s)</span>
+  <span class="jn-chip px-3 py-1">🏅 <span id="jg-ins">{{ eu.insignias|length }}</span>/{{ eu.ginasios_total }}</span>
+  <span id="jg-sorte" class="bg-[#E8B931] text-[#1B2A4A] rounded-2xl px-3 py-1 {{ '' if eu.sorte else 'hidden' }}">🍀 Sorte na próxima captura</span>
+</div>
+{% endblock %}
+
+{% block jn_content %}
+{# desafios PvP recebidos #}
+<div id="jg-recebidos" class="mb-4 space-y-2"></div>
+
+{# tabuleiro #}
+<section class="jn-fundo mb-4">
+  <div id="jg-scroll" class="overflow-y-auto" style="max-height: 56vh">
+    <div id="jg-board" class="jn-board"></div>
+  </div>
+</section>
+
+{# painel de ação #}
+<section class="jn-card p-4 mb-4">
+  <div class="flex items-center gap-4">
+    <button id="jg-dado" class="jn-dado flex items-center justify-center" aria-label="Rolar o dado">🎲</button>
+    <div class="min-w-0 flex-1">
+      <p id="jg-msg" class="font-extrabold text-[#1B2A4A]">Sua vez! Role o dado.</p>
+      <p id="jg-sub" class="text-sm text-gray-500"></p>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 gap-2 mt-4">
+    <button id="jg-btn-cap" class="rounded-2xl py-3 font-extrabold text-white bg-green-600 disabled:opacity-35">🌿 Capturar</button>
+    <button id="jg-btn-bat" class="rounded-2xl py-3 font-extrabold text-white bg-[#F0624D] disabled:opacity-35">⚔️ Batalhar</button>
+  </div>
+  <button id="jg-btn-des" class="hidden w-full mt-2 rounded-2xl py-3 font-extrabold text-[#1B2A4A] bg-[#E8B931]">👑 Enfrentar {{ regiao.desafio.chefe }}</button>
+
+  <h2 class="font-extrabold text-[#1B2A4A] text-center mt-4 mb-2">Itens na sua mão</h2>
+  <div id="jg-itens" class="flex flex-wrap justify-center gap-2"></div>
+</section>
+
+<section class="grid sm:grid-cols-2 gap-4">
+  <div class="jn-card p-4">
+    <h2 class="font-extrabold text-[#1B2A4A] mb-2">Rumo ao 🏛️ Hall da Fama</h2>
+    <p class="text-sm">PP: <b id="jg-req-pp"></b></p>
+    <p class="text-sm">Time: <b id="jg-req-time"></b></p>
+    <p class="text-sm">Criaturas: <b id="jg-cap"></b></p>
+    <p class="text-xs text-gray-500 mt-2">Chegando ao topo sem os requisitos, você recomeça a trilha com criaturas mais fortes.</p>
+  </div>
+  <div class="jn-card p-4">
+    <h2 class="font-extrabold text-[#1B2A4A] mb-2">Agora na trilha</h2>
+    <ol id="jg-feed" class="text-sm space-y-1 text-gray-700"></ol>
+  </div>
+</section>
+
+<section class="jn-card p-4 mt-4">
+  <h2 class="font-extrabold text-[#1B2A4A] mb-2">Batalhas</h2>
+  <ol id="jg-batalhas" class="text-sm space-y-1 text-gray-700"></ol>
+</section>
+
+<section class="jn-card p-4 mt-4">
+  <h2 class="font-extrabold text-[#1B2A4A] mb-2">Diário da jornada</h2>
+  <ol id="jg-log" class="text-sm space-y-1 text-gray-700"></ol>
+</section>
+
+<script>
+(() => {
+  const CASAS = {{ casas|tojson }};
+  const LOCAIS = {{ regiao.locais|tojson }};
+  const ITENS = {{ itens|tojson }};
+  const CFG = {{ jogo.casas|tojson }};
+  const RODADAS = {{ regiao.desafio.rodadas }};
+  const CHEFE = {{ regiao.desafio.chefe|tojson }};
+  const EU_AV = {{ {'username': current_user.username, 'avatar': (url_for('auth.avatar', user_id=current_user.id) if current_user.avatar else None), 'inicial': current_user.username[:1]|upper, 'online': False}|tojson }};
+  const API = {
+    estado: {{ url_for('jornada.api_estado')|tojson }}, rolar: {{ url_for('jornada.api_rolar')|tojson }},
+    capturar: {{ url_for('jornada.api_capturar')|tojson }}, pular: {{ url_for('jornada.api_pular')|tojson }},
+    item: {{ url_for('jornada.api_item')|tojson }}, desafio: {{ url_for('jornada.api_desafio')|tojson }},
+    desafiar: {{ url_for('jornada.api_pvp_desafiar')|tojson }}, responder: id => `/jornada/api/pvp/${id}/responder`,
+  };
+  const COR = {inicio: '#E0E7FF', captura: '#DCFCE7', cidade: '#DBEAFE', ginasio: '#FEE2E2', evento: '#EDE9FE',
+               bonus: '#FEF3C7', desafio: '#FDE68A', fim: '#FFE48A'};
+  let E = {{ eu|tojson }};
+  let VIZ = {{ vizinhos|tojson }};
+  let ULT = {{ ultimo_turno|tojson }};
+  let ocupado = false;
+  const $ = id => document.getElementById(id);
+  const {esc, avatar, toast, sheet, fecharSheet, criatura} = JN;
+  const nomeItem = k => ITENS[k] ? `${ITENS[k].emoji} ${ITENS[k].nome}` : k;
+  const inicioLocal = Object.fromEntries(LOCAIS.map(l => [l.de, l]));
+
+  // ── tabuleiro em serpentina (casa 0 embaixo à esquerda) ─────────────
+  function tabuleiro() {
+    const COLS = 6, linhas = [];
+    for (let i = 0; i < CASAS.length; i += COLS) {
+      const lin = CASAS.slice(i, i + COLS);
+      while (lin.length < COLS) lin.push(null);
+      linhas.push((linhas.length % 2) ? lin.reverse() : lin);
+    }
+    const porCasa = {};
+    VIZ.forEach(v => (porCasa[v.posicao] = porCasa[v.posicao] || []).push(v));
+    $('jg-board').innerHTML = linhas.reverse().flat().map(c => {
+      if (!c) return '<div></div>';
+      const atual = c.casa === E.posicao;
+      const outros = porCasa[c.casa] || [];
+      const loc = inicioLocal[c.casa];
+      const peoes = outros.slice(0, 2).map(v => avatar(v, 20)).join('') +
+        (outros.length > 2 ? `<span class="text-[10px] font-extrabold bg-white rounded-full px-1">+${outros.length - 2}</span>` : '');
+      return `<div class="jn-cel ${atual ? 'atual' : ''}" style="background:${COR[c.tipo]}" title="Casa ${c.casa} · ${esc(CFG[c.tipo].nome)}" ${atual ? 'id="jg-atual"' : ''}>
+          ${loc ? `<span class="loc">${esc(loc.emoji)} ${esc(loc.nome)}</span>` : ''}
+          ${atual ? avatar(EU_AV, 34) : `<span>${CFG[c.tipo].emoji}</span>`}
+          <span class="n">${c.casa}</span>
+          ${outros.length ? `<span class="peoes jn-stack">${peoes}</span>` : ''}
+        </div>`;
+    }).join('');
+    const atual = $('jg-atual'), sc = $('jg-scroll');
+    if (atual) sc.scrollTo({top: atual.offsetTop - sc.clientHeight / 2, behavior: 'smooth'});
+  }
+
+  function chip(k, qtd, onClick, sel) {
+    const b = document.createElement('button');
+    b.className = 'jn-item' + (sel ? ' sel' : '');
+    b.title = ITENS[k].descricao;
+    b.innerHTML = `<span class="text-xl">${ITENS[k].emoji}</span> ${esc(ITENS[k].nome)} <span class="text-gray-500">×${qtd}</span>`;
+    if (onClick) b.onclick = onClick; else b.classList.add('cursor-default');
+    return b;
+  }
+
+  function render() {
+    document.querySelectorAll('[data-jn="pp"]').forEach(e => e.textContent = E.pp);
+    document.querySelectorAll('[data-jn="energia"]').forEach(e => e.textContent = E.energia);
+    $('jg-local').textContent = E.local; $('jg-prog').textContent = `${E.local_indice}/${E.locais_total}`;
+    $('jg-volta').textContent = E.volta; $('jg-seq').textContent = E.sequencia_dias;
+    $('jg-ins').textContent = E.insignias.length; $('jg-sorte').classList.toggle('hidden', !E.sorte);
+    $('jg-req-pp').textContent = `${E.requisitos.pp_atual}/${E.requisitos.pp} ${E.requisitos.pp_atual >= E.requisitos.pp ? '✓' : ''}`;
+    $('jg-req-time').textContent = `${E.requisitos.time_atual}/${E.requisitos.time} ${E.requisitos.time_atual >= E.requisitos.time ? '✓' : ''}`;
+    $('jg-cap').textContent = `${E.capturadas}/${E.criaturas_total}`;
+
+    const pend = E.acao_pendente;
+    $('jg-dado').disabled = ocupado || !!pend || E.energia <= 0 || E.concluiu;
+    $('jg-btn-cap').disabled = ocupado || !(pend && pend.tipo === 'captura');
+    $('jg-btn-bat').disabled = ocupado || !E.aqui.length;
+    $('jg-btn-bat').textContent = E.aqui.length ? `⚔️ Batalhar (${E.aqui.length})` : '⚔️ Batalhar';
+    $('jg-btn-des').classList.toggle('hidden', !(pend && pend.tipo === 'desafio'));
+    if (E.concluiu) { $('jg-msg').textContent = '🏛️ Você está no Hall da Fama!'; $('jg-sub').textContent = 'A próxima região chega em breve.'; }
+    else if (!pend && E.energia <= 0) $('jg-sub').textContent = 'Sem energia hoje — recarrega à meia-noite.';
+
+    const box = $('jg-itens'); box.innerHTML = '';
+    const ks = Object.keys(E.itens);
+    if (!ks.length) box.innerHTML = '<p class="text-sm text-gray-500">Nenhum item. Cada cidade dá 2.</p>';
+    ks.forEach(k => box.appendChild(chip(k, E.itens[k],
+      k === 'elixir' ? () => acao(API.item, {item: 'elixir'}).then(r => r && toast(`⚗️ ${r.curadas} criatura(s) curada(s)`))
+      : k === 'tonico' ? () => location.href = {{ url_for('jornada.time')|tojson }} : null)));
+
+    // desafios recebidos
+    $('jg-recebidos').innerHTML = E.batalhas.recebidos.map(b => `
+      <div class="jn-card p-4 flex items-center gap-4 border-2 border-[#F0624D]">
+        <span class="text-3xl">⚔️</span>
+        <p class="flex-1 text-sm"><b>${esc(b.desafiante)}</b> te desafiou na casa ${b.casa}! <span class="text-gray-500">(${esc(b.criada)})</span></p>
+        <button class="bg-[#F0624D] text-white font-bold rounded-2xl px-4 py-2" data-resp="${b.id}">Responder</button>
+      </div>`).join('');
+    $('jg-recebidos').querySelectorAll('[data-resp]').forEach(b => b.onclick = () => sheetResponder(+b.dataset.resp));
+
+    // batalhas
+    const linhasB = [
+      ...E.batalhas.enviados.map(b => `⏳ Você desafiou <b>${esc(b.desafiado)}</b> — aguardando resposta`),
+      ...E.batalhas.recentes.map(b => `${b.vencedor === EU_AV.username ? '🏆' : '💥'} ${esc(b.desafiante)} × ${esc(b.desafiado)}: ` +
+        (b.total_desafiante !== null ? `${b.total_desafiante} a ${b.total_desafiado}, ` : '') + `venceu <b>${esc(b.vencedor)}</b>` +
+        (b.itens_roubados.length ? ` (levou ${b.itens_roubados.map(nomeItem).join(', ')})` : '') + (b.detalhe ? ` · ${esc(b.detalhe)}` : '')),
+    ];
+    $('jg-batalhas').innerHTML = linhasB.map(t => `<li>${t}</li>`).join('') || '<li class="text-gray-500">Caia na mesma casa que outro treinador para batalhar.</li>';
+    tabuleiro();
+  }
+
+  function log(txt) {
+    const li = document.createElement('li'); li.innerHTML = txt; $('jg-log').prepend(li);
+    while ($('jg-log').children.length > 30) $('jg-log').lastChild.remove();
+  }
+  function feed(itens) {
+    itens.slice().reverse().forEach(f => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="text-gray-400">${esc(f.quando)}</span> <b>${esc(f.username)}</b> ${esc(f.texto)}`;
+      $('jg-feed').prepend(li);
+    });
+    while ($('jg-feed').children.length > 15) $('jg-feed').lastChild.remove();
+    if (!$('jg-feed').children.length) $('jg-feed').innerHTML = '<li class="text-gray-500">Tudo calmo por enquanto.</li>';
+  }
+
+  function descrever(r) {
+    const p = [];
+    if (r.casa) p.push(`${CFG[r.casa.tipo].emoji} ${esc(CFG[r.casa.tipo].nome)} · ${esc(r.casa.local)}`);
+    if (r.criatura) p.push(`Apareceu <b>${esc(r.criatura.nome)}</b>!${r.descoberta ? ' ✨ primeira descoberta do servidor!' : ''}`);
+    if (r.sem_criatura) p.push('Nenhuma criatura nova por aqui: +10 PP');
+    if (r.bonus) p.push(`+${r.bonus} PP`);
+    if (r.itens && r.itens.ganhos) p.push('Itens: ' + (r.itens.ganhos.map(nomeItem).join(', ') || 'nenhum') + (r.itens.descartados.length ? ' (mão cheia)' : ''));
+    if (r.curadas) p.push(`${r.curadas} criatura(s) curada(s)`);
+    if (r.ginasio) {
+      const g = r.ginasio;
+      if (g.ja_vencido) p.push(`${esc(g.nome)}: insígnia já conquistada`);
+      else if (g.sem_time) p.push(`${esc(g.nome)}: você não tem criaturas para lutar`);
+      else p.push(`${esc(g.nome)} vs ${esc(g.lider)}: ${g.total_jogador} × ${g.total_lider} — <b>${g.venceu ? 'VITÓRIA! 🏅 +40 PP' : 'derrota'}</b>`);
+    }
+    if (r.evento) {
+      const ev = r.evento; let t = `❓ ${esc(ev.nome)}`;
+      if (ev.efeito === 'mover') t += ` (casa ${ev.de} → ${ev.para})`;
+      if (ev.efeito === 'pp') t += ` (${ev.valor > 0 ? '+' : ''}${ev.valor} PP)`;
+      if (ev.efeito === 'energia') t += ' (+1 energia)';
+      if (ev.perdeu) t += ` — perdeu ${nomeItem(ev.perdeu)}`;
+      p.push(t);
+    }
+    if (r.nova_volta) p.push(`Faltou requisito para o Desafio: <b>volta ${r.nova_volta}</b>, criaturas mais fortes!`);
+    if (r.desafio === 'disponivel') p.push(`<b>Você chegou ao Desafio do Pico!</b>`);
+    if (r.oponentes && r.oponentes.length) p.push(`⚔️ ${r.oponentes.map(esc).join(', ')} ${r.oponentes.length > 1 ? 'estão' : 'está'} aqui — dá para batalhar`);
+    if (r.premio_sequencia) p.push(`🔥 ${r.premio_sequencia.dias} dias seguidos: +${nomeItem(r.premio_sequencia.item)}`);
+    return p.join(' · ');
+  }
+
+  async function acao(url, body) {
+    if (ocupado) return null;
+    ocupado = true; render();
+    try {
+      const j = await JN.post(url, body);
+      if (!j.ok) return null;
+      E = j.estado; return j.resultado;
+    } finally { ocupado = false; render(); }
+  }
+
+  // ── dado ─────────────────────────────────────────────────────────────
+  $('jg-dado').onclick = async () => {
+    const btn = $('jg-dado'); btn.classList.add('rolando');
+    const giro = setInterval(() => { btn.textContent = 1 + Math.floor(Math.random() * 6); }, 70);
+    const r = await acao(API.rolar);
+    await new Promise(ok => setTimeout(ok, 400));
+    clearInterval(giro); btn.classList.remove('rolando');
+    btn.textContent = r ? r.dado : '🎲';
+    if (!r) return;
+    navigator.vibrate?.(15);
+    $('jg-msg').textContent = `Tirou ${r.dado}!`;
+    $('jg-sub').innerHTML = descrever(r);
+    log(`🎲 ${r.dado} → ${descrever(r)}`);
+    if (r.nova_volta) toast(`🔁 Volta ${r.nova_volta}! Criaturas mais fortes à frente.`);
+    if (r.ginasio && r.ginasio.venceu && !r.ginasio.ja_vencido) toast(`🏅 Insígnia do ${esc(r.ginasio.nome)}!`);
+    if (E.acao_pendente && E.acao_pendente.tipo === 'captura') sheetCaptura();
+    if (E.acao_pendente && E.acao_pendente.tipo === 'desafio') sheetDesafio();
+  };
+
+  // ── captura ──────────────────────────────────────────────────────────
+  function sheetCaptura() {
+    const pend = E.acao_pendente; if (!pend || pend.tipo !== 'captura') return;
+    const c = pend.dados; let sel = null;
+    const el = sheet(`
+      <div class="text-center">
+        <div class="mx-auto rounded-full flex items-center justify-center" style="width:96px;height:96px;font-size:48px;background:${esc(c.cor)}">${esc(c.emoji)}</div>
+        <h2 class="text-2xl font-extrabold text-[#1B2A4A] mt-2">${esc(c.nome)}</h2>
+        <p class="text-sm text-gray-500">${esc(c.tipo)} · Estágio ${c.estagio} · Ataque ${c.ataque} · ${c.pp} PP</p>
+        <p class="mt-4 font-extrabold text-lg">Captura com ${c.captura.map(n => `<span class="inline-block bg-[#1B2A4A] text-white rounded-xl px-3 py-1 mx-1">${n}</span>`).join(' ou ')}</p>
+        ${E.sorte ? '<p class="text-sm font-bold text-[#B8860B] mt-2">🍀 Dia de sorte: +1 automático se ajudar</p>' : ''}
+      </div>
+      <p class="text-xs text-gray-500 mt-4 mb-2">Usar item (só é gasto se fizer diferença):</p>
+      <div id="sc-itens" class="flex flex-wrap gap-2"></div>
+      <div class="flex gap-2 mt-4">
+        <button id="sc-tentar" class="flex-1 bg-green-600 text-white font-extrabold rounded-2xl py-3">🎲 Tentar captura</button>
+        <button id="sc-fugir" class="bg-gray-100 text-gray-700 font-bold rounded-2xl px-4 py-3">Deixar fugir</button>
+      </div>`);
+    const desenhar = () => {
+      const box = el.querySelector('#sc-itens'); box.innerHTML = '';
+      ['isca', 'rede', 'amuleto'].filter(k => E.itens[k]).forEach(k =>
+        box.appendChild(chip(k, E.itens[k], () => { sel = sel === k ? null : k; desenhar(); }, sel === k)));
+      if (!box.children.length) box.innerHTML = '<p class="text-sm text-gray-500">Sem itens de captura.</p>';
+    };
+    desenhar();
+    el.querySelector('#sc-tentar').onclick = async () => {
+      const r = await acao(API.capturar, {item: sel});
+      fecharSheet(); if (!r) return;
+      const dado = r.dado === null ? '🔮 Amuleto' : `Você tirou ${r.dado}${r.ajuste ? ' ' + esc(r.ajuste) : ''}`;
+      if (r.capturou) {
+        toast(`✨ ${dado}! Capturou!<br><span class="text-sm">${esc(r.criatura.emoji)} ${esc(r.criatura.nome)} · +${r.pp_ganho} PP · foi para o ${r.foi_para}</span>`);
+        $('jg-msg').textContent = `Capturou ${r.criatura.nome}!`;
+      } else {
+        toast(`💨 ${dado}… ${esc(r.criatura.nome)} fugiu.`);
+        $('jg-msg').textContent = `${r.criatura.nome} fugiu.`;
+      }
+      $('jg-sub').textContent = '';
+      log(`${r.capturou ? '✨' : '💨'} ${dado}: ${esc(r.criatura.nome)} ${r.capturou ? 'capturado (+' + r.pp_ganho + ' PP)' : 'fugiu'}`);
+    };
+    el.querySelector('#sc-fugir').onclick = async () => {
+      const r = await acao(API.pular); fecharSheet();
+      if (r) { $('jg-msg').textContent = 'A criatura fugiu.'; log('💨 Deixou a criatura fugir.'); }
+    };
+  }
+  $('jg-btn-cap').onclick = sheetCaptura;
+
+  // ── PvP: desafiar ────────────────────────────────────────────────────
+  function escolherCriatura(el, alvoSel, onPick) {
+    const saud = [...E.time, ...E.reserva].filter(c => !c.desmaiada);
+    el.querySelector(alvoSel).innerHTML = saud.map(c =>
+      `<button class="flex items-center gap-2 rounded-2xl border-2 border-gray-100 p-2" data-cr="${c.id}">${criatura(c)}</button>`).join('')
+      || '<p class="text-sm text-gray-500">Nenhuma criatura saudável.</p>';
+    el.querySelectorAll('[data-cr]').forEach(b => b.onclick = () => {
+      el.querySelectorAll('[data-cr]').forEach(x => x.classList.replace('border-[#F0624D]', 'border-gray-100'));
+      b.classList.replace('border-gray-100', 'border-[#F0624D]'); onPick(+b.dataset.cr);
+    });
+  }
+
+  $('jg-btn-bat').onclick = () => {
+    let alvo = E.aqui.length === 1 ? E.aqui[0].username : null, cr = null;
+    const el = sheet(`
+      <h2 class="text-xl font-extrabold text-[#1B2A4A]">⚔️ Batalhar</h2>
+      <p class="text-sm text-gray-500 mb-4">Dado + ataque. Empate = defensor vence. Quem ganha leva +30 PP e até 2 itens; a criatura de quem perde desmaia.</p>
+      <p class="font-bold mb-2">Contra quem?</p>
+      <div id="bt-alvos" class="flex flex-wrap gap-2 mb-4">${E.aqui.map(o => `
+        <button class="flex items-center gap-2 rounded-2xl border-2 ${o.username === alvo ? 'border-[#F0624D]' : 'border-gray-100'} px-3 py-2" data-alvo="${esc(o.username)}">${avatar(o, 32)} <b>${esc(o.username)}</b></button>`).join('')}</div>
+      <p class="font-bold mb-2">Sua criatura</p>
+      <div id="bt-cr" class="grid grid-cols-2 gap-2"></div>
+      ${E.itens.isca ? '<label class="flex items-center gap-2 mt-4 text-sm font-bold"><input type="checkbox" id="bt-isca"> Usar 🪱 Isca (+1)</label>' : ''}
+      <button id="bt-ir" class="w-full mt-4 bg-[#F0624D] text-white font-extrabold rounded-2xl py-3 disabled:opacity-40" disabled>Enviar desafio</button>`);
+    const ok = () => el.querySelector('#bt-ir').disabled = !(alvo && cr);
+    el.querySelectorAll('[data-alvo]').forEach(b => b.onclick = () => {
+      alvo = b.dataset.alvo;
+      el.querySelectorAll('[data-alvo]').forEach(x => x.classList.replace('border-[#F0624D]', 'border-gray-100'));
+      b.classList.replace('border-gray-100', 'border-[#F0624D]'); ok();
+    });
+    escolherCriatura(el, '#bt-cr', id => { cr = id; ok(); });
+    el.querySelector('#bt-ir').onclick = async () => {
+      const r = await acao(API.desafiar, {alvo, criatura: cr, isca: !!el.querySelector('#bt-isca')?.checked});
+      fecharSheet();
+      if (r) { toast(`⚔️ Desafio enviado para ${esc(r.alvo)}!`); log(`⚔️ Desafiou ${esc(r.alvo)}.`); }
+    };
+  };
+
+  // ── PvP: responder ───────────────────────────────────────────────────
+  function sheetResponder(id) {
+    const b = E.batalhas.recebidos.find(x => x.id === id); if (!b) return;
+    let cr = null;
+    const el = sheet(`
+      <h2 class="text-xl font-extrabold text-[#1B2A4A]">⚔️ ${esc(b.desafiante)} te desafiou!</h2>
+      <p class="text-sm text-gray-500 mb-4">Escolha quem luta. Você não vê a criatura do desafiante antes. Empate = você vence.</p>
+      <div id="rp-cr" class="grid grid-cols-2 gap-2"></div>
+      ${E.itens.isca ? '<label class="flex items-center gap-2 mt-4 text-sm font-bold"><input type="checkbox" id="rp-isca"> Usar 🪱 Isca (+1)</label>' : ''}
+      <button id="rp-ir" class="w-full mt-4 bg-[#F0624D] text-white font-extrabold rounded-2xl py-3 disabled:opacity-40" disabled>Lutar!</button>`);
+    escolherCriatura(el, '#rp-cr', i => { cr = i; el.querySelector('#rp-ir').disabled = false; });
+    el.querySelector('#rp-ir').onclick = async () => {
+      const r = await acao(API.responder(id), {criatura: cr, isca: !!el.querySelector('#rp-isca')?.checked});
+      fecharSheet(); if (!r) return;
+      const ganhei = r.vencedor === EU_AV.username;
+      const placar = r.total_desafiante !== null ? `${r.total_desafiado} × ${r.total_desafiante}` : esc(r.detalhe || '');
+      toast(`${ganhei ? '🏆 Você venceu!' : '💥 Você perdeu.'} ${placar}` +
+        (r.itens_roubados.length ? `<br><span class="text-sm">${ganhei ? 'Levou' : 'Perdeu'}: ${r.itens_roubados.map(nomeItem).join(', ')}</span>` : ''));
+      log(`⚔️ Batalha com ${esc(r.desafiante)}: ${ganhei ? 'vitória' : 'derrota'} (${placar})`);
+    };
+  }
+
+  // ── Desafio final ────────────────────────────────────────────────────
+  function sheetDesafio() {
+    let sel = [];
+    const el = sheet(`
+      <div class="text-center"><div class="text-6xl">👑</div>
+        <h2 class="text-2xl font-extrabold text-[#1B2A4A]">${esc(CHEFE)}</h2>
+        <p class="text-sm text-gray-500 mb-4">Melhor de ${RODADAS}. Escolha ${RODADAS} criaturas, na ordem das rodadas. Vencendo, você entra no 🏛️ Hall da Fama.</p></div>
+      <div id="df-time" class="grid grid-cols-2 gap-2"></div>
+      <div class="flex gap-2 mt-4">
+        <button id="df-ir" class="flex-1 bg-[#E8B931] text-[#1B2A4A] font-extrabold rounded-2xl py-3 disabled:opacity-40" disabled>Enfrentar</button>
+        <button id="df-recuar" class="bg-gray-100 text-gray-700 font-bold rounded-2xl px-4 py-3">Recuar</button>
+      </div>`);
+    const desenhar = () => {
+      el.querySelector('#df-time').innerHTML = E.time.filter(c => !c.desmaiada).map(c => {
+        const i = sel.indexOf(c.id);
+        return `<button class="flex items-center gap-2 rounded-2xl border-2 ${i >= 0 ? 'border-[#E8B931] bg-[#FFF3C4]' : 'border-gray-100'} p-2" data-d="${c.id}">
+          ${i >= 0 ? `<b class="text-[#B8860B]">${i + 1}ª</b>` : ''}${criatura(c)}</button>`;
+      }).join('');
+      el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
+        const id = +b.dataset.d, i = sel.indexOf(id);
+        if (i >= 0) sel.splice(i, 1); else if (sel.length < RODADAS) sel.push(id);
+        desenhar();
+      });
+      el.querySelector('#df-ir').disabled = sel.length !== RODADAS;
+    };
+    desenhar();
+    el.querySelector('#df-ir').onclick = async () => {
+      const r = await acao(API.desafio, {ids: sel}); fecharSheet(); if (!r) return;
+      const rods = r.rodadas.map((x, i) => `R${i + 1} ${esc(x.criatura)} ${x.total_jogador}×${x.total_chefe} ${x.venceu ? '✓' : '✗'}`).join(' · ');
+      if (r.venceu) { toast(`🏛️ Você venceu ${esc(r.chefe)}! Bem-vindo ao Hall da Fama!`, 6000); $('jg-msg').textContent = '🏛️ Hall da Fama!'; }
+      else { toast(`💥 ${esc(r.chefe)} venceu. De volta à casa ${r.para}.`); $('jg-msg').textContent = `Derrota. Casa ${r.para}.`; }
+      $('jg-sub').textContent = rods; log(`👑 ${r.venceu ? 'Vitória' : 'Derrota'} no Desafio: ${rods}`);
+    };
+    el.querySelector('#df-recuar').onclick = async () => {
+      const r = await acao(API.pular); fecharSheet();
+      if (r) $('jg-msg').textContent = `Recuou para a casa ${r.recuou_para}.`;
+    };
+  }
+  $('jg-btn-des').onclick = sheetDesafio;
+
+  // ── polling ──────────────────────────────────────────────────────────
+  JN.poll(async () => {
+    if (ocupado || document.getElementById('jn-sheet')) return;
+    const r = await fetch(`${API.estado}?desde=${ULT}`);
+    const j = await r.json();
+    if (!j.ok) return;
+    const antes = E.batalhas.recebidos.length;
+    E = j.estado; VIZ = j.vizinhos; ULT = j.ultimo_turno;
+    if (j.feed.length) feed(j.feed);
+    if (E.batalhas.recebidos.length > antes) toast('⚔️ Você recebeu um desafio!');
+    render();
+  });
+
+  feed({{ feed|tojson }});
+  render();
+  if (E.acao_pendente && E.acao_pendente.tipo === 'captura') $('jg-msg').textContent = 'Uma criatura está esperando você!';
+  if (E.acao_pendente && E.acao_pendente.tipo === 'desafio') $('jg-msg').textContent = `${CHEFE} espera por você.`;
+})();
+</script>
+{% endblock %}
